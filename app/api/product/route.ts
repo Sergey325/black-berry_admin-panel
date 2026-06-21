@@ -10,10 +10,12 @@ export async function POST(request: Request) {
 
         const colorsData = colors?.map((c: {
             color: string;
+            colorName: string;
             images: string[];
             sizes: { size: string; available: boolean }[];
         }) => ({
             color: c.color,
+            colorName: c.colorName,
             images: {
                 create: c.images.map((url: string, index: number) => ({
                     url,

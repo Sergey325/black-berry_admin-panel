@@ -19,6 +19,7 @@ export interface IProductImage {
 export interface IProductColor {
     id: number;
     color: string;
+    colorName: string;
     productId: number;
     images: IProductImage[];
     sizes: IProductSize[];

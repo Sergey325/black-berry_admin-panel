@@ -22,6 +22,7 @@ model ProductColor {
   id        Int            @id @default(autoincrement())
   color     String
   productId Int
+  colorName String
   product   Product        @relation(fields: [productId], references: [id], onDelete: Cascade)
   images    ProductImage[]
   sizes     ProductSize[]

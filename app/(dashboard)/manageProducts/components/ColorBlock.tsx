@@ -1,4 +1,4 @@
-import {Control, Controller, useFieldArray, UseFormRegister} from "react-hook-form";
+import {Control, Controller, FieldErrors, useFieldArray, UseFormRegister} from "react-hook-form";
 import {TiDeleteOutline} from "react-icons/ti";
 import ToolTip from "@/app/components/ToolTip";
 import ImagesUpload from "@/app/(dashboard)/manageProducts/components/ImagesUpload";
@@ -9,11 +9,12 @@ type Props = {
     register: UseFormRegister<FormValues>
     colorIndex: number
     onRemoveColor: (colorIndex: number) => void
+    errors: FieldErrors<FormValues>
 };
 
 const DEFAULT_SIZES = ["S", "M", "L", "XL"];
 
-const ColorBlock = ({ control, register, colorIndex, onRemoveColor }: Props) => {
+const ColorBlock = ({ control, register, colorIndex, onRemoveColor, errors }: Props) => {
     const { fields: sizeFields, append: appendSize, remove: removeSize } = useFieldArray({
         control,
         name: `colors.${colorIndex}.sizes`,
@@ -40,6 +41,14 @@ const ColorBlock = ({ control, register, colorIndex, onRemoveColor }: Props) => 
                 </ToolTip>
             </div>
 
+            <div className="flex flex-col gap-1">
+                <label className="text-base md:text-lg font-medium">Назва кольору</label>
+                <input
+                    {...register(`colors.${colorIndex}.colorName`, { required: "Обов'язкове поле" })}
+                    className="border border-gray-300 rounded-sm px-3 py-2 outline-none focus:border-gray-600 transition md:text-lg max-w-[200px]"
+                />
+                {errors?.colors?.[colorIndex]?.colorName && <span className="text-red-500 text-base md:text-lg">{errors?.colors?.[colorIndex]?.colorName.message}</span>}
+            </div>
             {/* Картинки для этого цвета */}
             <div className="flex flex-col gap-1">
                 <label className="text-base md:text-lg font-medium">Зображення для цього кольору</label>
@@ -51,6 +60,11 @@ const ColorBlock = ({ control, register, colorIndex, onRemoveColor }: Props) => 
                         <ImagesUpload value={field.value} onChange={field.onChange} />
                     )}
                 />
+                {errors?.colors?.[colorIndex]?.images && (
+                    <span className="text-red-500 text-base md:text-lg">
+                        {errors.colors[colorIndex].images.message as string}
+                    </span>
+                )}
             </div>
 
             {/* Размеры для этого цвета */}

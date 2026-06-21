@@ -20,12 +20,13 @@ export default function AddProduct({product, resetSelectedProduct}: Props) {
 
     const { register, control, handleSubmit, formState: { errors }, reset } = useForm<FormValues>({
         defaultValues: {
-            name: product?.name || "",
-            description: product?.description || "",
-            price: product?.price || 0,
+            name: product?.name,
+            description: product?.description,
+            price: product?.price,
             discount: product?.discount || 0,
             colors: product?.colors.map((c) => ({
                 color: c.color,
+                colorName: c.colorName,
                 images: c.images
                     .sort((a, b) => a.order - b.order)
                     .map((img) => img.url),
@@ -43,7 +44,23 @@ export default function AddProduct({product, resetSelectedProduct}: Props) {
     });
 
     const onSubmit = async (data: FormValues) => {
-        console.log(data)
+        // console.log(data)
+        if (data.colors.length === 0) {
+            toast.error("Додайте хоча б один колір товару");
+            return;
+        }
+
+        for (const color of data.colors) {
+            if (color.images.length === 0) {
+                toast.error(`Додайте зображення для кольору`);
+                return;
+            }
+            if (color.sizes.length === 0) {
+                toast.error(`Додайте хоча б один розмір для кожного кольору`);
+                return;
+            }
+        }
+
         axios.post("/api/product", {
             ...data,
             id: product?.id || null,
@@ -94,9 +111,10 @@ export default function AddProduct({product, resetSelectedProduct}: Props) {
                     <input
                         type="number"
                         step="0.01"
-                        {...register("price", { required: true, valueAsNumber: true })}
+                        {...register("price", { required: "Обов'язкове поле", valueAsNumber: true })}
                         className="border border-gray-300 rounded-sm px-3 py-2 outline-none focus:border-gray-600 transition md:text-lg"
                     />
+                    {errors.price && <span className="text-red-500 text-base md:text-lg">{errors.price.message}</span>}
                 </div>
                 <div className="flex flex-col gap-1">
                     <label className="text-base md:text-lg font-medium">Знижка (%)</label>
@@ -105,38 +123,11 @@ export default function AddProduct({product, resetSelectedProduct}: Props) {
                         {...register("discount", { valueAsNumber: true })}
                         className="border border-gray-300 rounded-sm px-3 py-2 outline-none focus:border-gray-600 transition md:text-lg"
                     />
+                    {errors.discount && <span className="text-red-500 text-base md:text-lg">{errors.discount.message}</span>}
                 </div>
             </div>
 
             <div className="flex flex-col gap-8">
-                <div className="flex items-center gap-4">
-                    <label className="text-base md:text-lg font-medium">Кольори товару</label>
-                    <div className="flex flex-wrap gap-2">
-                        {DEFAULT_COLORS.map((color) => (
-                            <button
-                                key={color}
-                                type="button"
-                                onClick={() => appendColor({ color: color, images: [], sizes: [] })}
-                                className="w-7 h-7 rounded-full border border-gray-500 hover:scale-110 transition"
-                                style={{ backgroundColor: color }}
-                            />
-                        ))}
-                        <ToolTip label="Додати колір">
-                            <button
-                                type="button"
-                                onClick={() => appendColor({ color: "#000000", images: [], sizes: [] })}
-                                className="w-7 h-7 rounded-full border border-gray-300 border-dashed flex items-center justify-center text-gray-400 hover:text-gray-800 hover:border-gray-500 transition text-center cursor-pointer"
-                            >
-                                +
-                            </button>
-                        </ToolTip>
-                    </div>
-                </div>
-
-                {colorFields.length === 0 && (
-                    <p className="text-base md:text-lg text-gray-400">Додайте хоча б один колір товару</p>
-                )}
-
                 {colorFields.map((colorField, colorIndex) => (
                     <ColorBlock
                         key={colorField.id}
@@ -144,8 +135,35 @@ export default function AddProduct({product, resetSelectedProduct}: Props) {
                         register={register}
                         colorIndex={colorIndex}
                         onRemoveColor={() => removeColor(colorIndex)}
+                        errors={errors}
                     />
                 ))}
+                <div className="flex items-center gap-4">
+                    <label className="text-base md:text-lg font-medium">Кольори товару</label>
+                    <div className="flex flex-wrap gap-2">
+                        {DEFAULT_COLORS.map((color) => (
+                            <button
+                                key={color}
+                                type="button"
+                                onClick={() => appendColor({ color: color, images: [], sizes: [], colorName: "" })}
+                                className="w-7 h-7 rounded-full border border-gray-500 hover:scale-110 transition"
+                                style={{ backgroundColor: color }}
+                            />
+                        ))}
+                        <ToolTip label="Додати колір">
+                            <button
+                                type="button"
+                                onClick={() => appendColor({ color: "#000000", images: [], sizes: [], colorName: "" })}
+                                className="w-7 h-7 rounded-full border border-gray-300 border-dashed flex items-center justify-center text-gray-400 hover:text-gray-800 hover:border-gray-500 transition text-center cursor-pointer"
+                            >
+                                +
+                            </button>
+                        </ToolTip>
+                    </div>
+                </div>
+                {colorFields.length === 0 && (
+                    <p className="text-base md:text-lg text-gray-400">Додайте хоча б один колір товару</p>
+                )}
             </div>
             <button type="submit" className="bg-black text-white rounded-sm py-3 hover:bg-gray-800 transition">
                 Зберегти товар
