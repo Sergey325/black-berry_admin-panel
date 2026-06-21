@@ -1,5 +1,6 @@
 import Navbar from "@/app/components/Navbar";
 import Container from "@/app/components/Container";
+import ToasterProvider from "@/app/Providers/ToasterProvider";
 
 export default function DashboardLayout({
                                             children,
@@ -9,6 +10,7 @@ export default function DashboardLayout({
     return (
         <>
             <Navbar />
+            <ToasterProvider/>
             <Container>
                 {children}
             </Container>

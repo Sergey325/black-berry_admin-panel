@@ -1,0 +1,103 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Product {
+  id          Int            @id @default(autoincrement())
+  name        String
+  price       Float
+  discount    Float          @default(0)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  slug        String
+  description String
+  colors      ProductColor[]
+}
+
+model ProductColor {
+  id        Int            @id @default(autoincrement())
+  color     String
+  productId Int
+  product   Product        @relation(fields: [productId], references: [id], onDelete: Cascade)
+  images    ProductImage[]
+  sizes     ProductSize[]
+}
+
+model ProductImage {
+  id             Int          @id @default(autoincrement())
+  url            String
+  order          Int          @default(0)
+  productColorId Int
+  productColor   ProductColor @relation(fields: [productColorId], references: [id], onDelete: Cascade)
+}
+
+model ProductSize {
+  id             Int          @id @default(autoincrement())
+  size           String
+  available      Boolean      @default(true)
+  productColorId Int
+  productColor   ProductColor @relation(fields: [productColorId], references: [id], onDelete: Cascade)
+}
+
+model NovaPoshtaCity {
+  id        Int      @id @default(autoincrement())
+  ref       String   @unique
+  name      String
+  area      String?
+  updatedAt DateTime @updatedAt
+
+  @@index([name])
+}
+
+model Order {
+  id            Int           @id @default(autoincrement())
+  invoiceId     String?       @unique
+  status        OrderStatus   @default(PENDING)
+  totalAmount   Float
+  firstName     String
+  lastName      String
+  phone         String
+  email         String?
+  comment       String?
+  city          String
+  cityRef       String
+  warehouse     String?
+  warehouseRef  String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  paymentMethod PaymentMethod
+  area          String
+  items         OrderItem[]
+}
+
+model OrderItem {
+  id        Int     @id @default(autoincrement())
+  orderId   Int
+  productId Int
+  name      String
+  price     Float
+  quantity  Int
+  color     String?
+  size      String?
+  imageUrl  String?
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentMethod {
+  MONOBANK
+  CASH_ON_DELIVERY
+}
