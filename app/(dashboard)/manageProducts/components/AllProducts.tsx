@@ -22,7 +22,7 @@ const AllProducts = ({products, handleChangeTab, onEdit}: Props) => {
                     <SearchInput />
                     <ToolTip label="Додати продукт">
                         <CiCirclePlus
-                            className="size-8 text-gray-400 hover:text-gray-800 cursor-pointer transition"
+                            className="size-8 text-gray-400 hover:text-gray-800 cursor-pointer transition bg-white rounded-full"
                             onClick={() => handleChangeTab("AddProduct")}
                         />
                     </ToolTip>
@@ -31,10 +31,10 @@ const AllProducts = ({products, handleChangeTab, onEdit}: Props) => {
                     <SortDropdown />
                 </div>
             </div>
-            <div className="border border-gray-300 rounded-md overflow-hidden">
+            <div className="border border-gray-300 bg-white rounded-md overflow-hidden">
 
                 {/* Заголовок таблицы */}
-                <div className="hidden sm:grid grid-cols-[60px_1fr_120px_100px] items-center gap-4 px-4 py-3 border-b border-gray-300 bg-gray-50 text-sm lg:text-base font-medium text-gray-500">
+                <div className="hidden sm:grid grid-cols-[60px_1fr_120px_100px] items-center gap-4 px-4 py-3 border-b border-gray-300 bg-gray-50 text-sm lg:text-base font-medium text-gray-600">
                     <span></span>
                     <span>Назва</span>
                     <span className="text-center">Ціна</span>

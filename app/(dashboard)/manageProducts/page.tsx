@@ -3,12 +3,12 @@ import ManageProductsClient from "@/app/(dashboard)/manageProducts/components/Ma
 
 
 type Props = {
-    searchParams: IProductsParams
-}
-
+    searchParams: Promise<IProductsParams>;
+};
 
 const ManageProducts = async ({searchParams}: Props) => {
-    const products = await getProducts(searchParams)
+    const params = await searchParams;
+    const products = await getProducts(params);
 
     return (
         <ManageProductsClient products={products}/>

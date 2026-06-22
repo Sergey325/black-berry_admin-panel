@@ -5,6 +5,7 @@ import toast from "react-hot-toast";
 import { MdEdit, MdDelete } from "react-icons/md";
 import { IProduct } from "@/app/actions/getProducts";
 import ToolTip from "@/app/components/ToolTip";
+import {calculatePriceWithDiscount} from "@/app/utils/calculateDiscount";
 
 type Props = {
     product: IProduct;
@@ -45,9 +46,9 @@ export default function ProductRow({ product, onEdit }: Props) {
             />
 
             <div className="flex-1 sm:contents min-w-0">
-                <p className="text-sm lg:text-base font-medium break-words">{product.name}</p>
-                <p className="text-sm text-gray-500 sm:hidden mt-0.5">{product.price} грн</p>
-                <p className="hidden sm:block text-sm lg:text-base text-center">{product.price} грн</p>
+                <p className="text-sm lg:text-base font-medium wrap-break-word">{product.name}</p>
+                <p className="text-sm  sm:hidden mt-0.5">{calculatePriceWithDiscount(product.price, product.discount)} грн</p>
+                <p className="hidden sm:block text-sm lg:text-base text-center">{calculatePriceWithDiscount(product.price, product.discount)} грн</p>
             </div>
 
             <div className="flex items-center gap-5 shrink-0 sm:justify-center">

@@ -45,14 +45,12 @@ export interface IProductsParams {
 export async function getProducts(params?: IProductsParams) {
     try {
         const { title, sort } = params ?? {};
-
+        
         const orderBy: any =
-            sort === "price_asc" ? { price: "asc" } :
-                sort === "price_desc" ? { price: "desc" } :
-                    sort === "name_asc" ? { name: "asc" } :
-                        sort === "name_desc" ? { name: "desc" } :
-                            sort === "oldest" ? { createdAt: "asc" } :
-                                { createdAt: "desc" }; // newest по умолчанию
+            sort === "name_asc" ? { name: "asc" } :
+                sort === "name_desc" ? { name: "desc" } :
+                    sort === "oldest" ? { createdAt: "asc" } :
+                        { createdAt: "desc" }; // newest по умолчанию
 
         const products = await prisma.product.findMany({
             where: title ? { name: { contains: title, mode: "insensitive" } } : undefined,
@@ -61,6 +59,23 @@ export async function getProducts(params?: IProductsParams) {
             },
             orderBy,
         });
+
+        if (sort === "price_asc") {
+            products.sort(
+                (a, b) =>
+                    a.price * (1 - a.discount / 100) -
+                    b.price * (1 - b.discount / 100)
+            );
+        }
+
+        if (sort === "price_desc") {
+            products.sort(
+                (a, b) =>
+                    b.price * (1 - b.discount / 100) -
+                    a.price * (1 - a.discount / 100)
+            );
+        }
+
         return products;
     }
     catch (error: any) {

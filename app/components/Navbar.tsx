@@ -19,7 +19,7 @@ const Navbar = ({}: Props) => {
     };
 
     return (
-        <header className="w-full border-b border-gray-300 text-base text-gray-800 bg-gray-50 relative z-20 select-none">
+        <header className="w-full border-b border-gray-300 text-base text-gray-800 bg-white relative z-20 select-none">
             <div className="w-full">
                 <nav className="flex items-center h-18 text-lg lg:text-xl">
                     <div

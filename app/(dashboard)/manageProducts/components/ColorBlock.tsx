@@ -72,7 +72,7 @@ const ColorBlock = ({ control, register, colorIndex, onRemoveColor, errors }: Pr
                 <label className="text-base md:text-lg font-medium">Розміри</label>
 
                 {sizeFields.map((sizeField, sizeIndex) => (
-                    <div key={sizeField.id} className="flex items-center gap-6 bg-gray-50 rounded-md px-3 py-2">
+                    <div key={sizeField.id} className="flex items-center gap-6 rounded-md px-3 py-2">
                         <input
                             {...register(`colors.${colorIndex}.sizes.${sizeIndex}.size`, { required: true })}
                             className="border border-gray-200 rounded-sm px-2 py-1 w-20 uppercase outline-none focus:border-gray-400 transition"

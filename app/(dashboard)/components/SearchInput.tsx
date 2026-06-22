@@ -31,7 +31,7 @@ export default function SearchInput() {
             value={value}
             onChange={(e) => setValue(e.target.value)}
             placeholder="Пошук за назвою..."
-            className="border border-gray-200 rounded-sm px-3 py-2 text-sm outline-none focus:border-gray-400 transition w-full sm:w-64"
+            className="border border-gray-200 rounded-sm px-3 py-2 text-sm outline-none focus:border-gray-400 transition w-full sm:w-64 bg-white"
         />
     );
 }

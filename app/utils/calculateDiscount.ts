@@ -1,0 +1,1 @@
+export const calculatePriceWithDiscount = (price: number, discount: number): number => Math.round((price-price/100*discount) * 100) / 100

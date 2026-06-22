@@ -55,24 +55,27 @@ model NovaPoshtaCity {
 }
 
 model Order {
-  id            Int           @id @default(autoincrement())
-  invoiceId     String?       @unique
-  status        OrderStatus   @default(PENDING)
-  totalAmount   Float
-  firstName     String
-  lastName      String
-  phone         String
-  email         String?
-  comment       String?
-  city          String
-  cityRef       String
-  warehouse     String?
-  warehouseRef  String?
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-  paymentMethod PaymentMethod
-  area          String
-  items         OrderItem[]
+  id              Int           @id @default(autoincrement())
+  invoiceId       String?       @unique
+  status          OrderStatus   @default(PENDING)
+  totalAmount     Float
+  firstName       String
+  lastName        String
+  phone           String
+  email           String?
+  comment         String?
+  city            String
+  cityRef         String
+  warehouse       String?
+  warehouseRef    String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  paymentMethod   PaymentMethod
+  area            String
+  ttnNumber       String?
+  ttnRef          String?
+  warehouseNumber Int?
+  items           OrderItem[]
 }
 
 model OrderItem {

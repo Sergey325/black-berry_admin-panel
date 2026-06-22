@@ -52,7 +52,7 @@ export default function ManageProductsClient({products}: Props) {
     }
 
     return (
-        <div className="mt-10">
+        <div className="mt-10 ">
             {
                 tab === "AllProducts" ? <AllProducts products={products} onEdit={onEditProduct} handleChangeTab={handleChangeTab}/> : <AddProduct product={selectedProduct || undefined} resetSelectedProduct={() => setSelectedProduct(null)}/>
             }
