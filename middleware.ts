@@ -5,11 +5,10 @@ export async function middleware(request: NextRequest) {
     const token = request.cookies.get("admin_session")?.value;
 
     const payload = token ? await verifyToken(token) : null;
-    console.log("pathname:", request.nextUrl.pathname);
-    console.log("token:", !!token);
-    console.log("payload:", payload);
+
     const pathname = request.nextUrl.pathname;
     const isLoginPage = pathname === "/login";
+    const isRootPage = pathname === "/";
 
     if (!payload && !isLoginPage) {
         return NextResponse.redirect(
@@ -18,6 +17,12 @@ export async function middleware(request: NextRequest) {
     }
 
     if (payload && isLoginPage) {
+        return NextResponse.redirect(
+            new URL("/manageProducts?tab=AllProducts", request.url)
+        );
+    }
+
+    if (payload && isRootPage) {
         return NextResponse.redirect(
             new URL("/manageProducts?tab=AllProducts", request.url)
         );

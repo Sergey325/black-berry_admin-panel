@@ -1,6 +1,7 @@
 import {getProducts, IProductsParams} from "@/app/actions/getProducts";
 import ManageProductsClient from "@/app/(dashboard)/manageProducts/components/ManageProductsClient";
 
+export const dynamic = 'force-dynamic'
 
 type Props = {
     searchParams: Promise<IProductsParams>;

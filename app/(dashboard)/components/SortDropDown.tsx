@@ -27,10 +27,10 @@ export default function SortDropdown() {
         <select
             value={currentSort}
             onChange={handleChange}
-            className="border border-gray-200 rounded-sm px-3 py-2 text-sm outline-none focus:border-gray-400 transition bg-white w-full min-w-[180px]"
+            className="border border-gray-200 rounded-sm px-3 py-2 text-base outline-none focus:border-gray-400 transition bg-white w-full min-w-[180px]"
         >
             {SORT_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
+                <option key={opt.value} value={opt.value} className="p-5">
                     {opt.label}
                 </option>
             ))}
