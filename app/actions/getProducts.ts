@@ -70,7 +70,7 @@ export async function getProducts(params?: IProductsParams) {
 
         if (sort === "price_desc") {
             products.sort(
-                (a, b) =>
+                (a:IProduct, b:IProduct) =>
                     b.price * (1 - b.discount / 100) -
                     a.price * (1 - a.discount / 100)
             );
