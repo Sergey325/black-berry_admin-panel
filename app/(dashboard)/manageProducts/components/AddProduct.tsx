@@ -140,7 +140,7 @@ export default function AddProduct({product, resetSelectedProduct}: Props) {
 
             <div className="flex items-center gap-1 mb-5 group cursor-pointer" onClick={() => router.replace("/manageProducts?tab=AllProducts")}>
                 <IoIosArrowBack className="size-5 group" />
-                <p className="group-hover:underline group">Повернутися до товарів</p>
+                <p className="group-hover:underline group select-none">Повернутися до товарів</p>
             </div>
 
             <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-8 bg-white rounded-md p-3 border border-gray-300 md:p-5">
