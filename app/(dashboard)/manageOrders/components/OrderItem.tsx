@@ -20,7 +20,7 @@ const OrderItem = ({orderItem}: Props) => {
                 />
                 <span className="text-base">{orderItem.name}</span>
             </div>
-            <span className="hidden md:inline-block md:w-[15%]">{orderItem.price/orderItem.quantity} грн</span>
+            <span className="hidden md:inline-block md:w-[15%]">{orderItem.price} грн</span>
             <div
                 className="flex justify-between items-center w-full sm:w-[45%] md:w-[30%] min-h-max min-w-max">
                 <div className="flex items-center text-base gap-1 min-h-max min-w-max">
