@@ -99,7 +99,7 @@ const OrderSummary = ({order}: Props) => {
                 </div>
                 <div className="flex justify-between">
                     <span className="font-light text-gray-800 max-w-[60%]">Спосіб оплати</span>
-                    <span className="text-gray-900 font-semibold">{order.paymentMethod}</span>
+                    <span className="text-gray-900 font-semibold text-right">{order.paymentMethod === "CASH_ON_DELIVERY" ? "Післяплата" : "Повна оплата картою"}</span>
                 </div>
                 {
                     order.ttnNumber && (
