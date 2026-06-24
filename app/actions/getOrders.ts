@@ -56,7 +56,10 @@ export async function getOrders(params?: IOrdersParams) {
 
         const orders = await prisma.order.findMany({
             where: {
-                ...(status && { status  }),
+                ...(status
+                        ? { status }
+                        : { status: { not: "PENDING" } }
+                ),
             },
             orderBy,
             include: {
