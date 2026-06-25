@@ -79,7 +79,7 @@ model Order {
 }
 
 model OrderItem {
-  id        Int    @id @default(autoincrement())
+  id        Int     @id @default(autoincrement())
   orderId   Int
   productId Int
   name      String
@@ -88,7 +88,8 @@ model OrderItem {
   color     String
   size      String
   imageUrl  String
-  order     Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  colorName String?
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
 }
 
 enum OrderStatus {

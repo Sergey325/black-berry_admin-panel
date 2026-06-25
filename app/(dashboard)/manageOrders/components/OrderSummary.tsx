@@ -5,6 +5,7 @@ import {OrderStatus} from "@prisma/client";
 import toast from "react-hot-toast";
 import {formatDate} from "@/app/utils/formatDate";
 import axios from "axios";
+import DropDown from "@/app/(dashboard)/components/DropDown";
 
 type Props = {
     order: IOrder
@@ -46,11 +47,10 @@ export const orderStatuses: StatusOption[] = [
     },
 ];
 
-
 const OrderSummary = ({order}: Props) => {
     const router = useRouter()
 
-    const onChangeStatus  = async (status: OrderStatus) => {
+    const onChangeStatus  = async (status: string) => {
         await axios.patch(`/api/order/${order.id}`, {
             status: status,
         })
@@ -61,7 +61,6 @@ const OrderSummary = ({order}: Props) => {
             toast.error(error?.response?.data?.error)
         });
     }
-
 
     const copyToClipboard = async (text: string) => {
         await navigator.clipboard.writeText(text);
@@ -82,20 +81,23 @@ const OrderSummary = ({order}: Props) => {
                 </div>
                 <div className="flex justify-between items-center">
                     <p className="font-light text-gray-800 max-w-[60%]">Status</p>
-                    <select
-                        value={order.status}
-                        onChange={(e) => {
-                            const status = e.target.value as OrderStatus;
-                            onChangeStatus(status);
-                        }}
-                        className="border border-gray-200 rounded-sm px-3 py-2 text-base outline-none focus:border-gray-400 transition bg-white w-full max-w-[180px] font-semibold"
-                    >
-                        {orderStatuses.map((opt, index) => (
-                            <option key={index + order.id} value={opt.value} className="p-5">
-                                {opt.label}
-                            </option>
-                        ))}
-                    </select>
+                    <div className="max-w-[180px]">
+                        <DropDown currentValue={order.status} options={orderStatuses} handleChange={onChangeStatus}/>
+                    </div>
+                    {/*<select*/}
+                    {/*    value={order.status}*/}
+                    {/*    onChange={(e) => {*/}
+                    {/*        const status = e.target.value as OrderStatus;*/}
+                    {/*        onChangeStatus(status);*/}
+                    {/*    }}*/}
+                    {/*    className="border border-gray-200 rounded-sm px-3 py-2 text-base outline-none focus:border-gray-400 transition bg-white w-full max-w-[180px] font-semibold"*/}
+                    {/*>*/}
+                    {/*    {orderStatuses.map((opt, index) => (*/}
+                    {/*        <option key={index + order.id} value={opt.value} className="p-5">*/}
+                    {/*            {opt.label}*/}
+                    {/*        </option>*/}
+                    {/*    ))}*/}
+                    {/*</select>*/}
                 </div>
                 <div className="flex justify-between">
                     <span className="font-light text-gray-800 max-w-[60%]">Спосіб оплати</span>

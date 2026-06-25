@@ -1,6 +1,10 @@
 import {IOrder, IOrderItem} from "@/app/actions/getOrders";
 import OrderItem from "@/app/(dashboard)/manageOrders/components/OrderItem";
-import OrderSummary from "@/app/(dashboard)/manageOrders/components/OrderSummary";
+import OrderSummary, {orderStatuses} from "@/app/(dashboard)/manageOrders/components/OrderSummary";
+import {useCallback, useMemo} from "react";
+import {useRouter, useSearchParams} from "next/navigation";
+import qs from "query-string";
+import DropDown from "@/app/(dashboard)/components/DropDown";
 
 type Props = {
     orders: IOrder[],
@@ -9,18 +13,68 @@ type Props = {
 };
 
 const AllOrders = ({orders, handleChangeTab, onEdit}: Props) => {
+    const params = useSearchParams()
+    const router = useRouter()
+
+    const status = useMemo(() => {
+        return params?.get("status") || "All";
+    }, [params])
+
+    const handleChangeStatusFilter = useCallback((statusValue: string) => {
+        let currentQuery = {}
+
+        if (status === statusValue) return null
+
+        if(params){
+            currentQuery = qs.parse(params.toString())
+        }
+
+        const updatedQuery: any = {
+            ...currentQuery,
+            status: statusValue
+        }
+
+        const url = qs.stringifyUrl({
+            url: 'manageOrders/',
+            query: updatedQuery
+        }, {skipNull: true})
+
+        router.push(url)
+    }, [params])
+
     if (orders?.length === 0) {
         return (
-            <div className="mt-4 text-center text-xs sm:text-lg">
-                No orders with the specified status found
+            <div className="flex flex-col gap-5 items-center">
+                <p className="mt-4 text-center text-lg">
+                    Замовлень із вказаним статусом не знайдено
+                </p>
+                <button
+                    className="border rounded-md h-8 px-3 cursor-pointer bg-gray-100 hover:shadow-[0_0_0_2px_rgba(100,116,139,1)] transition"
+                    onClick={() => router.push("/manageOrders")}
+                >
+                    Скинути фільтр
+                </button>
             </div>
+
         )
     }
 
     return (
         <div className="flex flex-col gap-3 md:gap-6 text-2xl md:text-4xl py-5 px-3">
+            <div>
+                <DropDown
+                    options={[
+                        {
+                            value: "",
+                            label: "Усі",
+                        },
+                        ...orderStatuses,
+                    ]}
+                    currentValue={status}
+                    handleChange={handleChangeStatusFilter}
+                />
+            </div>
             {(orders)?.map((order) => {
-
                 return (
                     <div key={order.id}
                          className="text-base lg:text-lg py-5 md:py-10 px-5 text-gray-700 rounded-xl border-2 border-gray-500 bg-white">

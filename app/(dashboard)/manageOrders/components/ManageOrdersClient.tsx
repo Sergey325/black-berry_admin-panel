@@ -39,7 +39,7 @@ export default function ManageOrdersClient({orders}: Props) {
         }
 
         const url = qs.stringifyUrl({
-            url: '/manageOrders/',
+            url: 'manageOrders/',
             query: updatedQuery
         }, {skipNull: true})
 

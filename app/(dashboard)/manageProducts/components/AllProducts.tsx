@@ -1,10 +1,10 @@
 import SearchInput from "@/app/(dashboard)/components/SearchInput";
 import ToolTip from "@/app/components/ToolTip";
 import {CiCirclePlus} from "react-icons/ci";
-import SortDropdown from "@/app/(dashboard)/components/SortDropDown";
+import DropDown from "@/app/(dashboard)/components/DropDown";
 import ProductRow from "@/app/(dashboard)/manageProducts/components/ProductRow";
-import {useState} from "react";
 import {IProduct} from "@/app/actions/getProducts";
+import {useRouter, useSearchParams} from "next/navigation";
 
 
 type Props = {
@@ -13,7 +13,27 @@ type Props = {
     onEdit: (product: IProduct) => void
 };
 
+const SORT_OPTIONS = [
+    { value: "newest", label: "Спочатку нові" },
+    { value: "oldest", label: "Спочатку старі" },
+    { value: "price_asc", label: "Ціна: за зростанням" },
+    { value: "price_desc", label: "Ціна: за спаданням" },
+    { value: "name_asc", label: "Назва: А-Я" },
+    { value: "name_desc", label: "Назва: Я-А" },
+];
+
+
 const AllProducts = ({products, handleChangeTab, onEdit}: Props) => {
+    const router = useRouter();
+    const params = useSearchParams();
+
+    const currentSort = params.get("sort") ?? "newest";
+
+    const handleSortChange = (value: string) => {
+        const qs = new URLSearchParams(params);
+        qs.set("sort", value);
+        router.push(`?${qs.toString()}`);
+    };
 
     return (
         <div className="flex flex-col gap-4 mt-10">
@@ -28,7 +48,7 @@ const AllProducts = ({products, handleChangeTab, onEdit}: Props) => {
                     </ToolTip>
                 </div>
                 <div className="w-full sm:w-fit">
-                    <SortDropdown />
+                    <DropDown key={currentSort} options={SORT_OPTIONS} handleChange={handleSortChange} currentValue={currentSort}/>
                 </div>
             </div>
             <div className="border border-gray-300 bg-white rounded-md overflow-hidden">

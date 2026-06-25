@@ -11,6 +11,7 @@ export interface IOrderItem {
     price: number;
     quantity: number;
     color: string;
+    colorName: string | null;
     size: string;
     imageUrl: string;
 }
@@ -56,10 +57,9 @@ export async function getOrders(params?: IOrdersParams) {
 
         const orders = await prisma.order.findMany({
             where: {
-                ...(status
-                        ? { status }
-                        : { status: { not: "PENDING" } }
-                ),
+                ...(status && {
+                    status,
+                }),
             },
             orderBy,
             include: {
