@@ -71,16 +71,16 @@ const OrderSummary = ({order}: Props) => {
             className="rounded-lg p-2 sm:p-4 lg:col-span-5 w-full xl:w-[30%] bg-gray-200 text-gray-900 self-start my-auto"
         >
             <h2 className="text-base md:text-xl font-medium ">
-                Order summary
+                Підсумок замовлення
             </h2>
 
             <div className="mt-6 space-y-4 text-sx sm:text-base">
                 <div className="flex justify-between items-center">
-                    <span className="font-light text-gray-800 max-w-[60%]">Created at</span>
+                    <span className="font-light text-gray-800 max-w-[60%]">Створено о</span>
                     <span className="text-gray-800 text-right font-semibold">{formatDate(order.createdAt)}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                    <p className="font-light text-gray-800 max-w-[60%]">Status</p>
+                    <p className="font-light text-gray-800 max-w-[60%]">Статус</p>
                     <div className="max-w-[180px]">
                         <DropDown currentValue={order.status} options={orderStatuses} handleChange={onChangeStatus}/>
                     </div>
