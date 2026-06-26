@@ -6,12 +6,14 @@ import qs from "query-string";
 import {IOrder} from "@/app/actions/getOrders";
 import AddOrder from "@/app/(dashboard)/manageOrders/components/AddOrder";
 import AllOrders from "@/app/(dashboard)/manageOrders/components/AllOrders";
+import {IProduct} from "@/app/actions/getProducts";
 
 type Props = {
     orders: IOrder[];
+    products: IProduct[];
 };
 
-export default function ManageOrdersClient({orders}: Props) {
+export default function ManageOrdersClient({orders, products}: Props) {
     const [selectedOrder, setSelectedOrder] = useState<IOrder | null>(null);
     const params = useSearchParams()
     const router = useRouter()
@@ -39,7 +41,7 @@ export default function ManageOrdersClient({orders}: Props) {
         }
 
         const url = qs.stringifyUrl({
-            url: 'manageOrders/',
+            url: '/manageOrders/',
             query: updatedQuery
         }, {skipNull: true})
 
@@ -54,7 +56,7 @@ export default function ManageOrdersClient({orders}: Props) {
     return (
         <div className="mt-10 ">
             {
-                tab === "AllOrders" ? <AllOrders orders={orders} onEdit={onEditOrder} handleChangeTab={handleChangeTab}/> : <div></div>
+                tab === "AllOrders" ? <AllOrders orders={orders} onEdit={onEditOrder} handleChangeTab={handleChangeTab}/> : <AddOrder products={products} />
             }
         </div>
     );

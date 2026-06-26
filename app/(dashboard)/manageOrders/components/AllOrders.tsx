@@ -5,6 +5,8 @@ import {useCallback, useMemo} from "react";
 import {useRouter, useSearchParams} from "next/navigation";
 import qs from "query-string";
 import DropDown from "@/app/(dashboard)/components/DropDown";
+import {CiCirclePlus} from "react-icons/ci";
+import ToolTip from "@/app/components/ToolTip";
 
 type Props = {
     orders: IOrder[],
@@ -61,7 +63,7 @@ const AllOrders = ({orders, handleChangeTab, onEdit}: Props) => {
 
     return (
         <div className="flex flex-col gap-3 md:gap-6 text-2xl md:text-4xl py-5 px-3">
-            <div>
+            <div className="w-full flex gap-4 items-center">
                 <DropDown
                     options={[
                         {
@@ -73,6 +75,12 @@ const AllOrders = ({orders, handleChangeTab, onEdit}: Props) => {
                     currentValue={status}
                     handleChange={handleChangeStatusFilter}
                 />
+                <ToolTip label="Додати замовлення">
+                    <CiCirclePlus
+                        className="size-8 text-gray-400 hover:text-gray-800 cursor-pointer transition bg-white rounded-full"
+                        onClick={() => handleChangeTab("AddOrder")}
+                    />
+                </ToolTip>
             </div>
             {(orders)?.map((order) => {
                 return (
@@ -104,19 +112,18 @@ const AllOrders = ({orders, handleChangeTab, onEdit}: Props) => {
                                         <hr className="border-gray-500 w-full"/>
                                         <div className="flex flex-col justify-between h-full">
                                             <OrderItem orderItem={orderItem}/>
-                                            {
-                                                order.comment && (
-                                                    <div className="flex flex-col gap-1 rounded-lg border border-gray-300 p-3 justify-self-end">
-                                                        <span className="text-sm">Коментар:</span>
-                                                        <p>
-                                                            {order.comment}
-                                                        </p>
-                                                    </div>
-                                                )
-                                            }
                                         </div>
                                     </div>
                                 ))}
+                                {   order.comment && (
+                                    <div
+                                        className="flex flex-col gap-1 rounded-lg border border-gray-300 p-3 justify-self-end">
+                                        <span className="text-sm">Коментар:</span>
+                                        <p className="wrap-break-word">
+                                            {order.comment}
+                                        </p>
+                                    </div>
+                                )}
                             </div>
                             <OrderSummary order={order}/>
                         </div>

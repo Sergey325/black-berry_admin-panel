@@ -7,6 +7,7 @@ import {IProduct} from "@/app/actions/getProducts";
 import toast from "react-hot-toast";
 import {useRouter} from "next/navigation";
 import {IoIosArrowBack} from "react-icons/io";
+import {FormValuesProduct} from "@/app/types";
 
 
 const DEFAULT_COLORS = [
@@ -52,7 +53,7 @@ const desc = "Стильна та зручна панамка — ідеальн
 export default function AddProduct({product, resetSelectedProduct}: Props) {
     const router = useRouter();
 
-    const { register, control, handleSubmit, formState: { errors }, reset, getValues } = useForm<FormValues>({
+    const { register, control, handleSubmit, formState: { errors }, reset, getValues } = useForm<FormValuesProduct>({
         defaultValues: {
             name: product?.name,
             description: product?.description || desc,
@@ -77,7 +78,7 @@ export default function AddProduct({product, resetSelectedProduct}: Props) {
         name: "colors",
     });
 
-    const onSubmit = async (data: FormValues) => {
+    const onSubmit = async (data: FormValuesProduct) => {
         // console.log(data)
         if (data.colors.length === 0) {
             toast.error("Додайте хоча б один колір товару");
@@ -100,7 +101,7 @@ export default function AddProduct({product, resetSelectedProduct}: Props) {
             id: product?.id || null,
             slug: slugify(data.name)
         }).then(() => {
-            toast.success(product?.id ? "Product updated!" : "Product created!")
+            toast.success(product?.id ? "Продукт оновлено!" : "Продукт створено!")
             reset({
                 name: "",
                 description: desc,
