@@ -121,7 +121,7 @@ const OrderSummary = ({order}: Props) => {
                     )
                 }
                 <div className="flex items-center justify-between border-t border-gray-800 pt-4 text-base sm:text-lg">
-                    <div className="text-base font-medium">Повна</div>
+                    <div className="text-base font-medium">Усього</div>
                     <span className="text-base lg:text-xl text-gray-800 font-semibold">{order.totalAmount} грн</span>
                 </div>
             </div>

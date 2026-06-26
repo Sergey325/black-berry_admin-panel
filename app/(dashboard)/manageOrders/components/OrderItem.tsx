@@ -18,7 +18,11 @@ const OrderItem = ({orderItem}: Props) => {
                     alt={orderItem.name}
                     className="object-cover aspect-square rounded-md border border-gray-400 shrink-0"
                 />
-                <span className="text-base">{orderItem.name}</span>
+                <p className="text-base">
+                    <span>{orderItem.name}</span>
+                    <span className="ml-2 font-semibold">{orderItem.size}</span>
+                </p>
+
             </div>
             <span className="hidden md:inline-block md:w-[15%]">{orderItem.price} грн</span>
             <div
