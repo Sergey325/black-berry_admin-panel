@@ -2,14 +2,15 @@ import {Control, Controller, FieldErrors, useFieldArray, UseFormRegister} from "
 import {TiDeleteOutline} from "react-icons/ti";
 import ToolTip from "@/app/components/ToolTip";
 import ImagesUpload from "@/app/(dashboard)/manageProducts/components/ImagesUpload";
+import {FormValuesProduct} from "@/app/types";
 
 
 type Props = {
-    control:  Control<FormValues, any, FormValues>
-    register: UseFormRegister<FormValues>
+    control:  Control<FormValuesProduct, any, FormValuesProduct>
+    register: UseFormRegister<FormValuesProduct>
     colorIndex: number
     onRemoveColor: (colorIndex: number) => void
-    errors: FieldErrors<FormValues>
+    errors: FieldErrors<FormValuesProduct>
 };
 
 const DEFAULT_SIZES = ["S", "M", "L", "XL"];
