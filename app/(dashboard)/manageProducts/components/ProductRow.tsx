@@ -46,22 +46,22 @@ export default function ProductRow({ product, onEdit }: Props) {
             />
 
             <div className="flex-1 sm:contents min-w-0">
-                <p className="text-sm lg:text-base font-medium wrap-break-word">{product.name}</p>
+                <p className="text-base font-medium wrap-break-word">{product.name}</p>
                 <p className="text-sm  sm:hidden mt-0.5">{calculatePriceWithDiscount(product.price, product.discount)} грн</p>
-                <p className="hidden sm:block text-sm lg:text-base text-center">{calculatePriceWithDiscount(product.price, product.discount)} грн</p>
+                <p className="hidden sm:block text-base text-center">{calculatePriceWithDiscount(product.price, product.discount)} грн</p>
             </div>
 
-            <div className="flex items-center gap-5 shrink-0 sm:justify-center">
+            <div className="flex items-center gap-10 lg:gap-5 shrink-0 sm:justify-center">
                 <ToolTip label="Редагувати">
                     <MdEdit
                         onClick={() => onEdit(product)}
-                        className="size-6 md:size-7 text-gray-500 hover:text-blue-600 transition cursor-pointer"
+                        className="size-7 text-gray-500 hover:text-blue-600 transition cursor-pointer"
                     />
                 </ToolTip>
                 <ToolTip label="Видалити">
                     <MdDelete
                         onClick={handleDelete}
-                        className="size-6 md:size-7 text-gray-500 hover:text-red-600 transition cursor-pointer"
+                        className="size-7 text-gray-500 hover:text-red-600 transition cursor-pointer"
                     />
                 </ToolTip>
             </div>

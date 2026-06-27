@@ -88,7 +88,7 @@ const AllOrders = ({orders, handleChangeTab}: Props) => {
                 <DropDown
                     options={[
                         {
-                            value: "",
+                            value: "All",
                             label: "Усі",
                         },
                         ...orderStatuses,

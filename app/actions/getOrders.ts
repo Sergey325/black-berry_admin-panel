@@ -41,7 +41,7 @@ export interface IOrder {
 }
 
 export interface IOrdersParams {
-    status?: OrderStatus;
+    status?: OrderStatus | "All";
     sort?: string;
 }
 
@@ -55,12 +55,15 @@ export async function getOrders(params?: IOrdersParams) {
                     sort === "oldest" ? { createdAt: "asc" } :
                         { createdAt: "desc" } // newest по умолчанию
 
+        const where =
+            status === "All"
+                ? {}
+                : status
+                    ? { status: status as OrderStatus }
+                    : { status: { not: OrderStatus.PENDING } };
+
         const orders = await prisma.order.findMany({
-            where: {
-                ...(status && {
-                    status,
-                }),
-            },
+            where,
             orderBy,
             include: {
                 items: true,
