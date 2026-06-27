@@ -1,4 +1,5 @@
-export function formatDate(dateValue: Date | string) {
+
+export function formatDateAndTime(dateValue: Date | string) {
     const date = new Date(dateValue);
 
     const datePart = new Intl.DateTimeFormat("uk-UA", {
@@ -18,3 +19,20 @@ export function formatDate(dateValue: Date | string) {
 
     return `${timePart}, ${datePart}`;
 }
+
+export function formatDate(dateValue: Date | string) {
+    const date = new Date(dateValue);
+
+    const datePart = new Intl.DateTimeFormat("uk-UA", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+        timeZone: "Europe/Kyiv",
+    })
+        .format(date)
+        .replace(" р.", "");
+
+
+    return datePart;
+}
+

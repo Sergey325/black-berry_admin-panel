@@ -14,6 +14,8 @@ export default function DashboardLayout({
             <Container>
                 {children}
             </Container>
+            <div className="mt-10 lg:mt-20">
+            </div>
         </>
     );
 }

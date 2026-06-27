@@ -1,20 +1,27 @@
-import {IOrder, IOrderItem} from "@/app/actions/getOrders";
-import OrderItem from "@/app/(dashboard)/manageOrders/components/OrderItem";
-import OrderSummary, {orderStatuses} from "@/app/(dashboard)/manageOrders/components/OrderSummary";
+import {IOrder} from "@/app/actions/getOrders";
+import {orderStatuses} from "@/app/(dashboard)/manageOrders/components/OrderSummary";
 import {useCallback, useMemo} from "react";
 import {useRouter, useSearchParams} from "next/navigation";
 import qs from "query-string";
 import DropDown from "@/app/(dashboard)/components/DropDown";
 import {CiCirclePlus} from "react-icons/ci";
 import ToolTip from "@/app/components/ToolTip";
+import {formatDate} from "@/app/utils/formatDate";
+import OrderCard from "@/app/(dashboard)/manageOrders/components/OrderCard";
 
 type Props = {
     orders: IOrder[],
     handleChangeTab: (tab: string) => void
-    onEdit: (order: IOrder) => void
 };
 
-const AllOrders = ({orders, handleChangeTab, onEdit}: Props) => {
+const profitStatuses = [
+    "PAID",
+    "PROCESSING",
+    "SHIPPED",
+    "DELIVERED",
+];
+
+const AllOrders = ({orders, handleChangeTab}: Props) => {
     const params = useSearchParams()
     const router = useRouter()
 
@@ -61,6 +68,20 @@ const AllOrders = ({orders, handleChangeTab, onEdit}: Props) => {
         )
     }
 
+    const groupedOrders = Object.entries(
+        orders.reduce((acc, order) => {
+            const date = formatDate(order.createdAt); // например "22 червня 2026"
+
+            if (!acc[date]) {
+                acc[date] = [];
+            }
+
+            acc[date].push(order);
+
+            return acc;
+        }, {} as Record<string, typeof orders>)
+    );
+
     return (
         <div className="flex flex-col gap-3 md:gap-6 text-2xl md:text-4xl py-5 px-3">
             <div className="w-full flex gap-4 items-center">
@@ -82,54 +103,38 @@ const AllOrders = ({orders, handleChangeTab, onEdit}: Props) => {
                     />
                 </ToolTip>
             </div>
-            {(orders)?.map((order) => {
-                return (
-                    <div key={order.id}
-                         className="text-base lg:text-lg py-5 md:py-10 px-5 text-gray-700 rounded-xl border-2 border-gray-500 bg-white">
-                        <div className="flex flex-col md:flex-row justify-between gap-1 sm:gap-0">
-                            <div className="space-y-1.5">
-                                <p className="">{`Замовлення: ${order.invoiceId}`}</p>
-                                <p className="">{`Місто: ${order.city}, ${order.area} обл.`}</p>
-                                <p className="">{`${order.warehouse}`}</p>
-                            </div>
-                            <div className="space-y-1.5 text-left md:text-right">
-                                <p className="">{`Ім'я: ${order.firstName} ${order.lastName}`}</p>
-                                <p className="">{`Телефон: ${order.phone}`}</p>
-                                {order.email && <p className="">{`Email: ${order.email}`}</p>}
-                            </div>
-                        </div>
-                        <div className="flex flex-col xl:flex-row gap-5 xl:gap-20 pt-2 items-stretch h-full">
-                            <div className="flex flex-col w-full xl:w-4/6 gap-3">
-                                <hr className="hidden sm:inline-block border-gray-500 w-full"/>
-                                <div className="hidden sm:grid grid-cols-3 md:grid-cols-4 text-base">
-                                    <span className="font-semibold">Товар</span>
-                                    <span className="hidden md:inline-block md:w-[18%] justify-self-end lg:text-center -mr-[28%] font-semibold">Ціна</span>
-                                    <span className="md:w-[18%] justify-self-end text-center font-semibold">Кількість</span>
-                                    <span className=" justify-self-end text-right font-semibold">Усього</span>
-                                </div>
-                                {(order.items).map(orderItem => (
-                                    <div key={orderItem.id} className="flex flex-col gap-2 h-full">
-                                        <hr className="border-gray-500 w-full"/>
-                                        <div className="flex flex-col justify-between h-full">
-                                            <OrderItem orderItem={orderItem}/>
-                                        </div>
-                                    </div>
-                                ))}
-                                {   order.comment && (
-                                    <div
-                                        className="flex flex-col gap-1 rounded-lg border border-gray-300 p-3 justify-self-end">
-                                        <span className="text-sm">Коментар:</span>
-                                        <p className="wrap-break-word">
-                                            {order.comment}
-                                        </p>
-                                    </div>
-                                )}
-                            </div>
-                            <OrderSummary order={order}/>
-                        </div>
-                    </div>)
-            })}
+            {groupedOrders.map(([date, orders]) => {
+                const totalProfit = orders
+                    .filter(order => profitStatuses.includes(order.status))
+                    .reduce((sum, order) => sum + order.totalAmount, 0);
 
+                return (
+                    <div key={date} className="space-y-6">
+
+                        <div className="flex items-center gap-4 py-2">
+                            <hr className="flex-1 lg:border-2 border-gray-950" />
+
+                            <div className="lg:px-2 text-center whitespace-nowrap">
+                                <div className="font-semibold text-lg lg:text-xl">
+                                    {date}
+                                </div>
+                                <div className="text-base text-gray-600">
+                                    {orders.length} замовлень • {totalProfit} грн
+                                </div>
+                            </div>
+
+                            <hr className="flex-1 border-gray-950 lg:border-2" />
+                        </div>
+
+                        {orders.map(order => (
+                            <OrderCard
+                                key={order.id}
+                                order={order}
+                            />
+                        ))}
+                    </div>
+                );
+            })}
         </div>
     );
 };

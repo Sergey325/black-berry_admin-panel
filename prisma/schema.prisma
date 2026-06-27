@@ -92,6 +92,13 @@ model OrderItem {
   order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
 }
 
+model TelegramUser {
+  id     Int     @id @default(autoincrement())
+  chatId String  @unique
+  name   String?
+  role   String  @default("ADMIN")
+}
+
 enum OrderStatus {
   PENDING
   PAID

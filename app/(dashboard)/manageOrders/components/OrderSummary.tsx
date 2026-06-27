@@ -3,7 +3,7 @@ import {useRouter} from "next/navigation";
 import {IOrder} from "@/app/actions/getOrders";
 import {OrderStatus} from "@prisma/client";
 import toast from "react-hot-toast";
-import {formatDate} from "@/app/utils/formatDate";
+import {formatDateAndTime} from "@/app/utils/formatDate";
 import axios from "axios";
 import DropDown from "@/app/(dashboard)/components/DropDown";
 
@@ -77,7 +77,7 @@ const OrderSummary = ({order}: Props) => {
             <div className="mt-6 space-y-4 text-sx sm:text-base">
                 <div className="flex justify-between items-center">
                     <span className="font-light text-gray-800 max-w-[60%]">Створено о</span>
-                    <span className="text-gray-800 text-right font-semibold">{formatDate(order.createdAt)}</span>
+                    <span className="text-gray-800 text-right font-semibold">{formatDateAndTime(order.createdAt)}</span>
                 </div>
                 <div className="flex justify-between items-center">
                     <p className="font-light text-gray-800 max-w-[60%]">Статус</p>

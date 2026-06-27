@@ -48,15 +48,11 @@ export default function ManageOrdersClient({orders, products}: Props) {
         router.push(url)
     }, [params])
 
-    const onEditOrder = (order: IOrder) => {
-        setSelectedOrder(order)
-        handleChangeTab("AddOrder")
-    }
 
     return (
         <div className="mt-10 ">
             {
-                tab === "AllOrders" ? <AllOrders orders={orders} onEdit={onEditOrder} handleChangeTab={handleChangeTab}/> : <AddOrder products={products} />
+                tab === "AllOrders" ? <AllOrders orders={orders} handleChangeTab={handleChangeTab}/> : <AddOrder products={products} />
             }
         </div>
     );

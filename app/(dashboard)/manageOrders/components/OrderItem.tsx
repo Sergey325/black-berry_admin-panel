@@ -28,7 +28,7 @@ const OrderItem = ({orderItem}: Props) => {
             <div
                 className="flex justify-between items-center w-full sm:w-[45%] md:w-[30%] min-h-max min-w-max">
                 <div className="flex items-center text-base gap-1 min-h-max min-w-max">
-                    <span className="inline-block sm:hidden">Quantity: </span>
+                    <span className="inline-block sm:hidden">Кількість: </span>
                     <span className="sm:ml-9">{orderItem.quantity}</span>
                 </div>
                 <span
