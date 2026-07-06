@@ -75,6 +75,10 @@ model Order {
   ttnNumber       String?
   ttnRef          String?
   warehouseNumber Int
+  clientIp        String?
+  fbc             String?
+  fbp             String?
+  userAgent       String?
   items           OrderItem[]
 }
 

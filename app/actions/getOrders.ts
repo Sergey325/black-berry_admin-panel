@@ -37,6 +37,7 @@ export interface IOrder {
     ttnNumber: string | null;
     ttnRef: string | null;
     warehouseNumber: number;
+    fbc: string | null;
     items: IOrderItem[]
 }
 

@@ -1,6 +1,7 @@
 import OrderSummary from "@/app/(dashboard)/manageOrders/components/OrderSummary";
 import OrderItem from "@/app/(dashboard)/manageOrders/components/OrderItem";
 import {IOrder} from "@/app/actions/getOrders";
+import {FaFacebook} from "react-icons/fa";
 
 
 type Props = {
@@ -12,7 +13,7 @@ const OrderCard = ({order}: Props) => {
         <div className="text-base lg:text-lg py-5 md:py-10 px-5 text-gray-700 rounded-xl border-2 border-gray-500 bg-white">
             <div className="flex flex-col md:flex-row justify-between gap-1 sm:gap-0">
                 <div className="space-y-1.5">
-                    <p className="">{`Замовлення: ${order.invoiceId}`}</p>
+                    <p className="inline-flex gap-2 items-center">{`Замовлення: ${order.invoiceId}`}<span>{order.fbc && <FaFacebook className={"text-blue-600 size-5 -mt-1"}/>}</span></p>
                     <p className="">{`Місто: ${order.city}, ${order.area} обл.`}</p>
                     <p className="">{`${order.warehouse}`}</p>
                 </div>
