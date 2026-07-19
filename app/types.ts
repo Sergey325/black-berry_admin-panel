@@ -4,12 +4,22 @@ export type FormValuesProduct = {
     description: string;
     price: number;
     discount: number | null;
+    quantity: number | null;
+    materialId: number;
     colors: {
         color: string;
         colorName: string;
+        colorCode: string | null;
+        isBestSeller: boolean;
         images: string[];
         sizes: { size: string; available: boolean }[];
     }[];
+    relatedProducts: {
+        id: number;
+        name: string;
+        imageUrl: string
+    }[]
+    categoryId: number | null;
 };
 
 export type FormValuesOrder = {

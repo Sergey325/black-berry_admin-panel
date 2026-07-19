@@ -1,4 +1,4 @@
-import ManageOrdersClient from "@/app/(dashboard)/manageOrders/components/ManageOrdersClient";
+import ManageOrdersClient from "@/app/(dashboard)/manageOrders/ManageOrdersClient";
 import {getOrders, IOrdersParams} from "@/app/actions/getOrders";
 import {getProducts} from "@/app/actions/getProducts";
 

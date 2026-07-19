@@ -17,7 +17,7 @@ const ToolTip = ({children, label}: Props) => {
             {children}
             <span
                 className={`
-                    absolute 
+                    absolute z-2
                     px-1
                     hidden lg:inline-block 
                     whitespace-nowrap 

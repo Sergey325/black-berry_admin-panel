@@ -6,12 +6,16 @@ import {useRouter, useSearchParams} from "next/navigation";
 import qs from "query-string";
 import AllProducts from "@/app/(dashboard)/manageProducts/components/AllProducts";
 import AddProduct from "@/app/(dashboard)/manageProducts/components/AddProduct";
+import {IMaterial} from "@/app/actions/getMaterials";
+import {ICategory} from "@/app/actions/getCategories";
 
 type Props = {
     products: IProduct[];
+    materials: IMaterial[];
+    categories: ICategory[];
 };
 
-export default function ManageProductsClient({products}: Props) {
+export default function ManageProductsClient({products, materials, categories}: Props) {
     const [selectedProduct, setSelectedProduct] = useState<IProduct | null>(null);
     const params = useSearchParams()
     const router = useRouter()
@@ -54,7 +58,19 @@ export default function ManageProductsClient({products}: Props) {
     return (
         <div className="mt-10 ">
             {
-                tab === "AllProducts" ? <AllProducts products={products} onEdit={onEditProduct} handleChangeTab={handleChangeTab}/> : <AddProduct product={selectedProduct || undefined} resetSelectedProduct={() => setSelectedProduct(null)}/>
+                tab === "AllProducts"
+                    ? <AllProducts
+                        products={products}
+                        onEdit={onEditProduct}
+                        handleChangeTab={handleChangeTab}
+                    />
+                    : <AddProduct
+                        product={selectedProduct || undefined}
+                        products={products}
+                        materials={materials}
+                        categories={categories}
+                        resetSelectedProduct={() => setSelectedProduct(null)}
+                    />
             }
         </div>
     );

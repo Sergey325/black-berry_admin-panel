@@ -1,13 +1,19 @@
-import { useFieldArray, useForm } from "react-hook-form";
+import {useFieldArray, useForm} from "react-hook-form";
 import axios from "axios";
 import ColorBlock from "@/app/(dashboard)/manageProducts/components/ColorBlock";
 import ToolTip from "@/app/components/ToolTip";
-import slugify from "@/app/utils/slugify";
 import {IProduct} from "@/app/actions/getProducts";
 import toast from "react-hot-toast";
 import {useRouter} from "next/navigation";
 import {IoIosArrowBack} from "react-icons/io";
 import {FormValuesProduct} from "@/app/types";
+import {IMaterial} from "@/app/actions/getMaterials";
+import {useMemo, useRef, useState} from "react";
+import {ICategory} from "@/app/actions/getCategories";
+import {optimizeCloudinaryUrl} from "@/app/utils/optimizeCloudinaryImage";
+import {MdDelete} from "react-icons/md";
+import Materials from "@/app/(dashboard)/manageProducts/components/Materials";
+import slugify from "@/app/utils/slugify";
 
 
 const DEFAULT_COLORS = [
@@ -43,6 +49,9 @@ const DEFAULT_COLORS = [
 
 type Props = {
     product?: IProduct;
+    products: IProduct[];
+    materials: IMaterial[];
+    categories: ICategory[];
     resetSelectedProduct: () => void;
 }
 const desc = "Стильна та зручна панамка — ідеальний вибір для сонячних днів. Легка тканина забезпечує комфорт у носінні, а продуманий крій допомагає захистити обличчя від сонця.\n" +
@@ -50,18 +59,28 @@ const desc = "Стильна та зручна панамка — ідеальн
     "Завдяки універсальному дизайну панамка стане практичним доповненням гардероба для прогулянок, відпочинку на природі чи подорожей. Вона зберігає охайний вигляд навіть при активному використанні та дарує комфорт протягом усього дня.\n" +
     "\n" +
     "Добре поєднується як із повсякденними, так і з літніми образами."
-export default function AddProduct({product, resetSelectedProduct}: Props) {
+export default function AddProduct({product, products, materials, categories, resetSelectedProduct}: Props) {
     const router = useRouter();
+    const [searchCategory, setSearchCategory] = useState("");
+    const [searchProduct, setSearchProduct] = useState("");
+    const [dropdownCategoryOpen, setDropdownCategoryOpen] = useState(false);
+    const [dropdownProductsOpen, setDropdownProductsOpen] = useState(false);
+    const categoryRef = useRef<HTMLDivElement | null>(null);
 
-    const { register, control, handleSubmit, formState: { errors }, reset, getValues } = useForm<FormValuesProduct>({
+    const { register, control, handleSubmit, formState: { errors }, reset, getValues, setValue, clearErrors, watch, setError } = useForm<FormValuesProduct>({
         defaultValues: {
             name: product?.name,
             description: product?.description || desc,
             price: product?.price || 500,
             discount: product?.discount || 0,
+            quantity: product?.quantity || null,
+            materialId: product?.material?.id || undefined,
+            categoryId: product?.category?.id || null,
             colors: product?.colors.map((c) => ({
                 color: c.color,
                 colorName: c.colorName,
+                colorCode: c.colorCode || null,
+                isBestSeller: c.isBestSeller || false,
                 images: c.images
                     .sort((a, b) => a.order - b.order)
                     .map((img) => img.url),
@@ -70,16 +89,35 @@ export default function AddProduct({product, resetSelectedProduct}: Props) {
                     available: s.available,
                 })),
             })) || [],
+            relatedProducts: product?.relatedTo?.map(p => {return {id: p.id, name: p.name, imageUrl: p.colors[0].images[0].url}}) || []
         },
     });
+
+
 
     const { fields: colorFields, append: appendColor, remove: removeColor } = useFieldArray({
         control,
         name: "colors",
     });
 
+
     const onSubmit = async (data: FormValuesProduct) => {
-        // console.log(data)
+        console.log(data)
+
+        if (!data.categoryId) {
+            toast.error("Виберіть категорію");
+            categoryRef.current?.scrollIntoView({
+                behavior: "smooth",
+                block: "center",
+            });
+            return;
+        }
+
+        if (!data.materialId) {
+            toast.error("Виберіть матеріал");
+            return;
+        }
+
         if (data.colors.length === 0) {
             toast.error("Додайте хоча б один колір товару");
             return;
@@ -136,6 +174,48 @@ export default function AddProduct({product, resetSelectedProduct}: Props) {
         removeColor(colorIndex)
     }
 
+
+
+    const selectedCategoryId = watch("categoryId");
+
+    const selectedCategory = useMemo(() => {
+        return categories.find(category => category.id === selectedCategoryId);
+    }, [selectedCategoryId])
+
+    const filteredCategories = categories.filter(c =>
+        c.name.toLowerCase().includes(searchCategory.toLowerCase())
+    );
+
+    const handleSelectCategory = (categoryId: number) => {
+        setValue("categoryId", categoryId)
+        clearErrors("categoryId");
+        setSearchCategory("");
+        setDropdownCategoryOpen(false);
+    };
+
+    const { fields: relatedProductsFields, append: appendRelatedProduct, remove: removeRelatedProduct } = useFieldArray({
+        control,
+        name: "relatedProducts",
+    });
+
+    const watchedRelatedProducts = watch("relatedProducts");
+
+    const filteredProducts = products.filter(p =>
+        p.name.toLowerCase().includes(searchProduct.toLowerCase())
+    );
+
+    const handleSelectProduct = (product: IProduct) => {
+        const firstColor = product.colors[0];
+        appendRelatedProduct({
+            id: product.id,
+            name: product.name,
+            imageUrl: firstColor.images[0]?.url ?? "",
+        });
+        clearErrors("relatedProducts");
+        setSearchProduct("");
+        setDropdownProductsOpen(false);
+    };
+
     return (
         <div>
 
@@ -165,7 +245,7 @@ export default function AddProduct({product, resetSelectedProduct}: Props) {
                     {errors.description && <span className="text-red-500 text-base md:text-lg">{errors.description.message}</span>}
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                     <div className="flex flex-col gap-1">
                         <label className="text-base md:text-lg font-medium">Ціна</label>
                         <input
@@ -185,6 +265,136 @@ export default function AddProduct({product, resetSelectedProduct}: Props) {
                         />
                         {errors.discount && <span className="text-red-500 text-base md:text-lg">{errors.discount.message}</span>}
                     </div>
+                    <div className="flex flex-col gap-1">
+                        <label className="text-base md:text-lg font-medium">Кількість</label>
+                        <input
+                            type="number"
+                            step="1"
+                            {...register("quantity", { valueAsNumber: true })}
+                            className="border border-gray-300 rounded-sm px-3 py-2 outline-none focus:border-gray-600 transition md:text-lg"
+                        />
+                    </div>
+                </div>
+
+                <div className="flex flex-col md:flex-row md:justify-between items-start gap-5 w-full">
+                    <Materials materialsList={materials} initialValue={product?.material} onSelectedValueChange={(material: IMaterial) => setValue("materialId", material.id)}/>
+                    {selectedCategory ? (
+                        <div className="flex items-center justify-between gap-3 border rounded-md px-2 py-1 bg-gray-50 w-full">
+                            <div className="flex items-center gap-3">
+                                <img
+                                    src={optimizeCloudinaryUrl(selectedCategory.coverImage, 200)}
+                                    className="w-14 aspect-5/3 object-cover rounded"
+                                    alt=""
+                                />
+                                <div>
+                                    <p className="font-medium">{selectedCategory.name}</p>
+                                    {/*<p className="text-xs text-gray-500">{selectedCategory.slug}</p>*/}
+                                </div>
+                            </div>
+
+                            <MdDelete
+                                onClick={() => setValue("categoryId", null)}
+                                className="text-red-500 size-5 mr-2 hover:scale-105 transition-transform cursor-pointer"
+                            />
+                        </div>
+                    ) : (
+                        <div className="relative w-full" ref={categoryRef}>
+                            <input
+                                type="text"
+                                value={searchCategory}
+                                onChange={(e) => { setSearchCategory(e.target.value); setDropdownCategoryOpen(true); }}
+                                onFocus={() => setDropdownCategoryOpen(true)}
+                                placeholder="Пошук категорії..."
+                                className="border border-gray-300 rounded-sm px-3 py-2 outline-none focus:border-gray-600 transition w-full bg-white"
+                            />
+                            {dropdownCategoryOpen && searchCategory && filteredCategories.length > 0 && (
+                                <div className="absolute z-10 bottom-full w-full min-w-70 sm:min-w-75 mb-1 bg-gray-200 border-2 border-gray-800 rounded-md mt-1 max-h-100 overflow-auto shadow-md">
+                                    {filteredCategories.map((category) => (
+                                        <div
+                                            key={category.id}
+                                            onClick={() => handleSelectCategory(category.id)}
+                                            className="px-4 py-2 hover:bg-gray-300 cursor-pointer flex items-center gap-3"
+                                        >
+                                            {category.coverImage && (
+                                                <img src={optimizeCloudinaryUrl(category.coverImage, 200) } className="w-12 aspect-5/3 object-cover rounded" alt=""/>
+                                            )}
+                                            <span className="truncate">{category.name}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+
+                {/* Товары */}
+                <div className="flex flex-col gap-4">
+                    <h2 className="text-lg font-medium">Зв'язані товари</h2>
+
+                    {/* Поиск и добавление товара */}
+                    <div className="relative">
+                        <input
+                            type="text"
+                            value={searchProduct}
+                            onChange={(e) => { setSearchProduct(e.target.value); setDropdownProductsOpen(true); }}
+                            onFocus={() => setDropdownProductsOpen(true)}
+                            placeholder="Пошук товару..."
+                            className="border border-gray-300 rounded-sm px-3 py-2 outline-none focus:border-gray-600 transition w-full bg-white"
+                        />
+                        {dropdownProductsOpen && searchProduct && filteredProducts.length > 0 && (
+                            <div className="absolute z-10 bottom-full w-full mb-1 bg-gray-200 border-2 border-gray-800 rounded-md mt-1 max-h-100 overflow-auto shadow-md">
+                                {filteredProducts.map((product) => (
+                                    <div
+                                        key={product.id}
+                                        onClick={() => handleSelectProduct(product)}
+                                        className="px-4 py-2 hover:bg-gray-300 cursor-pointer flex items-center gap-3"
+                                    >
+                                        {product.colors[0]?.images[0]?.url && (
+                                            <img src={optimizeCloudinaryUrl(product.colors[0].images[0].url, 80)} className="w-8 h-8 object-cover rounded" alt="" />
+                                        )}
+                                        <span>{product.name}</span>
+                                        <span className="ml-auto text-gray-600">{product.price} грн</span>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+
+                    {errors.relatedProducts?.root && (
+                        <p className="text-red-500 text-sm">
+                            {errors.relatedProducts.root.message}
+                        </p>
+                    )}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                        {relatedProductsFields.map((field, index) => {
+                            const relatedProduct = watchedRelatedProducts[index];
+                            return (
+                                <div key={field.id} className="border border-gray-200 bg-white rounded-md px-2 flex flex-col gap-3">
+                                    <div className="flex items-center gap-3">
+                                        {relatedProduct.imageUrl && (
+                                            <img src={optimizeCloudinaryUrl(relatedProduct.imageUrl, 100)} className="w-12 h-12 object-cover rounded" alt="" />
+                                        )}
+                                        <p className="font-medium flex-1">{relatedProduct.name}</p>
+                                        <ToolTip label="Видалити">
+                                            <MdDelete
+                                                onClick={() => {
+                                                    removeRelatedProduct(index);
+                                                    if (relatedProductsFields.length === 1) {
+                                                        setError("relatedProducts", {
+                                                            type: "manual",
+                                                            message: "Додайте хоча б один зв'язаний продукт",
+                                                        });
+                                                    }
+                                                }}
+                                                className="size-6 md:size-7 text-gray-500 hover:text-red-600 transition cursor-pointer"
+                                            />
+                                        </ToolTip>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
                 </div>
 
                 <div className="flex flex-col gap-8">
@@ -194,8 +404,11 @@ export default function AddProduct({product, resetSelectedProduct}: Props) {
                             control={control}
                             register={register}
                             colorIndex={colorIndex}
+                            isBestSeller={colorField.isBestSeller}
                             onRemoveColor={() => handleDeleteColor(colorIndex)}
                             errors={errors}
+                            getValues={getValues}
+                            setValue={setValue}
                         />
                     ))}
                     <div className="flex items-center gap-4">
@@ -205,7 +418,7 @@ export default function AddProduct({product, resetSelectedProduct}: Props) {
                                 <button
                                     key={item.color+item.colorName}
                                     type="button"
-                                    onClick={() => appendColor({ color: item.color, images: [], sizes: [{size: "S", available: true}, {size: "M", available: true}], colorName: item.colorName })}
+                                    onClick={() => appendColor({ color: item.color, images: [], sizes: [{size: "S", available: true}, {size: "M", available: true}], colorName: item.colorName, colorCode: null, isBestSeller: false })}
                                     className="w-7 h-7 rounded-full border border-gray-500 hover:scale-110 transition"
                                     style={{ backgroundColor: item.color }}
                                 />
@@ -213,7 +426,7 @@ export default function AddProduct({product, resetSelectedProduct}: Props) {
                             <ToolTip label="Додати колір">
                                 <button
                                     type="button"
-                                    onClick={() => appendColor({ color: "#000000", images: [], sizes: [], colorName: "" })}
+                                    onClick={() => appendColor({ color: "#000000", images: [], sizes: [], colorName: "", colorCode: null, isBestSeller: false })}
                                     className="w-7 h-7 rounded-full border border-gray-300 border-dashed flex items-center justify-center text-gray-400 hover:text-gray-800 hover:border-gray-500 transition text-center cursor-pointer"
                                 >
                                     +

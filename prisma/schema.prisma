@@ -6,26 +6,36 @@ datasource db {
   provider = "postgresql"
 }
 
+/// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
 model Product {
-  id          Int            @id @default(autoincrement())
+  id          Int               @id @default(autoincrement())
   name        String
   price       Float
-  discount    Float          @default(0)
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
+  discount    Float             @default(0)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
   slug        String
   description String
+  categoryId  Int?
+  materialId  Int?
+  quantity    Int?
+  category    Category?         @relation(fields: [categoryId], references: [id])
+  material    Material?         @relation(fields: [materialId], references: [id])
   colors      ProductColor[]
+  relatedTo   ProductRelation[] @relation("ProductRelation_From")
+  relatedFrom ProductRelation[] @relation("ProductRelation_To")
 }
 
 model ProductColor {
-  id        Int            @id @default(autoincrement())
-  color     String
-  productId Int
-  colorName String
-  product   Product        @relation(fields: [productId], references: [id], onDelete: Cascade)
-  images    ProductImage[]
-  sizes     ProductSize[]
+  id           Int            @id @default(autoincrement())
+  color        String
+  productId    Int
+  colorName    String
+  isBestSeller Boolean        @default(false)
+  colorCode    String?
+  product      Product        @relation(fields: [productId], references: [id], onDelete: Cascade)
+  images       ProductImage[]
+  sizes        ProductSize[]
 }
 
 model ProductImage {
@@ -42,6 +52,49 @@ model ProductSize {
   available      Boolean      @default(true)
   productColorId Int
   productColor   ProductColor @relation(fields: [productColorId], references: [id], onDelete: Cascade)
+}
+
+model Material {
+  id       Int       @id @default(autoincrement())
+  name     String    @unique
+  products Product[]
+}
+
+model ProductRelation {
+  id            Int     @id @default(autoincrement())
+  fromProductId Int
+  toProductId   Int
+  order         Int     @default(0)
+  reason        String?
+  fromProduct   Product @relation("ProductRelation_From", fields: [fromProductId], references: [id], onDelete: Cascade)
+  toProduct     Product @relation("ProductRelation_To", fields: [toProductId], references: [id], onDelete: Cascade)
+
+  @@unique([fromProductId, toProductId])
+}
+
+model Category {
+  id                  Int                     @id @default(autoincrement())
+  name                String
+  slug                String                  @unique
+  description         String
+  coverImage          String
+  season              Season
+  productsDescription String
+  isOnMainPage        Boolean?                @default(false)
+  hasLining           Boolean?                @default(false)
+  specifications      CategorySpecification[]
+  products            Product[]
+}
+
+model CategorySpecification {
+  id         Int      @id @default(autoincrement())
+  name       String
+  value      String
+  order      Int      @default(0)
+  categoryId Int
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([categoryId, name])
 }
 
 model NovaPoshtaCity {
@@ -101,6 +154,12 @@ model TelegramUser {
   chatId String  @unique
   name   String?
   role   String  @default("ADMIN")
+}
+
+enum Season {
+  SUMMER
+  WINTER
+  ALL_SEASON
 }
 
 enum OrderStatus {
