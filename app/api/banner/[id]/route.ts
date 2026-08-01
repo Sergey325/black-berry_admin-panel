@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import prisma from "@/app/lib/prisma";
+import { deleteCloudinaryImageByUrl } from "@/app/lib/cloudinary";
 
 export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
     try {
@@ -11,7 +12,16 @@ export async function DELETE(_request: Request, { params }: { params: Promise<{ 
             return NextResponse.json({ error: "Некоректний ідентифікатор банера" }, { status: 400 });
         }
 
+        const banner = await prisma.banner.findUnique({ where: { id: bannerId }, select: { image: true } });
+
+        if (!banner) {
+            return NextResponse.json({ error: "Банер не знайдено" }, { status: 404 });
+        }
+
+        await deleteCloudinaryImageByUrl(banner.image);
+
         await prisma.banner.delete({ where: { id: bannerId } });
+
         return NextResponse.json(null, { status: 200 });
     } catch (error) {
         console.error(error);

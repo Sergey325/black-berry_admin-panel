@@ -1,16 +1,22 @@
 import { NextResponse } from "next/server";
-import { v2 as cloudinary } from "cloudinary";
+import { deleteCloudinaryImageByUrl } from "@/app/lib/cloudinary";
 
-cloudinary.config({
-    cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET,
-});
+type DeleteCloudinaryRequest = {
+    imageUrl?: string;
+};
 
 export async function DELETE(req: Request) {
-    const { publicId } = await req.json();
+    try {
+        const body: DeleteCloudinaryRequest = await req.json();
 
-    const result = await cloudinary.uploader.destroy(publicId);
+        if (typeof body.imageUrl === "string" && body.imageUrl.trim()) {
+            const result = await deleteCloudinaryImageByUrl(body.imageUrl);
+            return NextResponse.json(result);
+        }
 
-    return NextResponse.json(result);
+        return NextResponse.json({ error: "Не передано зображення для видалення" }, { status: 400 });
+    } catch (error) {
+        console.error(error);
+        return NextResponse.json({ error: "Не вдалося видалити зображення" }, { status: 500 });
+    }
 }

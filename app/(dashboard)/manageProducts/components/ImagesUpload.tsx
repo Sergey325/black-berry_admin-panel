@@ -56,7 +56,7 @@ const ImagesUpload = ({
     const handleDelete = useCallback(async (imageUrl: string) => {
         await axios.delete("/api/cloudinary", {
             data: {
-                publicId: imageUrl.match(/\/upload\/(?:v\d+\/)?(.+)\.[^.]+$/)?.[1],
+                imageUrl,
             },
         })
             .then(() => {
