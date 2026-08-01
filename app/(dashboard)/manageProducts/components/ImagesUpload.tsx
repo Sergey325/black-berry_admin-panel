@@ -1,6 +1,6 @@
 "use client"
 
-import {CldUploadWidget} from "next-cloudinary";
+import {CldUploadWidget, type CldUploadWidgetProps} from "next-cloudinary";
 import Image from "next/image"
 import {useCallback, useEffect, useRef} from "react";
 import toast from "react-hot-toast";
@@ -8,34 +8,53 @@ import {TbPhotoPlus} from "react-icons/tb";
 import {IoMdClose} from "react-icons/io";
 import axios from "axios";
 
-declare global {
-    var cloudinary: any
-}
-
-const uploadPreset = "blackberry"
-
 type Props = {
     onChange: (value: Array<string>) => void
     value: Array<string>
+    folder?: string
+    maxFiles?: number
+    multiple?: boolean
+    uploadLabel?: string
 };
 
-const ImagesUpload = ({onChange, value}: Props) => {
+type UploadWidgetOptions = NonNullable<CldUploadWidgetProps["options"]> & {
+    asset_folder?: string
+};
+
+const getUploadedImageUrl = (result: unknown) => {
+    const uploadResult = result as { info?: { secure_url?: unknown } };
+    return typeof uploadResult.info?.secure_url === "string" ? uploadResult.info.secure_url : null;
+};
+
+const ImagesUpload = ({
+    onChange,
+    value,
+    folder = "BlackBerry",
+    maxFiles = 10,
+    multiple = true,
+    uploadLabel = "Додати зображення",
+}: Props) => {
     const valueRef = useRef(value);
 
     useEffect(() => {
         valueRef.current = value;
     }, [value]);
 
-    const handleUpload = useCallback((result: any) => {
-        if (valueRef.current.length > 9) {
-            toast.error("You can't upload more than 10 images")
+    const handleUpload = useCallback((result: unknown) => {
+        if (valueRef.current.length >= maxFiles) {
+            toast.error(`Ви не можете завантажити більше ${maxFiles} зображень`)
             return
         }
-        onChange([...valueRef.current, result.info.secure_url])
-    }, [onChange])
+        const imageUrl = getUploadedImageUrl(result);
+        if (!imageUrl) {
+            toast.error("Не вдалося отримати посилання на зображення");
+            return;
+        }
+        onChange([...valueRef.current, imageUrl])
+    }, [maxFiles, onChange])
 
     const handleDelete = useCallback(async (imageUrl: string) => {
-        await axios.delete("/api/image", {
+        await axios.delete("/api/cloudinary", {
             data: {
                 publicId: imageUrl.match(/\/upload\/(?:v\d+\/)?(.+)\.[^.]+$/)?.[1],
             },
@@ -43,26 +62,34 @@ const ImagesUpload = ({onChange, value}: Props) => {
             .then(() => {
                 toast.success("Зображення видалено!");
             })
-            .catch((error) => {
-                toast.error(error?.response?.data?.error);
+            .catch((error: unknown) => {
+                if (axios.isAxiosError<{ error?: string }>(error)) {
+                    toast.error(error.response?.data?.error ?? "Не вдалося видалити зображення");
+                } else {
+                    toast.error("Не вдалося видалити зображення");
+                }
             })
             .finally(() => {
                 onChange(valueRef.current.filter((i) => i !== imageUrl))
             });
     }, [onChange])
 
+    const widgetOptions: UploadWidgetOptions = {
+        maxFiles,
+        resourceType: "image",
+        maxFileSize: 5500000,
+        multiple,
+        // `folder` is needed in fixed-folder mode, `asset_folder` — in dynamic-folder mode.
+        folder,
+        asset_folder: folder,
+    };
+
     return (
         <div>
             <CldUploadWidget
                 onSuccess={handleUpload}
-                uploadPreset={uploadPreset}
-                options={{
-                    maxFiles: 10,
-                    resourceType: "image",
-                    maxFileSize: 5500000,
-                    multiple: true,
-                    folder: "BlackBerry"
-                }}
+                signatureEndpoint="/api/cloudinary/sign"
+                options={widgetOptions}
             >
                 {({open}) => {
                     return (
@@ -84,18 +111,18 @@ const ImagesUpload = ({onChange, value}: Props) => {
                             >
                                 <TbPhotoPlus className="size-[25px] md:size-[50px]"/>
                                 <div className="font-semibold text-sm md:text-lg">
-                                    Click to upload images
+                                    {uploadLabel}
                                 </div>
                             </div>
                             {value.length > 0 && (
-                                <div className="flex flex-wrap gap-2 w-full h-full pt-4">
+                                <div className="flex flex-wrap gap-2 w-full pt-4">
                                     {
                                         value.map(image => (
                                             <div key={image}
                                                  className="relative rounded-lg overflow-hidden border-gray-800 border-2">
                                                 <Image
                                                     alt="Upload"
-                                                    height={100} width={100} className="size-20 md:size-25"
+                                                    height={100} width={100} className="size-20 md:size-25 object-scale-down object-top-right"
                                                     src={image}
                                                 />
                                                 <IoMdClose

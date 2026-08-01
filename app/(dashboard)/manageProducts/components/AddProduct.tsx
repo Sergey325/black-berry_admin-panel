@@ -149,6 +149,7 @@ export default function AddProduct({product, products, materials, categories, re
 
             })
             resetSelectedProduct()
+            router.replace("/manageProducts?tab=AllProducts")
             router.refresh()
         })
         .catch(() => {
@@ -216,10 +217,15 @@ export default function AddProduct({product, products, materials, categories, re
         setDropdownProductsOpen(false);
     };
 
+    const returnToProducts = () => {
+        resetSelectedProduct();
+        router.replace("/manageProducts?tab=AllProducts");
+    };
+
     return (
         <div>
 
-            <div className="flex items-center gap-1 mb-5 group cursor-pointer" onClick={() => router.replace("/manageProducts?tab=AllProducts")}>
+            <div className="flex items-center gap-1 mb-5 group cursor-pointer" onClick={returnToProducts}>
                 <IoIosArrowBack className="size-5 group" />
                 <p className="group-hover:underline group select-none">Повернутися до товарів</p>
             </div>
@@ -283,7 +289,7 @@ export default function AddProduct({product, products, materials, categories, re
                             <div className="flex items-center gap-3">
                                 <img
                                     src={optimizeCloudinaryUrl(selectedCategory.coverImage, 200)}
-                                    className="w-14 aspect-5/3 object-cover rounded"
+                                    className="w-14 aspect-5/3 object-scale-down object-top-right rounded"
                                     alt=""
                                 />
                                 <div>
@@ -316,7 +322,7 @@ export default function AddProduct({product, products, materials, categories, re
                                             className="px-4 py-2 hover:bg-gray-300 cursor-pointer flex items-center gap-3"
                                         >
                                             {category.coverImage && (
-                                                <img src={optimizeCloudinaryUrl(category.coverImage, 200) } className="w-12 aspect-5/3 object-cover rounded" alt=""/>
+                                                <img src={optimizeCloudinaryUrl(category.coverImage, 200) } className="w-12 aspect-5/3 object-scale-down object-top-right rounded bg-white" alt=""/>
                                             )}
                                             <span className="truncate">{category.name}</span>
                                         </div>

@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+@theme {
+  --color-primary: #823D9A;
+}
+
 @layer base {
   * {
     font-family: "Montserrat", Arial, sans-serif;
@@ -13,6 +17,15 @@
 }
 html, body, #root {
   height: 100%;
+}
+
+button {
+  cursor: pointer;
+}
+
+img {
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .no-scroll {

@@ -62,7 +62,7 @@ const Navbar = ({}: Props) => {
 
                     <div className="md:hidden flex items-center justify-end w-full gap-6">
                         <button
-                            className="flex flex-col gap-1.5 p-2 mr-5"
+                            className="flex flex-col gap-1.5 p-2 mr-2"
                             onClick={() => setMenuOpen(!menuOpen)}
                             aria-label="Меню"
                         >

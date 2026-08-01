@@ -11,16 +11,15 @@ type Props = {
 };
 
 const AllCategories = ({categories, handleChangeTab, onEdit}: Props) => {
-
     return (
         <div className="flex flex-col gap-4 mt-10">
             <div className="flex flex-col sm:flex-row gap-4 sm:gap-0 items-center sm:justify-between">
                 <div className="w-full flex gap-4 items-center">
                     <SearchInput />
-                    <ToolTip label="Додати продукт">
+                    <ToolTip label="Додати категорію">
                         <CiCirclePlus
                             className="size-8 text-gray-400 hover:text-gray-800 cursor-pointer transition bg-white rounded-full"
-                            onClick={() => handleChangeTab("AddProduct")}
+                            onClick={() => handleChangeTab("AddCategory")}
                         />
                     </ToolTip>
                 </div>

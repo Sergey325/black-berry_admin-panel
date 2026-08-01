@@ -22,6 +22,32 @@ export type FormValuesProduct = {
     categoryId: number | null;
 };
 
+export type FormValuesCategory = {
+    name: string;
+    coverImage: string;
+    season: "SUMMER" | "WINTER" | "ALL_SEASON";
+    productsDescription: string;
+    description: string;
+    isOnMainPage: boolean;
+    hasLining: boolean;
+    isDecoration: boolean;
+    specifications: {
+        name: string;
+        value: string;
+    }[];
+};
+
+export type FormValuesBanner = {
+    image: string;
+    badge: string;
+    title: string;
+    features: { value: string }[];
+    ctaHref: string;
+    ctaLabel: string;
+    order: number;
+};
+
+
 export type FormValuesOrder = {
     firstName: string;
     lastName: string;

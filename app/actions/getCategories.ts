@@ -13,6 +13,7 @@ export interface ICategory {
     season: Season
     isOnMainPage: boolean | null
     hasLining: boolean | null
+    isDecoration: boolean | null
     specifications: {
         name: string
         id: number
@@ -25,9 +26,16 @@ export interface ICategory {
     }
 }
 
-export async function getCategories() {
+export interface ICategoriesParams {
+    title?: string;
+}
+
+export async function getCategories(params?: ICategoriesParams): Promise<ICategory[]> {
     try {
+        const { title} = params ?? {};
+
         const categories = await prisma.category.findMany({
+            where: title ? { name: { contains: title, mode: "insensitive" } } : undefined,
             orderBy: {
                 id: "asc",
             },

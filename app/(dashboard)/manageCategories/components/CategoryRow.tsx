@@ -40,7 +40,7 @@ const CategoryRow = ({category, onEdit}: Props) => {
                     src={category.coverImage}
                     fill
                     alt={category.name}
-                    className="object-cover rounded-md border border-gray-200"
+                    className="object-scale-down object-top-right rounded-md border border-gray-200"
                 />
             </div>
 

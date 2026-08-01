@@ -82,6 +82,7 @@ model Category {
   productsDescription String
   isOnMainPage        Boolean?                @default(false)
   hasLining           Boolean?                @default(false)
+  isDecoration        Boolean?                @default(false)
   specifications      CategorySpecification[]
   products            Product[]
 }
@@ -143,7 +144,7 @@ model OrderItem {
   price     Float
   quantity  Int
   color     String
-  size      String
+  size      String?
   imageUrl  String
   colorName String?
   order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
@@ -154,6 +155,17 @@ model TelegramUser {
   chatId String  @unique
   name   String?
   role   String  @default("ADMIN")
+}
+
+model Banner {
+  id       Int      @id @default(autoincrement())
+  image    String
+  badge    String?
+  title    String
+  features String[]
+  ctaHref  String?
+  ctaLabel String?
+  order    Int      @default(0)
 }
 
 enum Season {

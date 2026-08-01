@@ -12,7 +12,7 @@ export interface IOrderItem {
     quantity: number;
     color: string;
     colorName: string | null;
-    size: string;
+    size: string | null;
     imageUrl: string;
 }
 
