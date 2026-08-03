@@ -185,9 +185,9 @@ export default function Dropdown<T = string>({
                 aria-controls={listboxId}
                 className={`flex w-full items-center justify-between gap-2 rounded-xl border bg-white px-4 py-2.5 text-sm transition-colors
                     ${textCenter ? "text-center" : "text-left"}
-                    ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:border-primary/50'}
-                    ${error ? 'border-red-400' : 'border-primary/30'}
-                    ${isOpen ? 'border-primary/30 ring-1 ring-primary/80' : ''}
+                    ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:border-slate-800'}
+                    ${error ? 'border-red-400' : 'border-slate-500'}
+                    ${isOpen ? 'border-slate-500 ring-1 ring-slate-800' : ''}
                     ${buttonClassName}`}
             >
                 <span className={`truncate ${selectedOption ? 'text-neutral-900' : 'text-neutral-400'}`}>
@@ -236,8 +236,8 @@ export default function Dropdown<T = string>({
                             className={`flex cursor-pointer items-center rounded-lg px-3 py-2 text-sm transition-colors
                             ${textCenter ? "text-center justify-center" : "text-left"}
                             ${option.disabled ? 'pointer-events-none opacity-40' : ''}
-                            ${isActive && !option.disabled ? 'bg-neutral-100' : ''}
-                            ${isSelected ? 'bg-primary/10 text-primary font-semibold' : 'text-neutral-700'}
+                            ${isActive && !option.disabled ? 'bg-gray-100' : ''}
+                            ${isSelected ? 'bg-gray-200 text-slate-900 font-semibold' : 'text-neutral-700'}
                         `}
                         >
                             <span className="truncate">{option.label}</span>

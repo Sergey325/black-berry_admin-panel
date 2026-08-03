@@ -24,10 +24,60 @@ button {
 }
 
 img {
+  -webkit-user-drag: none;
   -webkit-user-select: none;
   user-select: none;
 }
 
+a {
+  -webkit-user-drag: none;
+}
+
 .no-scroll {
   overflow: hidden;
+}
+
+::selection {
+  background-color: oklch(20.8% 0.042 265.755);
+  color: white;
+}
+
+::-webkit-scrollbar{
+  @apply ml-1 w-1 md:w-2 h-1;
+}
+
+/*Track*/
+::-webkit-scrollbar-track {
+  @apply ml-1 bg-transparent;
+}
+
+/*Handle*/
+::-webkit-scrollbar-thumb {
+  @apply ml-1 bg-[#0F172BFF] h-[40%];
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #0F172BFF transparent;
+}
+
+.thin-scrollbar::-webkit-scrollbar {
+  @apply w-0.5
+}
+
+.thin-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.thin-scrollbar::-webkit-scrollbar-thumb {
+  @apply bg-primary rounded-full
+}
+
+.thin-scrollbar::-webkit-scrollbar-thumb:hover {
+  @apply bg-primary
+}
+
+.thin-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #0F172BFF transparent;
 }

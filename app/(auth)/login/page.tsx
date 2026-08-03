@@ -15,7 +15,7 @@ export default function LoginPage() {
 
         try {
             await axios.post("/api/login", { password });
-            router.replace("/manageProducts?tab=AllProducts");
+            router.replace("/products?tab=AllProducts");
             router.refresh();
         } catch {
             setError("Невірний пароль");

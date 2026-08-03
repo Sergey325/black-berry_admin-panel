@@ -8,22 +8,23 @@ datasource db {
 
 /// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
 model Product {
-  id          Int               @id @default(autoincrement())
-  name        String
-  price       Float
-  discount    Float             @default(0)
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
-  slug        String
-  description String
-  categoryId  Int?
-  materialId  Int?
-  quantity    Int?
-  category    Category?         @relation(fields: [categoryId], references: [id])
-  material    Material?         @relation(fields: [materialId], references: [id])
-  colors      ProductColor[]
-  relatedTo   ProductRelation[] @relation("ProductRelation_From")
-  relatedFrom ProductRelation[] @relation("ProductRelation_To")
+  id               Int                @id @default(autoincrement())
+  name             String
+  price            Float
+  discount         Float              @default(0)
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  slug             String
+  description      String?
+  categoryId       Int?
+  materialId       Int?
+  quantity         Int?
+  category         Category?          @relation(fields: [categoryId], references: [id])
+  material         Material?          @relation(fields: [materialId], references: [id])
+  colors           ProductColor[]
+  relatedTo        ProductRelation[]  @relation("ProductRelation_From")
+  relatedFrom      ProductRelation[]  @relation("ProductRelation_To")
+  PromoCodeProduct PromoCodeProduct[]
 }
 
 model ProductColor {
@@ -85,6 +86,7 @@ model Category {
   isDecoration        Boolean?                @default(false)
   specifications      CategorySpecification[]
   products            Product[]
+  PromoCodeCategory   PromoCodeCategory[]
 }
 
 model CategorySpecification {
@@ -109,31 +111,37 @@ model NovaPoshtaCity {
 }
 
 model Order {
-  id              Int           @id @default(autoincrement())
-  invoiceId       String?       @unique
-  status          OrderStatus   @default(PENDING)
-  totalAmount     Float
-  firstName       String
-  lastName        String
-  phone           String
-  email           String?
-  comment         String?
-  city            String
-  cityRef         String
-  warehouse       String
-  warehouseRef    String
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
-  paymentMethod   PaymentMethod
-  area            String
-  ttnNumber       String?
-  ttnRef          String?
-  warehouseNumber Int
-  clientIp        String?
-  fbc             String?
-  fbp             String?
-  userAgent       String?
-  items           OrderItem[]
+  id                     Int           @id @default(autoincrement())
+  invoiceId              String?       @unique
+  status                 OrderStatus   @default(PENDING)
+  totalAmount            Float
+  firstName              String
+  lastName               String
+  phone                  String
+  email                  String?
+  comment                String?
+  city                   String
+  cityRef                String
+  warehouse              String
+  warehouseRef           String
+  createdAt              DateTime      @default(now())
+  updatedAt              DateTime      @updatedAt
+  paymentMethod          PaymentMethod
+  area                   String
+  ttnNumber              String?
+  ttnRef                 String?
+  warehouseNumber        Int
+  clientIp               String?
+  fbc                    String?
+  fbp                    String?
+  userAgent              String?
+  paidAt                 DateTime?
+  discountAmount         Float?
+  discountPercentApplied Float?
+  promoCodeId            Int?
+  promoCodeSnapshot      String?
+  PromoCode              PromoCode?    @relation(fields: [promoCodeId], references: [id])
+  items                  OrderItem[]
 }
 
 model OrderItem {
@@ -168,6 +176,56 @@ model Banner {
   order    Int      @default(0)
 }
 
+model MonthlyExpense {
+  id          Int      @id @default(autoincrement())
+  year        Int
+  month       Int
+  amount      Float
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime
+
+  @@index([year, month])
+}
+
+model PromoCode {
+  id                Int                 @id @default(autoincrement())
+  code              String              @unique
+  discountPercent   Float
+  scopeType         PromoScopeType      @default(ALL)
+  startsAt          DateTime?
+  expiresAt         DateTime?
+  maxUses           Int?
+  usedCount         Int                 @default(0)
+  isActive          Boolean             @default(true)
+  isDeleted         Boolean             @default(false)
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime
+  Order             Order[]
+  PromoCodeCategory PromoCodeCategory[]
+  PromoCodeProduct  PromoCodeProduct[]
+}
+
+model PromoCodeCategory {
+  id          Int       @id @default(autoincrement())
+  promoCodeId Int
+  categoryId  Int
+  Category    Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  PromoCode   PromoCode @relation(fields: [promoCodeId], references: [id], onDelete: Cascade)
+
+  @@unique([promoCodeId, categoryId])
+}
+
+model PromoCodeProduct {
+  id          Int       @id @default(autoincrement())
+  promoCodeId Int
+  productId   Int
+  Product     Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  PromoCode   PromoCode @relation(fields: [promoCodeId], references: [id], onDelete: Cascade)
+
+  @@unique([promoCodeId, productId])
+}
+
 enum Season {
   SUMMER
   WINTER
@@ -187,4 +245,10 @@ enum OrderStatus {
 enum PaymentMethod {
   MONOBANK
   CASH_ON_DELIVERY
+}
+
+enum PromoScopeType {
+  ALL
+  CATEGORY
+  PRODUCT
 }

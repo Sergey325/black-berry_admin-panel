@@ -63,7 +63,7 @@ export interface IProduct {
     id: number;
     name: string;
     slug: string;
-    description: string;
+    description: string | null;
     price: number;
     discount: number;
     quantity: number | null;

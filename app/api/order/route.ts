@@ -26,6 +26,7 @@ export async function POST(request: Request) {
                 warehouseNumber: warehouseNumber ?? "",
                 warehouseRef: warehouseRef ?? "",
                 paymentMethod: paymentMethod as PaymentMethod,
+                paidAt: new Date(),
                 items: {
                     create: items.map((item: any) => ({
                         productId: item.productId,

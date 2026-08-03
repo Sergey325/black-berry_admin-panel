@@ -18,13 +18,13 @@ export async function proxy(request: NextRequest) {
 
     if (payload && isLoginPage) {
         return NextResponse.redirect(
-            new URL("/manageProducts?tab=AllProducts", request.url)
+            new URL("/products?tab=AllProducts", request.url)
         );
     }
 
     if (payload && isRootPage) {
         return NextResponse.redirect(
-            new URL("/manageProducts?tab=AllProducts", request.url)
+            new URL("/products?tab=AllProducts", request.url)
         );
     }
 

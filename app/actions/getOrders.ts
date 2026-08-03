@@ -32,6 +32,7 @@ export interface IOrder {
     warehouseRef: string;
     createdAt: Date | string;
     updatedAt: Date | string;
+    paidAt: Date | string | null;
     paymentMethod: PaymentMethod;
     area: string;
     ttnNumber: string | null;
