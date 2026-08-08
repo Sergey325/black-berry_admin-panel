@@ -1,21 +1,21 @@
 import { NextResponse } from "next/server";
 import prisma from "@/app/lib/prisma";
+import {FormValuesProduct} from "@/app/types";
+
+type ProductRequest = FormValuesProduct & {
+    id: number | null;
+};
 
 export async function POST(request: Request) {
     try {
-        const body = await request.json();
-        const { id, name, description, price, discount, colors, slug, materialId, categoryId, relatedProducts, quantity } = body;
+        const body = await request.json() as ProductRequest;
+        const { id, name, description, price, discount, colors, slug, materialId, categoryId, relatedProducts } = body;
         const productId = Number(id)
 
-        const colorsData = colors?.map((c: {
-            color: string;
-            colorName: string;
-            isBestSeller: boolean;
-            images: string[];
-            sizes: { size: string; available: boolean }[];
-        }) => ({
+        const colorsData = colors.map((c) => ({
             color: c.color,
             colorName: c.colorName,
+            colorCode: c.colorCode,
             isBestSeller: c.isBestSeller,
             images: {
                 create: c.images.map((url: string, index: number) => ({
@@ -27,13 +27,12 @@ export async function POST(request: Request) {
                 create: c.sizes.map((s) => ({
                     size: s.size,
                     available: s.available,
+                    quantity: s.quantity,
                 })),
             },
         }));
 
-        const relatedIds: number[] = relatedProducts?.map(
-            (r: { id: number; imageUrl: string; name: string }) => r.id
-        ) ?? [];
+        const relatedIds = relatedProducts.map((relatedProduct) => relatedProduct.id);
 
         let finalProductId: number;
 
@@ -50,10 +49,9 @@ export async function POST(request: Request) {
                     description,
                     slug,
                     price,
-                    discount,
+                    discount: discount ?? 0,
                     materialId,
                     categoryId,
-                    quantity,
                     colors: {
                         create: colorsData,
                     },
@@ -68,10 +66,9 @@ export async function POST(request: Request) {
                     description,
                     slug,
                     price,
-                    discount,
+                    discount: discount ?? 0,
                     materialId,
                     categoryId,
-                    quantity,
                     colors: {
                         create: colorsData,
                     },

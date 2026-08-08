@@ -31,7 +31,7 @@ export default function StatusBreakdown({ data }: Props) {
     const total = data.reduce((sum, item) => sum + item.count, 0);
 
     if (total === 0) {
-        return <p className="py-12 text-center text-gray-400">Замовлень цього місяця ще немає</p>;
+        return <p className="py-12 text-center text-gray-400">Замовлень за цей період ще немає</p>;
     }
 
     return (

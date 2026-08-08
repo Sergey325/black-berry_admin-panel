@@ -28,10 +28,8 @@ const ColorBlock = ({control, register, colorIndex, onRemoveColor, errors}: Prop
     });
 
     return (
-        <div className="border border-gray-300 rounded-xl p-4 flex flex-col gap-8">
-
-            {/* Цвет */}
-            <div className="flex items-center gap-6">
+        <div className="flex min-w-0 flex-col gap-6 rounded-xl border border-gray-200 bg-gray-50/60 p-4 md:p-5">
+            <div className="flex items-center gap-3 sm:gap-6">
                 <Controller
                     control={control}
                     name={`colors.${colorIndex}.color`}
@@ -39,12 +37,11 @@ const ColorBlock = ({control, register, colorIndex, onRemoveColor, errors}: Prop
                         <input type="color" {...field} className="w-10 h-10 rounded-lg border border-gray-200 cursor-pointer" />
                     )}
                 />
-                <span className="text-base md:text-lg text-gray-500">Колір товару</span>
+                <span className="text-base font-semibold text-gray-900">Варіант кольору</span>
                 <ToolTip label="Видалити колір">
-                    <FiTrash2
-                        className="size-7 md:size-8 text-red-400 hover:text-red-600 transition ml-auto cursor-pointer"
-                        onClick={() => onRemoveColor(colorIndex)}
-                    />
+                    <button type="button" onClick={() => onRemoveColor(colorIndex)} className="inline-flex size-11 items-center justify-center rounded-lg text-gray-500 transition hover:bg-red-50 hover:text-red-600" aria-label="Видалити колір">
+                        <FiTrash2 className="size-6"/>
+                    </button>
                 </ToolTip>
             </div>
 
@@ -52,20 +49,20 @@ const ColorBlock = ({control, register, colorIndex, onRemoveColor, errors}: Prop
 
                 <div className="flex flex-col md:flex-row md:items-end gap-6">
                     <div className="flex flex-col">
-                        <label className="text-base font-medium">Назва кольору</label>
+                        <label className="text-sm font-medium text-gray-700">Назва кольору</label>
                         <input
                             {...register(`colors.${colorIndex}.colorName`, { required: "Обов'язкове поле" })}
-                            className="border border-gray-300 rounded-lg px-3 py-2 outline-none focus:border-gray-600 transition md:text-lg max-w-[200px]"
+                            className="max-w-[220px] rounded-lg border border-gray-300 px-3 py-2.5 text-base outline-none transition focus:border-gray-500 focus:ring-2 focus:ring-gray-200"
                         />
-                        {errors?.colors?.[colorIndex]?.colorName && <span className="text-red-500 text-base">{errors?.colors?.[colorIndex]?.colorName.message}</span>}
+                        {errors?.colors?.[colorIndex]?.colorName && <span className="text-sm text-red-500">{errors?.colors?.[colorIndex]?.colorName.message}</span>}
                     </div>
                     <div className="flex flex-col">
-                        <label className="text-base font-medium">Код кольору</label>
+                        <label className="text-sm font-medium text-gray-700">Код кольору</label>
                         <input
                             {...register(`colors.${colorIndex}.colorCode`)}//, { required: "Обов'язкове поле" }
-                            className="border border-gray-300 rounded-lg px-3 py-2 outline-none focus:border-gray-600 transition md:text-lg max-w-[200px]"
+                            className="max-w-[220px] rounded-lg border border-gray-300 px-3 py-2.5 text-base outline-none transition focus:border-gray-500 focus:ring-2 focus:ring-gray-200"
                         />
-                        {errors?.colors?.[colorIndex]?.colorCode && <span className="text-red-500 text-base">{errors?.colors?.[colorIndex]?.colorCode.message}</span>}
+                        {errors?.colors?.[colorIndex]?.colorCode && <span className="text-sm text-red-500">{errors?.colors?.[colorIndex]?.colorCode.message}</span>}
                     </div>
                     <Controller
                         control={control}
@@ -76,16 +73,15 @@ const ColorBlock = ({control, register, colorIndex, onRemoveColor, errors}: Prop
                                 checked={field.value}
                                 onChange={field.onChange}
                                 colorOnChecked="text-gray-950"
-                                labelStyle="text-nowrap sm:text-lg"
+                                labelStyle="text-nowrap text-base"
                             />
                         )}
                     />
                 </div>
 
             </div>
-            {/* Картинки для этого цвета */}
             <div className="flex flex-col gap-1">
-                <label className="text-base md:text-lg font-medium">Зображення для цього кольору</label>
+                <label className="text-sm font-medium text-gray-700">Зображення для цього кольору</label>
                 <Controller
                     control={control}
                     name={`colors.${colorIndex}.images`}
@@ -95,23 +91,37 @@ const ColorBlock = ({control, register, colorIndex, onRemoveColor, errors}: Prop
                     )}
                 />
                 {errors?.colors?.[colorIndex]?.images && (
-                    <span className="text-red-500 text-base md:text-lg">
+                    <span className="text-sm text-red-500">
                         {errors.colors[colorIndex].images.message as string}
                     </span>
                 )}
             </div>
 
-            {/* Размеры для этого цвета */}
             <div className="flex flex-col gap-2">
-                <label className="text-base md:text-lg font-medium">Розміри</label>
+                <label className="text-sm font-medium text-gray-700">Розміри</label>
 
                 {sizeFields.map((sizeField, sizeIndex) => {
                     return (
-                        <div key={sizeField.id} className="flex items-center gap-6 rounded-lg px-3 py-2">
+                        <div key={sizeField.id} className="relative flex min-w-0 flex-col gap-3 rounded-lg border border-gray-200 bg-white p-3 pr-12 sm:flex-row sm:items-center sm:gap-8 sm:border-0 sm:bg-transparent sm:pr-3">
                             <input
                                 {...register(`colors.${colorIndex}.sizes.${sizeIndex}.size`, { required: true })}
-                                className="border border-gray-200 rounded-lg px-2 py-1 w-20 uppercase outline-none focus:border-gray-400 transition"
+                                className="w-full rounded-lg border border-gray-200 px-2 py-1 uppercase outline-none transition focus:border-gray-400 sm:w-24"
                             />
+
+
+                            <div className="flex w-full items-center justify-between gap-2 sm:w-auto sm:justify-start">
+                                <label className="text-sm font-medium text-gray-700">Кількість</label>
+                                <input
+                                    type="number"
+                                    min="0"
+                                    step="1"
+                                    {...register(`colors.${colorIndex}.sizes.${sizeIndex}.quantity`, {
+                                        min: 0,
+                                        setValueAs: (value: string) => value === "" ? null : Number(value),
+                                    })}
+                                    className="w-24 shrink-0 rounded-lg border border-gray-200 px-2 py-1 outline-none transition focus:border-gray-400"
+                                />
+                            </div>
                             <Controller
                                 control={control}
                                 name={`colors.${colorIndex}.sizes.${sizeIndex}.available`}
@@ -121,16 +131,14 @@ const ColorBlock = ({control, register, colorIndex, onRemoveColor, errors}: Prop
                                         checked={field.value}
                                         onChange={field.onChange}
                                         colorOnChecked="text-gray-950"
-                                        labelStyle="text-nowrap md:text-lg"
+                                        labelStyle="text-nowrap text-base"
                                     />
                                 )}
                             />
-
-                            <ToolTip label="Видалити колір">
-                                <FiTrash2
-                                    className="size-7 md:size-8 text-red-400 hover:text-red-600 transition ml-auto cursor-pointer"
-                                    onClick={() => removeSize(sizeIndex)}
-                                />
+                            <ToolTip label="Видалити розмір">
+                                <button type="button" onClick={() => removeSize(sizeIndex)} className="inline-flex size-10 items-center justify-center rounded-lg text-gray-500 transition hover:bg-red-50 hover:text-red-600" aria-label="Видалити розмір">
+                                    <FiTrash2 className="size-6"/>
+                                </button>
                             </ToolTip>
                         </div>
                     )
@@ -141,8 +149,8 @@ const ColorBlock = ({control, register, colorIndex, onRemoveColor, errors}: Prop
                         <button
                             key={size}
                             type="button"
-                            onClick={() => appendSize({ size, available: true })}
-                            className="text-base md:text-lg border border-gray-200 rounded-lg px-3 py-1 hover:bg-gray-100 hover:border-gray-400 transition"
+                            onClick={() => appendSize({ size, available: true, quantity: null })}
+                            className="rounded-lg border border-gray-200 px-3 py-1.5 text-base transition hover:border-gray-400 hover:bg-gray-100"
                         >
                             {size}
                         </button>

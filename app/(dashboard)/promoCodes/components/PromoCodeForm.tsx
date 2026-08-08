@@ -306,7 +306,7 @@ const PromoCodeForm = ({promoCode, categories, products, onBack}: Props) => {
                         className="rounded-lg border border-gray-300 px-3 py-2 outline-none transition focus:border-gray-600"
                     />
                     {errors.maxUses && <span className="text-sm text-red-500">{errors.maxUses.message}</span>}
-                    <span className="text-xs text-gray-500">Пустое поле для безлимитного использования</span>
+                    <span className="text-xs text-gray-500">Порожнє поле для необмеженого використання</span>
                 </div>
 
                 {promoCode && (

@@ -8,14 +8,13 @@ export default function DashboardLayout({
     children: React.ReactNode;
 }) {
     return (
-        <>
+        <div className="min-h-screen bg-gray-50 text-gray-900">
             <Navbar />
             <ToasterProvider/>
             <Container>
                 {children}
             </Container>
-            <div className="mt-10 lg:mt-20">
-            </div>
-        </>
+            <div className="h-10 lg:h-16" />
+        </div>
     );
 }

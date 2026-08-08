@@ -86,6 +86,7 @@ const AddOrder = ({products}: Props) => {
         appendItem({
             productId: product.id,
             productColorId: firstColor.id,
+            colorName: firstColor.colorName,
             name: product.name,
             color: firstColor.color,
             size: firstColor.sizes[0]?.size ?? "",
@@ -142,23 +143,27 @@ const AddOrder = ({products}: Props) => {
 
     return (
         <div>
-            <div className="flex items-center gap-1 mb-5 group cursor-pointer" onClick={() => router.replace("/orders?tab=AllOrders")}>
+            <button type="button" className="group mb-5 inline-flex items-center gap-1 text-sm font-medium text-gray-600 transition hover:text-gray-950" onClick={() => router.replace("/orders?tab=AllOrders")}>
                 <IoIosArrowBack className="size-5 group" />
-                <p className="group-hover:underline group select-none">Повернутися до замовлень</p>
-            </div>
-            <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-8 p-4">
+                <span className="select-none">Повернутися до замовлень</span>
+            </button>
+            <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-5">
 
-                {/* Контактные данные */}
-                <div className="flex flex-col gap-4">
-                    <h2 className="text-lg font-semibold">Контактні дані</h2>
+                <section className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm md:p-5">
+                    <div className="mb-4">
+                        <h2 className="font-semibold text-gray-900">Контактні дані</h2>
+                        <p className="mt-1 text-base text-gray-600">Інформація про отримувача замовлення</p>
+                    </div>
                     <div>
                         <ContactForm register={register} errors={errors} control={control}/>
                     </div>
-                </div>
+                </section>
 
-                {/* Доставка */}
-                <div className="flex flex-col gap-4">
-                    <h2 className="text-lg font-semibold">Доставка</h2>
+                <section className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm md:p-5">
+                    <div className="mb-4">
+                        <h2 className="font-semibold text-gray-900">Доставка</h2>
+                        <p className="mt-1 text-base text-gray-600">Місто й відділення Нової пошти</p>
+                    </div>
                     <div id="order-delivery">
                         <NovaPoshtaSelect
                             selectedCity={selectedCity}
@@ -167,24 +172,25 @@ const AddOrder = ({products}: Props) => {
                             setSelectedWarehouse={setSelectedWarehouse}
                         />
                     </div>
-                </div>
+                </section>
 
-                {/* Способ оплаты */}
-                <div className="flex flex-col gap-2">
-                    <h2 className="text-lg font-semibold">Спосіб оплати</h2>
-                    <div className="flex gap-4">
+                <section className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm md:p-5">
+                    <h2 className="font-semibold text-gray-900">Спосіб оплати</h2>
+                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
                         {(["MONOBANK", "CASH_ON_DELIVERY"] as const).map((method) => (
-                            <label key={method} className="flex items-center gap-2 cursor-pointer">
-                                <input type="radio" value={method} {...register("paymentMethod")} />
-                                <span className="">{method === "MONOBANK" ? "Онлайн (Monobank)" : "Накладений платіж"}</span>
+                            <label key={method} className={`flex cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 text-base font-medium transition ${paymentMethod === method ? "border-gray-900 bg-gray-50 text-gray-950" : "border-gray-200 text-gray-700 hover:border-gray-400"}`}>
+                                <input type="radio" value={method} {...register("paymentMethod")} className="accent-black" />
+                                <span>{method === "MONOBANK" ? "Онлайн (Monobank)" : "Накладений платіж"}</span>
                             </label>
                         ))}
                     </div>
-                </div>
+                </section>
 
-                {/* Товары */}
-                <div id="order-items" className="flex flex-col gap-4">
-                    <h2 className="text-lg font-semibold">Товари</h2>
+                <section id="order-items" className="flex flex-col gap-4 rounded-xl border border-gray-200 bg-white p-4 shadow-sm md:p-5">
+                    <div>
+                        <h2 className="font-semibold text-gray-900">Товари</h2>
+                        <p className="mt-1 text-base text-gray-600">Додайте позиції та налаштуйте варіанти</p>
+                    </div>
 
                     <SearchSelect
                         options={productOptions}
@@ -208,7 +214,7 @@ const AddOrder = ({products}: Props) => {
                         const selectedColor = product?.colors.find(c => c.color === currentItem?.color);
 
                         return (
-                            <div key={field.id} className="border border-gray-200 bg-white rounded-md p-4 flex flex-col gap-3">
+                            <div key={field.id} className="flex flex-col gap-4 rounded-xl border border-gray-200 bg-gray-50/60 p-4">
                                 <div className="flex items-center gap-3">
                                     {currentItem?.imageUrl && (
                                         <Image src={currentItem.imageUrl} width={48} height={48} className="size-12 rounded object-cover" alt="" />
@@ -225,16 +231,14 @@ const AddOrder = ({products}: Props) => {
                                                     });
                                                 }
                                             }}
-                                            className="size-6 md:size-7 text-gray-500 hover:text-red-600 transition cursor-pointer"
+                                        className="size-5 cursor-pointer text-gray-500 transition hover:text-red-600"
                                         />
                                     </ToolTip>
                                 </div>
 
-                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-
-                                    {/* Цвет */}
+                                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                                     <div className="flex flex-col gap-1">
-                                        <label className=" text-gray-500">Колір</label>
+                                        <label className="text-sm font-medium text-gray-700">Колір</label>
                                         <Controller
                                             control={control}
                                             name={`items.${index}.color`}
@@ -246,11 +250,12 @@ const AddOrder = ({products}: Props) => {
                                                         const newColor = product?.colors.find(c => c.color === e.target.value);
                                                         if (newColor) {
                                                             setValue(`items.${index}.productColorId`, newColor.id);
+                                                            setValue(`items.${index}.colorName`, newColor.colorName);
                                                             setValue(`items.${index}.size`, newColor.sizes[0]?.size ?? "");
                                                             setValue(`items.${index}.imageUrl`, newColor.images[0]?.url ?? "");
                                                         }
                                                     }}
-                                                    className="border border-gray-200 rounded-sm px-2 py-1.5  outline-none"
+                                                    className="rounded-lg border border-gray-300 bg-white px-2 py-2 text-base outline-none"
                                                 >
                                                     {product?.colors.map(c => (
                                                         <option key={c.id} value={c.color} style={{backgroundColor: c.color, color: c.color === "#000000" ? "#ffffff" : "#000000"}} className="hover:opacity-70 ">
@@ -262,12 +267,11 @@ const AddOrder = ({products}: Props) => {
                                         />
                                     </div>
 
-                                    {/* Размер */}
                                     <div className="flex flex-col gap-1">
-                                        <label className=" text-gray-500">Розмір</label>
+                                        <label className="text-sm font-medium text-gray-700">Розмір</label>
                                         <select
                                             {...register(`items.${index}.size`)}
-                                            className="border border-gray-200 rounded-sm px-2 py-1.5  outline-none"
+                                            className="rounded-lg border border-gray-300 bg-white px-2 py-2 text-base outline-none"
                                         >
                                             {selectedColor?.sizes.map(s => (
                                                 <option key={s.id} value={s.size}>{s.size}</option>
@@ -275,25 +279,23 @@ const AddOrder = ({products}: Props) => {
                                         </select>
                                     </div>
 
-                                    {/* Цена */}
                                     <div className="flex flex-col gap-1">
-                                        <label className=" text-gray-500">Ціна (грн)</label>
+                                        <label className="text-sm font-medium text-gray-700">Ціна (грн)</label>
                                         <input
                                             type="number"
                                             min={1}
                                             {...register(`items.${index}.price`, { valueAsNumber: true })}
-                                            className="border border-gray-200 rounded-sm px-2 py-1.5  outline-none"
+                                            className="rounded-lg border border-gray-300 bg-white px-2 py-2 text-base outline-none"
                                         />
                                     </div>
 
-                                    {/* Количество */}
                                     <div className="flex flex-col gap-1">
-                                        <label className=" text-gray-500">Кількість</label>
+                                        <label className="text-sm font-medium text-gray-700">Кількість</label>
                                         <input
                                             type="number"
                                             min={1}
                                             {...register(`items.${index}.quantity`, { valueAsNumber: true, min: 1 })}
-                                            className="border border-gray-200 rounded-sm px-2 py-1.5  outline-none"
+                                            className="rounded-lg border border-gray-300 bg-white px-2 py-2 text-base outline-none"
                                         />
                                     </div>
 
@@ -302,15 +304,15 @@ const AddOrder = ({products}: Props) => {
                         );
                     })}
 
-                    {/* Итого */}
                     {itemFields.length > 0 && (
-                        <div className="flex justify-start text-base font-semibold">
-                            Сума: {paymentMethod === "CASH_ON_DELIVERY" ? "150" : totalAmount} грн
+                        <div className="flex items-center justify-between rounded-lg bg-gray-900 px-4 py-3 text-white">
+                            <span className="text-base text-gray-100">Сума замовлення</span>
+                            <span className="font-semibold">{paymentMethod === "CASH_ON_DELIVERY" ? "150" : totalAmount.toLocaleString("uk-UA")} грн</span>
                         </div>
                     )}
-                </div>
+                </section>
 
-                <button type="submit" className="bg-black text-white rounded-sm py-3 hover:bg-gray-800 transition">
+                <button type="submit" className="rounded-lg bg-black py-3 text-base font-medium text-white transition hover:bg-gray-800">
                     Створити замовлення
                 </button>
 

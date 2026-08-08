@@ -39,7 +39,7 @@ const SearchSelect = ({
     const [isOpen, setIsOpen] = useState(false);
     const deferredSearch = useDeferredValue(search.trim().toLowerCase());
     const rootRef = useRef<HTMLDivElement>(null);
-    const selectedIds = useMemo(() => new Set(value.map((option) => option.id)), [value]);
+    const selectedIds = useMemo(() => new Set(value?.map((option) => option.id)), [value]);
 
     useClickOutside({ref: rootRef, onClickOutside: () => setIsOpen(false)});
 
@@ -102,7 +102,7 @@ const SearchSelect = ({
                         ))}
                 </div>
             )}
-            {value.length > 0 && (
+            {value && value.length > 0 && (
                 <div className="mt-3 flex flex-wrap gap-2">
                     {value.map((option) => (
                         <span key={option.id} className="flex max-w-full items-center gap-2 rounded-full bg-gray-100 py-1 pr-2 pl-1 text-sm text-gray-700">

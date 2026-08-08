@@ -23,24 +23,30 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50">
-            <form onSubmit={handleSubmit} className="bg-white border border-gray-200 rounded-md p-8 w-full max-w-sm flex flex-col gap-4">
-                <h1 className="text-xl font-semibold text-center text-red">Вхід в Адмін-панель</h1>
+        <main className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-10">
+            <form onSubmit={handleSubmit} className="flex w-full max-w-sm flex-col rounded-xl border border-gray-200 bg-white p-6 shadow-sm sm:p-8">
+                <div className="mb-6 text-center">
+                    <div className="mx-auto mb-4 flex w-fit px-3 py-1 items-center justify-center rounded-xl bg-gray-950 text-lg font-semibold text-white">Black Berry</div>
+                    <h1 className="text-xl font-semibold text-gray-900">Вхід в адмін-панель</h1>
+                    <p className="mt-1 text-sm text-gray-500">Введіть пароль для продовження</p>
+                </div>
 
+                <label htmlFor="password" className="mb-1.5 text-sm font-medium text-gray-700">Пароль</label>
                 <input
+                    id="password"
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Пароль"
-                    className="border border-gray-200 rounded-sm px-3 py-2 outline-none focus:border-gray-400 transition"
+                    autoComplete="current-password"
+                    className="rounded-lg border border-gray-300 px-3 py-2.5 outline-none transition focus:border-gray-500 focus:ring-2 focus:ring-gray-200"
                 />
 
-                {error && <p className="text-red-500 text-sm">{error}</p>}
+                {error && <p className="mt-2 text-sm text-red-500">{error}</p>}
 
-                <button type="submit" className="bg-black text-white rounded-sm py-2 hover:bg-gray-800 transition">
+                <button type="submit" className="mt-5 rounded-lg bg-black py-2.5 text-sm font-medium text-white transition hover:bg-gray-800">
                     Увійти
                 </button>
             </form>
-        </div>
+        </main>
     );
 }

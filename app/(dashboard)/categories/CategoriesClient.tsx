@@ -6,6 +6,7 @@ import {ICategory} from "@/app/actions/getCategories";
 import qs from "query-string";
 import AllCategories from "@/app/(dashboard)/categories/components/AllCategories";
 import AddCategory from "@/app/(dashboard)/categories/components/AddCategory";
+import DashboardPageHeader from "@/app/(dashboard)/components/DashboardPageHeader";
 
 type Props = {
     categories: ICategory[];
@@ -33,7 +34,7 @@ const CategoriesClient = ({categories}: Props) => {
             currentQuery = qs.parse(params.toString())
         }
 
-        const updatedQuery: any = {
+        const updatedQuery = {
             ...currentQuery,
             tab: tabTitle
         }
@@ -44,7 +45,7 @@ const CategoriesClient = ({categories}: Props) => {
         }, {skipNull: true})
 
         router.push(url)
-    }, [params])
+    }, [params, router, tab])
 
     const onEditCategory = (category: ICategory) => {
         setSelectedCategory(category)
@@ -52,11 +53,19 @@ const CategoriesClient = ({categories}: Props) => {
     }
 
     return (
-        <div className="mt-10 ">
+        <main className="py-6 md:py-10">
+            <DashboardPageHeader
+                title={tab === "AllCategories" ? "Категорії" : selectedCategory ? "Редагування категорії" : "Нова категорія"}
+                description={tab === "AllCategories"
+                    ? "Організуйте каталог і керуйте відображенням колекцій"
+                    : selectedCategory ? `Оновіть оформлення категорії «${selectedCategory.name}»` : "Створіть новий розділ каталогу"}
+            />
+            <div className="mt-7">
             {
                 tab === "AllCategories" ? <AllCategories categories={categories} onEdit={onEditCategory} handleChangeTab={handleChangeTab}/> : <AddCategory category={selectedCategory || undefined} resetSelectedCategory={() => setSelectedCategory(null)}/>
             }
-        </div>
+            </div>
+        </main>
     );
 };
 

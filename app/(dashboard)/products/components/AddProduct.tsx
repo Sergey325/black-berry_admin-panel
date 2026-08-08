@@ -16,34 +16,34 @@ import SearchSelect, {SearchSelectOption} from "@/app/components/SearchSelect";
 
 
 const DEFAULT_COLORS = [
-    {
-        color: "#000000",
-        colorName: "Чорна"
-    },
-    {
-        color: "#FFFFFF",
-        colorName: "Біла"
-    },
-    {
-        color: "#F7CCD3",
-        colorName: "Рожева"
-    },
-    {
-        color: "#E1D1B7",
-        colorName: "Бежева"
-    },
-    {
-        color: "#EA3637",
-        colorName: "Червона"
-    },
-    {
-        color: "#FCD64D",
-        colorName: "Жовта"
-    },
-    {
-        color: "#D3B4E0",
-        colorName: "Бузкова"
-    },
+    { code: "06", colorHex: "#FF9A44", colorName: "Рудий" },
+    { code: "15", colorHex: "#D7EAE7", colorName: "М'ятний" },
+    { code: "27", colorHex: "#C6B1C9", colorName: "Бузковий" },
+    { code: "31", colorHex: "#ECCEDC", colorName: "Зефірний" },
+    { code: "53", colorHex: "#61616D", colorName: "Темно-сірий" },
+    { code: "55", colorHex: "#F3F2F0", colorName: "Білий" },
+    { code: "62", colorHex: "#E7DFD4", colorName: "Молочний" },
+    { code: "98", colorHex: "#E7A1CC", colorName: "Суха троянда" },
+    { code: "106", colorHex: "#A4011E", colorName: "Червоний" },
+    { code: "107", colorHex: "#B9083F", colorName: "Вишневий" },
+    { code: "141", colorHex: "#153EAC", colorName: "Синій" },
+    { code: "146", colorHex: "#D9D0E5", colorName: "Світло-лавандовий" },
+    { code: "149", colorHex: "#BB2744", colorName: "Малиновий" },
+    { code: "161", colorHex: "#FEE7E5", colorName: "Пудровий" },
+    { code: "185", colorHex: "#E4B5CA", colorName: "Рожевий" },
+    { code: "216", colorHex: "#F6D34E", colorName: "Жовтий" },
+    { code: "287", colorHex: "#A5D1F1", colorName: "Блакитний" },
+    { code: "310", colorHex: "#DFC8A6", colorName: "Шампань" },
+    { code: "321", colorHex: "#6E4832", colorName: "Шоколадний" },
+    { code: "377", colorHex: "#F180A7", colorName: "Яскраво-рожевий" },
+    { code: "416", colorHex: "#C4C4CD", colorName: "Світло-сірий" },
+    { code: "428", colorHex: "#A3A9B7", colorName: "Сірий" },
+    { code: "485", colorHex: "#6A8045", colorName: "Зелений" },
+    { code: "493", colorHex: "#371A13", colorName: "Гіркий шоколадний" },
+    { code: "530", colorHex: "#A68E82", colorName: "Бежевий" },
+    { code: "599", colorHex: "#C4BAAC", colorName: "Слонова кістка" },
+    { code: "788", colorHex: "#C3B0E2", colorName: "Лавандовий" },
+    { code: "1060", colorHex: "#291D1B", colorName: "Чорний" },
 ];
 
 type Props = {
@@ -54,6 +54,27 @@ type Props = {
     resetSelectedProduct: () => void;
 }
 
+const getContrastTextColor = (hexColor: string) => {
+    const hex = hexColor.replace("#", "");
+    const normalizedHex = hex.length === 3
+        ? hex.split("").map((char) => `${char}${char}`).join("")
+        : hex;
+
+    const red = parseInt(normalizedHex.slice(0, 2), 16) / 255;
+    const green = parseInt(normalizedHex.slice(2, 4), 16) / 255;
+    const blue = parseInt(normalizedHex.slice(4, 6), 16) / 255;
+
+    const toLinear = (value: number) =>
+        value <= 0.03928 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+
+    const luminance =
+        0.2126 * toLinear(red) +
+        0.7152 * toLinear(green) +
+        0.0722 * toLinear(blue);
+
+    return luminance > 0.179 ? "#111827" : "#FFFFFF";
+};
+
 export default function AddProduct({product, products, materials, categories, resetSelectedProduct}: Props) {
     const router = useRouter();
 
@@ -63,7 +84,6 @@ export default function AddProduct({product, products, materials, categories, re
             description: product?.description || "",
             price: product?.price || 500,
             discount: product?.discount || 0,
-            quantity: product?.quantity || null,
             materialId: product?.material?.id || undefined,
             categoryId: product?.category?.id || null,
             colors: product?.colors.map((c) => ({
@@ -77,6 +97,7 @@ export default function AddProduct({product, products, materials, categories, re
                 sizes: c.sizes.map((s) => ({
                     size: s.size,
                     available: s.available,
+                    quantity: s.quantity,
                 })),
             })) || [],
             relatedProducts: product?.relatedTo?.map(p => ({
@@ -191,7 +212,7 @@ export default function AddProduct({product, products, materials, categories, re
             imageUrl: item.colors[0]?.images[0]?.url,
             description: `${item.price} грн`,
         })), [product?.id, products]);
-    const selectedRelatedProducts = useMemo<SearchSelectOption[]>(() => watchedRelatedProducts.map((item) => {
+    const selectedRelatedProducts = useMemo<SearchSelectOption[]>(() => (watchedRelatedProducts ?? []).map((item) => {
         const option = productOptions.find((productOption) => productOption.id === item.id);
         return {
             id: item.id,
@@ -208,60 +229,51 @@ export default function AddProduct({product, products, materials, categories, re
 
     return (
         <div>
-            <div className="flex items-center gap-1 mb-5 group cursor-pointer" onClick={returnToProducts}>
+            <button type="button" className="group mb-5 inline-flex items-center gap-1 text-sm font-medium text-gray-600 transition hover:text-gray-950" onClick={returnToProducts}>
                 <IoIosArrowBack className="size-5 group" />
-                <p className="group-hover:underline group select-none">Повернутися до товарів</p>
-            </div>
+                <span className="select-none">Повернутися до товарів</span>
+            </button>
 
-            <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-8 bg-white rounded-xl p-3 border border-gray-300 md:p-5">
+            <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-7 rounded-xl border border-gray-200 bg-white p-4 shadow-sm md:p-6">
 
                 <div className="flex flex-col gap-1">
-                    <label className="text-base md:text-lg font-medium">Назва товару</label>
+                    <label className="text-sm font-medium text-gray-700">Назва товару</label>
                     <input
                         {...register("name", { required: "Обов'язкове поле" })}
-                        className="border border-gray-300 rounded-lg px-3 py-2 outline-none focus:border-gray-600 transition md:text-lg"
+                        className="rounded-lg border border-gray-300 px-3 py-2.5 text-base outline-none transition focus:border-gray-500 focus:ring-2 focus:ring-gray-200"
                     />
-                    {errors.name && <span className="text-red-500 text-base md:text-lg">{errors.name.message}</span>}
+                    {errors.name && <span className="text-sm text-red-500">{errors.name.message}</span>}
                 </div>
 
                 <div className="flex flex-col gap-1">
-                    <label className="text-base md:text-lg font-medium">Опис товару</label>
+                    <label className="text-sm font-medium text-gray-700">Опис товару</label>
                     <textarea
                         {...register("description")}
                         rows={5}
-                        className="border border-gray-300 rounded-lg px-3 py-2 outline-none focus:border-gray-600 transition max-h-[200px] min-h-[45px] overflow-y-auto md:text-lg"
+                        className="max-h-[240px] min-h-28 overflow-y-auto rounded-lg border border-gray-300 px-3 py-2.5 text-base outline-none transition focus:border-gray-500 focus:ring-2 focus:ring-gray-200"
                     />
-                    {errors.description && <span className="text-red-500 text-base md:text-lg">{errors.description.message}</span>}
+                    {errors.description && <span className="text-sm text-red-500">{errors.description.message}</span>}
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 gap-4">
                     <div className="flex flex-col gap-1">
-                        <label className="text-base md:text-lg font-medium">Ціна</label>
+                        <label className="text-sm font-medium text-gray-700">Ціна</label>
                         <input
                             type="number"
                             step="0.01"
                             {...register("price", { required: "Обов'язкове поле", valueAsNumber: true })}
-                            className="border border-gray-300 rounded-lg px-3 py-2 outline-none focus:border-gray-600 transition md:text-lg"
+                            className="rounded-lg border border-gray-300 px-3 py-2.5 text-base outline-none transition focus:border-gray-500 focus:ring-2 focus:ring-gray-200"
                         />
-                        {errors.price && <span className="text-red-500 text-base md:text-lg">{errors.price.message}</span>}
+                        {errors.price && <span className="text-sm text-red-500">{errors.price.message}</span>}
                     </div>
                     <div className="flex flex-col gap-1">
-                        <label className="text-base md:text-lg font-medium">Знижка (%)</label>
+                        <label className="text-sm font-medium text-gray-700">Знижка (%)</label>
                         <input
                             type="number"
                             {...register("discount", { valueAsNumber: true })}
-                            className="border border-gray-300 rounded-lg px-3 py-2 outline-none focus:border-gray-600 transition md:text-lg"
+                            className="rounded-lg border border-gray-300 px-3 py-2.5 text-base outline-none transition focus:border-gray-500 focus:ring-2 focus:ring-gray-200"
                         />
-                        {errors.discount && <span className="text-red-500 text-base md:text-lg">{errors.discount.message}</span>}
-                    </div>
-                    <div className="flex flex-col gap-1">
-                        <label className="text-base md:text-lg font-medium">Кількість</label>
-                        <input
-                            type="number"
-                            step="1"
-                            {...register("quantity", { valueAsNumber: true })}
-                            className="border border-gray-300 rounded-lg px-3 py-2 outline-none focus:border-gray-600 transition md:text-lg"
-                        />
+                        {errors.discount && <span className="text-sm text-red-500">{errors.discount.message}</span>}
                     </div>
                 </div>
 
@@ -283,7 +295,7 @@ export default function AddProduct({product, products, materials, categories, re
                 </div>
 
                 <div className="flex flex-col gap-4">
-                    <h2 className="text-lg font-medium">Зв’язані товари</h2>
+                    <h2 className="text-base font-semibold text-gray-900">Зв’язані товари</h2>
                     <SearchSelect
                         multiple
                         options={productOptions}
@@ -310,16 +322,21 @@ export default function AddProduct({product, products, materials, categories, re
                         />
                     ))}
                     <div className="flex items-center gap-4">
-                        <label className="text-base md:text-lg font-medium">Кольори товару</label>
+                        <label className="text-base font-semibold text-gray-900">Кольори товару</label>
                         <div className="flex flex-wrap gap-2">
                             {DEFAULT_COLORS.map((item) => (
                                 <button
-                                    key={item.color+item.colorName}
+                                    key={item.code + item.colorHex}
                                     type="button"
-                                    onClick={() => appendColor({ color: item.color, images: [], sizes: [{size: "S", available: true}, {size: "M", available: true}], colorName: item.colorName, colorCode: null, isBestSeller: false })}
-                                    className="w-7 h-7 rounded-full border border-gray-500 hover:scale-110 transition"
-                                    style={{ backgroundColor: item.color }}
-                                />
+                                    onClick={() => appendColor({ color: item.colorHex, images: [], sizes: [{size: "S", available: true, quantity: null}, {size: "M", available: true, quantity: null}], colorName: item.colorName, colorCode: item.code, isBestSeller: false })}
+                                    className="w-7 h-7 rounded-full border border-gray-500 hover:scale-110 transition text-xs text-center font-medium"
+                                    style={{
+                                        backgroundColor: item.colorHex,
+                                        color: getContrastTextColor(item.colorHex),
+                                    }}
+                                >
+                                    {item.code}
+                                </button>
                             ))}
                             <ToolTip label="Додати колір">
                                 <button
@@ -333,11 +350,11 @@ export default function AddProduct({product, products, materials, categories, re
                         </div>
                     </div>
                     {colorFields.length === 0 && (
-                        <p className="text-base md:text-lg text-gray-400">Додайте хоча б один колір товару</p>
+                        <p className="text-sm text-gray-500">Додайте хоча б один колір товару</p>
                     )}
                 </div>
-                <button type="submit" className="bg-black text-white rounded-xl py-3 hover:bg-gray-800 transition">
-                    Зберегти товар
+                <button type="submit" className="rounded-lg bg-black py-3 text-base font-medium text-white transition hover:bg-gray-800">
+                    {product ? "Оновити товар" : "Зберегти товар"}
                 </button>
             </form>
         </div>

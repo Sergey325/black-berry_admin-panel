@@ -16,10 +16,6 @@ type Props = {
 const CategoryRow = ({category, onEdit}: Props) => {
     const router = useRouter();
 
-    // const handleEdit = () => {
-    //     router.push(`/?edit=${product.id}`);
-    // };
-
     const handleDelete = async () => {
         if (!confirm(`Видалити товар "${category.name}"?`)) return;
 
@@ -34,40 +30,38 @@ const CategoryRow = ({category, onEdit}: Props) => {
     };
 
     return (
-        <div className="flex items-center gap-3 px-3 py-3 sm:grid sm:grid-cols-[100px_minmax(0,1fr)_120px_120px] sm:gap-4 sm:px-4 border-b border-gray-300 hover:bg-gray-50 transition">
+        <div className="flex items-center gap-3 border-b border-gray-200 px-3 py-3.5 transition last:border-b-0 hover:bg-gray-50/80 sm:grid sm:grid-cols-[100px_minmax(0,1fr)_120px_120px] sm:gap-4 sm:px-4">
 
-            <div className="relative aspect-5/3  w-20 shrink-0">
+            <div className="relative aspect-5/3 w-20 shrink-0 overflow-hidden rounded-lg border border-gray-200">
                 <Image
                     src={category.coverImage}
                     fill
                     alt={category.name}
-                    className="object-scale-down object-top-right rounded-lg border border-gray-300"
+                    className="object-contain"
                 />
             </div>
 
             <div className="flex-1 sm:contents min-w-0">
-                <p className="text-base font-medium wrap-break-word">
+                <p className="wrap-break-word font-medium text-gray-900">
                     {category.name}
                 </p>
 
-                <p className="text-base sm:text-center font-medium">
+                <p className="text-sm font-medium text-gray-600 sm:text-center">
                     {category._count.products}
                 </p>
             </div>
 
-            <div className="flex items-center gap-10 lg:gap-5 shrink-0 sm:justify-center">
+            <div className="flex shrink-0 items-center gap-1 sm:justify-center">
                 <ToolTip label="Редагувати">
-                    <MdEdit
-                        onClick={() => onEdit(category)}
-                        className="size-7 text-gray-500 hover:text-blue-600 transition cursor-pointer"
-                    />
+                    <button type="button" onClick={() => onEdit(category)} className="inline-flex size-9 items-center justify-center rounded-lg text-gray-500 transition hover:bg-blue-50 hover:text-blue-600" aria-label="Редагувати категорію">
+                        <MdEdit className="size-5"/>
+                    </button>
                 </ToolTip>
 
                 <ToolTip label="Видалити">
-                    <FiTrash2
-                        onClick={handleDelete}
-                        className="size-7 text-gray-500 hover:text-red-600 transition cursor-pointer"
-                    />
+                    <button type="button" onClick={handleDelete} className="inline-flex size-9 items-center justify-center rounded-lg text-gray-500 transition hover:bg-red-50 hover:text-red-600" aria-label="Видалити категорію">
+                        <FiTrash2 className="size-5"/>
+                    </button>
                 </ToolTip>
             </div>
 

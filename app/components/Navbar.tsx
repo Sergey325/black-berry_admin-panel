@@ -4,6 +4,7 @@ import Link from "next/link";
 import {usePathname} from "next/navigation";
 import {useEffect, useState} from "react";
 import {FiBarChart2, FiGrid, FiImage, FiPackage, FiShoppingCart, FiTag} from "react-icons/fi";
+import ToolTip from "@/app/components/ToolTip";
 
 const navbarOptions = [
     {
@@ -63,20 +64,20 @@ const Navbar = () => {
                             const Icon = option.icon;
 
                             return (
-                                <Link
-                                    key={option.path}
-                                    href={option.href}
-                                    aria-current={isActive ? "page" : undefined}
-                                    title={option.label}
-                                    className={`flex flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200 xl:text-base ${
-                                        isActive
-                                            ? "bg-white text-slate-800 shadow-sm ring-1 ring-black/5"
-                                            : "text-gray-600 hover:bg-white/70 hover:text-gray-950"
-                                    }`}
-                                >
-                                    <Icon className="size-5 shrink-0"/>
-                                    <span className="hidden lg:inline">{option.label}</span>
-                                </Link>
+                                <ToolTip key={option.path} label={option.label} className="flex-1" tooltipClassName="lg:hidden">
+                                    <Link
+                                        href={option.href}
+                                        aria-current={isActive ? "page" : undefined}
+                                        className={`flex w-full items-center justify-center gap-2 whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200 xl:text-base ${
+                                            isActive
+                                                ? "bg-white text-slate-800 shadow-sm ring-1 ring-black/5"
+                                                : "text-gray-600 hover:bg-white/70 hover:text-gray-950"
+                                        }`}
+                                    >
+                                        <Icon className="size-5 shrink-0"/>
+                                        <span className="hidden lg:inline">{option.label}</span>
+                                    </Link>
+                                </ToolTip>
                             );
                         })}
                     </div>
@@ -111,8 +112,8 @@ const Navbar = () => {
                                 aria-current={isActive ? "page" : undefined}
                                 className={`flex items-center gap-3 rounded-xl px-4 py-3 text-base font-medium transition ${
                                     isActive
-                                        ? "bg-white text-primary shadow-sm ring-1 ring-gray-200"
-                                        : "text-gray-700 hover:bg-white"
+                                        ? "bg-white text-slate-800 shadow-sm ring-1 ring-gray-200"
+                                        : "text-gray-600 hover:bg-white"
                                 }`}
                             >
                                 <Icon className="size-5"/>

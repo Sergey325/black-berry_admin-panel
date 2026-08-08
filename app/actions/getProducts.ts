@@ -2,11 +2,13 @@
 
 import prisma from "@/app/lib/prisma";
 import { ICategory } from "@/app/actions/getCategories";
+import {Prisma} from "@prisma/client";
 
 export interface IProductSize {
     id: number;
     size: string;
     available: boolean;
+    quantity: number | null;
     productColorId: number;
 }
 
@@ -66,7 +68,6 @@ export interface IProduct {
     description: string | null;
     price: number;
     discount: number;
-    quantity: number | null;
     material: IProductMaterial | null;
     createdAt: Date;
     updatedAt: Date;
@@ -84,7 +85,7 @@ export async function getProducts(params?: IProductsParams): Promise<IProduct[]>
     try {
         const { title, sort } = params ?? {};
 
-        const orderBy: any =
+        const orderBy: Prisma.ProductOrderByWithRelationInput =
             sort === "name_asc" ? { name: "asc" } :
                 sort === "name_desc" ? { name: "desc" } :
                     sort === "oldest" ? { createdAt: "asc" } :

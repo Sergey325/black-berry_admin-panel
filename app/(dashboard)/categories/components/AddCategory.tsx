@@ -94,23 +94,23 @@ const AddCategory = ({ category, resetSelectedCategory}: Props) => {
 
     return (
         <div>
-            <div className="flex items-center gap-1 mb-5 group cursor-pointer" onClick={returnToCategories}>
+            <button type="button" className="group mb-5 inline-flex items-center gap-1 text-sm font-medium text-gray-600 transition hover:text-gray-950" onClick={returnToCategories}>
                 <IoIosArrowBack className="size-5" />
-                <p className="group-hover:underline select-none">Повернутися до категорій</p>
-            </div>
+                <span className="select-none">Повернутися до категорій</span>
+            </button>
 
-            <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-8 bg-white rounded-xl p-3 border border-gray-300 md:p-5">
+            <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-7 rounded-xl border border-gray-200 bg-white p-4 shadow-sm md:p-6">
                 <div className="flex flex-col gap-1">
-                    <label className="text-base md:text-lg font-medium">Назва категорії</label>
+                    <label className="text-sm font-medium text-gray-700">Назва категорії</label>
                     <input
                         {...register("name", { required: "Обов'язкове поле" })}
-                        className="border border-gray-300 rounded-lg px-3 py-2 outline-none focus:border-gray-600 transition md:text-lg"
+                        className="rounded-lg border border-gray-300 px-3 py-2.5 text-base outline-none transition focus:border-gray-500 focus:ring-2 focus:ring-gray-200"
                     />
-                    {errors.name && <span className="text-red-500 text-base md:text-lg">{errors.name.message}</span>}
+                    {errors.name && <span className="text-sm text-red-500">{errors.name.message}</span>}
                 </div>
 
                 <div className="flex flex-col gap-2">
-                    <label className="text-base md:text-lg font-medium">Обкладинка категорії</label>
+                    <label className="text-sm font-medium text-gray-700">Обкладинка категорії</label>
                     <ImagesUpload
                         value={coverImage ? [coverImage] : []}
                         onChange={(images) => setValue("coverImage", images[0] ?? "", { shouldValidate: true })}
@@ -120,24 +120,24 @@ const AddCategory = ({ category, resetSelectedCategory}: Props) => {
                         uploadLabel="Завантажити обкладинку"
                     />
                     <input type="hidden" {...register("coverImage", { required: "Додайте обкладинку категорії" })} />
-                    {errors.coverImage && <span className="text-red-500 text-base md:text-lg">{errors.coverImage.message}</span>}
+                    {errors.coverImage && <span className="text-sm text-red-500">{errors.coverImage.message}</span>}
                 </div>
 
                 <div className="flex flex-col gap-1">
-                    <label className="text-base md:text-lg font-medium">Сезон</label>
+                    <label className="text-sm font-medium text-gray-700">Сезон</label>
                     <Dropdown options={seasonOptions} value={season}/>
                 </div>
 
                 <div className="flex flex-col gap-1">
-                    <label className="text-base md:text-lg font-medium">Опис товарів категорії</label>
-                    <textarea {...register("productsDescription", { required: "Обов'язкове поле" })} rows={5} className="border border-gray-300 rounded-lg px-3 py-2 outline-none focus:border-gray-600 transition max-h-[200px] min-h-[45px] overflow-y-auto md:text-lg" />
-                    {errors.productsDescription && <span className="text-red-500 text-base md:text-lg">{errors.productsDescription.message}</span>}
+                    <label className="text-sm font-medium text-gray-700">Опис товарів категорії</label>
+                    <textarea {...register("productsDescription", { required: "Обов'язкове поле" })} rows={5} className="max-h-[240px] min-h-28 overflow-y-auto rounded-lg border border-gray-300 px-3 py-2.5 text-base outline-none transition focus:border-gray-500 focus:ring-2 focus:ring-gray-200" />
+                    {errors.productsDescription && <span className="text-sm text-red-500">{errors.productsDescription.message}</span>}
                 </div>
 
                 <div className="flex flex-col gap-1">
-                    <label className="text-base md:text-lg font-medium">Опис категорії</label>
-                    <textarea {...register("description", { required: "Обов'язкове поле" })} rows={5} className="border border-gray-300 rounded-lg px-3 py-2 outline-none focus:border-gray-600 transition max-h-[200px] min-h-[45px] overflow-y-auto md:text-lg" />
-                    {errors.description && <span className="text-red-500 text-base md:text-lg">{errors.description.message}</span>}
+                    <label className="text-sm font-medium text-gray-700">Опис категорії</label>
+                    <textarea {...register("description", { required: "Обов'язкове поле" })} rows={5} className="max-h-[240px] min-h-28 overflow-y-auto rounded-lg border border-gray-300 px-3 py-2.5 text-base outline-none transition focus:border-gray-500 focus:ring-2 focus:ring-gray-200" />
+                    {errors.description && <span className="text-sm text-red-500">{errors.description.message}</span>}
                 </div>
                 <div className="flex flex-wrap gap-5">
                     <Controller
@@ -165,7 +165,7 @@ const AddCategory = ({ category, resetSelectedCategory}: Props) => {
 
                 <div className="flex flex-col gap-4">
                     <div className="flex items-center justify-between gap-3">
-                        <h2 className="text-lg font-medium">Характеристики</h2>
+                        <h2 className="text-base font-semibold text-gray-900">Характеристики</h2>
                         <button type="button" onClick={() => append({ name: "", value: "" })} className="border border-gray-400 rounded-lg px-3 py-1 hover:bg-gray-100 transition">Додати</button>
                     </div>
                     {specificationFields.map((field, index) => (
@@ -182,7 +182,7 @@ const AddCategory = ({ category, resetSelectedCategory}: Props) => {
                     ))}
                 </div>
 
-                <button type="submit" className="bg-black text-white rounded-lg py-3 hover:bg-gray-800 transition">
+                <button type="submit" className="rounded-lg bg-black py-3 text-base font-medium text-white transition hover:bg-gray-800">
                     {category ? "Оновити категорію" : "Зберегти категорію"}
                 </button>
             </form>

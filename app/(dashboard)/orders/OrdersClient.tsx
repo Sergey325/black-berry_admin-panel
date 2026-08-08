@@ -1,12 +1,13 @@
 "use client";
 
-import {useCallback, useMemo, useState} from "react";
+import {useCallback, useMemo} from "react";
 import {useRouter, useSearchParams} from "next/navigation";
 import qs from "query-string";
 import {IOrder} from "@/app/actions/getOrders";
 import AddOrder from "@/app/(dashboard)/orders/components/AddOrder";
 import AllOrders from "@/app/(dashboard)/orders/components/AllOrders";
 import {IProduct} from "@/app/actions/getProducts";
+import DashboardPageHeader from "@/app/(dashboard)/components/DashboardPageHeader";
 
 type Props = {
     orders: IOrder[];
@@ -14,7 +15,6 @@ type Props = {
 };
 
 export default function OrdersClient({orders, products}: Props) {
-    const [selectedOrder, setSelectedOrder] = useState<IOrder | null>(null);
     const params = useSearchParams()
     const router = useRouter()
 
@@ -23,10 +23,6 @@ export default function OrdersClient({orders, products}: Props) {
     }, [params])
 
     const handleChangeTab = useCallback((tabTitle: string) => {
-        if (tabTitle === "AllOrders") {
-            setSelectedOrder(null)
-        }
-
         if (tab === tabTitle) return null
 
         let currentQuery = {}
@@ -35,7 +31,7 @@ export default function OrdersClient({orders, products}: Props) {
             currentQuery = qs.parse(params.toString())
         }
 
-        const updatedQuery: any = {
+        const updatedQuery = {
             ...currentQuery,
             tab: tabTitle
         }
@@ -46,14 +42,22 @@ export default function OrdersClient({orders, products}: Props) {
         }, {skipNull: true})
 
         router.push(url)
-    }, [params])
+    }, [params, router, tab])
 
 
     return (
-        <div className="mt-10 ">
+        <main className="py-6 md:py-10">
+            <DashboardPageHeader
+                title={tab === "AllOrders" ? "Замовлення" : "Нове замовлення"}
+                description={tab === "AllOrders"
+                    ? "Відстежуйте замовлення, оплату та виконання"
+                    : "Створіть замовлення вручну для клієнта"}
+            />
+            <div className="mt-7">
             {
                 tab === "AllOrders" ? <AllOrders orders={orders} handleChangeTab={handleChangeTab}/> : <AddOrder products={products} />
             }
-        </div>
+            </div>
+        </main>
     );
 }

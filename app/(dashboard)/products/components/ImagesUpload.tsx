@@ -79,7 +79,6 @@ const ImagesUpload = ({
         resourceType: "image",
         maxFileSize: 5500000,
         multiple,
-        // `folder` is needed in fixed-folder mode, `asset_folder` — in dynamic-folder mode.
         folder,
         asset_folder: folder,
     };
@@ -99,10 +98,11 @@ const ImagesUpload = ({
                                 className="
                                 relative
                                 cursor-pointer
-                                hover:opacity-70
-                                transition
+                                bg-gray-50
+                                hover:bg-gray-100
+                                transition-colors
                                 rounded-xl
-                                border-dashed border-2 border-gray-600
+                                border-dashed border border-gray-300
                                 py-5 md:py-10
                                 flex flex-col
                                 justify-center items-center
@@ -111,7 +111,7 @@ const ImagesUpload = ({
                             "
                             >
                                 <TbPhotoPlus className="size-[25px] md:size-[50px]"/>
-                                <div className="font-semibold text-sm md:text-lg">
+                                <div className="text-base font-medium">
                                     {uploadLabel}
                                 </div>
                             </div>
@@ -120,7 +120,7 @@ const ImagesUpload = ({
                                     {
                                         value.map(image => (
                                             <div key={image}
-                                                 className="relative rounded-lg overflow-hidden border-gray-800 border-2">
+                                                 className="relative overflow-hidden rounded-lg border border-gray-200 bg-white">
                                                 <Image
                                                     alt="Upload"
                                                     height={100} width={100} className="size-20 md:size-25 object-scale-down object-top-right"

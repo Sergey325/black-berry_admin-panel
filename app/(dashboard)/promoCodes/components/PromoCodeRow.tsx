@@ -81,22 +81,22 @@ const PromoCodeRow = ({promoCode, isLoadingEdit, onEdit, onDeleted, onStatusChan
     );
 
     const renderActions = () => (
-        <div className="flex items-center gap-4">
+        <div className="flex shrink-0 items-center gap-1 sm:justify-center">
             <ToolTip label="Редагувати">
-                <button type="button" disabled={isLoadingEdit} onClick={() => onEdit(promoCode.id)} className="text-gray-500 transition hover:text-blue-600 disabled:opacity-40">
-                    <MdEdit className="size-7"/>
+                <button type="button" disabled={isLoadingEdit} onClick={() => onEdit(promoCode.id)} className="inline-flex size-9 items-center justify-center rounded-lg text-gray-500 transition hover:bg-blue-50 hover:text-blue-600 disabled:opacity-40" aria-label="Редагувати промокод">
+                    <MdEdit className="size-5"/>
                 </button>
             </ToolTip>
             <ToolTip label="Видалити">
-                <button type="button" disabled={isDeleting} onClick={handleDelete} className="text-gray-500 transition hover:text-red-600 disabled:opacity-40">
-                    <FiTrash2 className="size-7"/>
+                <button type="button" disabled={isDeleting} onClick={handleDelete} className="inline-flex size-9 items-center justify-center rounded-lg text-gray-500 transition hover:bg-red-50 hover:text-red-600 disabled:opacity-40" aria-label="Видалити промокод">
+                    <FiTrash2 className="size-5"/>
                 </button>
             </ToolTip>
         </div>
     );
 
     return (
-        <div className="border-b border-gray-300 transition last:border-b-0 hover:bg-gray-50">
+        <div className="border-b border-gray-200 transition last:border-b-0 hover:bg-gray-50">
             <div className="px-4 py-4 text-sm xl:hidden">
                 <div className="flex items-start justify-between gap-4">
                     <div className="min-w-0">

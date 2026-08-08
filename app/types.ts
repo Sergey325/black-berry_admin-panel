@@ -6,7 +6,6 @@ export type FormValuesProduct = {
     description: string;
     price: number;
     discount: number | null;
-    quantity: number | null;
     materialId: number;
     colors: {
         color: string;
@@ -14,7 +13,7 @@ export type FormValuesProduct = {
         colorCode: string | null;
         isBestSeller: boolean;
         images: string[];
-        sizes: { size: string; available: boolean }[];
+        sizes: { size: string; available: boolean; quantity: number | null }[];
     }[];
     relatedProducts: {
         id: number;
@@ -70,6 +69,7 @@ export type OrderItem = {
     productColorId: number;
     name: string;
     color: string;
+    colorName: string;
     size: string;
     price: number;
     quantity: number;
@@ -123,7 +123,7 @@ export type ContactData = {
 };
 
 export interface MonthlyStats {
-    period: { year: number; month: number };
+    period: { from: { year: number; month: number }; to: { year: number; month: number } };
     revenue: number;
     expenses: number;
     netProfit: number;
@@ -132,7 +132,7 @@ export interface MonthlyStats {
     pendingCashOnDeliveryAmount: number;
     refundedAmount: number;
     refundedOrdersCount: number;
-    previousMonth: {
+    previousPeriod: {
         revenue: number;
         netProfit: number;
         ordersCount: number;
@@ -140,7 +140,7 @@ export interface MonthlyStats {
         profitChangePercent: number | null;
     };
     statusBreakdown: { status: string; count: number }[];
-    dailyRevenue: { date: string; revenue: number }[];
+    dailyRevenue: { date: string; revenue: number; ordersCount: number }[];
     topProducts: {
         productId: number;
         name: string;
@@ -169,6 +169,7 @@ export interface MonthlyExpense {
     month: number;
     amount: number;
     description: string | null;
+    expenseDate: string | null;
     createdAt: string;
     updatedAt: string;
 }

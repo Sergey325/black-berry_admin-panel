@@ -6,15 +6,15 @@ import {Control, Controller, FieldErrors, UseFormRegister} from "react-hook-form
 type Props = {
     register: UseFormRegister<FormValuesOrder>;
     errors: FieldErrors<FormValuesOrder>;
-    control:  Control<FormValuesOrder, any, FormValuesOrder>;
+    control: Control<FormValuesOrder>;
 };
 
 export default function ContactForm({ register, errors, control }: Props) {
     return (
-        <div className="border-2 border-gray-200 rounded-md p-6 flex flex-col gap-5 text-base lg:text-lg bg-white">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+        <div className="flex flex-col gap-5">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="flex flex-col gap-1">
-                    <label className="text-sm md:text-base">Ім&#39;я*</label>
+                    <label className="text-base font-medium text-gray-700">Ім&#39;я*</label>
                     <input
                         autoComplete="given-name"
                         maxLength={25}
@@ -25,7 +25,7 @@ export default function ContactForm({ register, errors, control }: Props) {
                                 message: "Тільки українські літери",
                             },
                         })}
-                        className="border border-gray-200 rounded-sm px-3 py-2 outline-none focus:border-gray-400 transition"
+                        className="rounded-lg border border-gray-300 px-3 py-2.5 text-base outline-none transition focus:border-gray-500 focus:ring-2 focus:ring-gray-200"
                     />
                     {errors.firstName && (
                         <p className="text-red-500 text-sm">
@@ -34,7 +34,7 @@ export default function ContactForm({ register, errors, control }: Props) {
                     )}
                 </div>
                 <div className="flex flex-col gap-1">
-                    <label className="text-sm md:text-base">Прізвище*</label>
+                    <label className="text-base font-medium text-gray-700">Прізвище*</label>
                     <input
                         autoComplete="family-name"
                         maxLength={25}
@@ -45,7 +45,7 @@ export default function ContactForm({ register, errors, control }: Props) {
                                 message: "Тільки українські літери",
                             },
                         })}
-                        className="border border-gray-200 rounded-sm px-3 py-2 outline-none focus:border-gray-400 transition"
+                        className="rounded-lg border border-gray-300 px-3 py-2.5 text-base outline-none transition focus:border-gray-500 focus:ring-2 focus:ring-gray-200"
                     />
                     {errors.lastName && (
                         <p className="text-red-500 text-sm">
@@ -54,7 +54,7 @@ export default function ContactForm({ register, errors, control }: Props) {
                     )}
                 </div>
                 <div className="flex flex-col gap-1">
-                    <label className="text-sm md:text-base">Номер телефону*</label>
+                    <label className="text-base font-medium text-gray-700">Номер телефону*</label>
                     <Controller
                         control={control}
                         name="phone"
@@ -69,7 +69,7 @@ export default function ContactForm({ register, errors, control }: Props) {
                                 autoComplete="tel"
                                 value={field.value || ""}
                                 onAccept={(value) => field.onChange(value)}
-                                className="border border-gray-200 rounded-sm px-3 py-2 outline-none focus:border-gray-400 transition"
+                                className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-base outline-none transition focus:border-gray-500 focus:ring-2 focus:ring-gray-200"
                             />
                         )}
                     />
@@ -79,9 +79,8 @@ export default function ContactForm({ register, errors, control }: Props) {
                         </p>
                     )}
                 </div>
-                {/* Email */}
                 <div className="flex flex-col gap-1">
-                    <label className="text-sm md:text-base">
+                    <label className="text-base font-medium text-gray-700">
                         Email
                     </label>
 
@@ -95,7 +94,7 @@ export default function ContactForm({ register, errors, control }: Props) {
                                 message: "Невірний email",
                             },
                         })}
-                        className="border border-gray-200 rounded-sm px-3 py-2 outline-none focus:border-gray-400 transition"
+                        className="rounded-lg border border-gray-300 px-3 py-2.5 text-base outline-none transition focus:border-gray-500 focus:ring-2 focus:ring-gray-200"
                     />
 
                     {errors.email && (
@@ -108,9 +107,8 @@ export default function ContactForm({ register, errors, control }: Props) {
             </div>
 
 
-            {/* Комментарий */}
             <div className="flex flex-col gap-1">
-                <label className="text-sm md:text-base">
+                <label className="text-base font-medium text-gray-700">
                     Коментарі до замовлення
                 </label>
 
@@ -118,7 +116,7 @@ export default function ContactForm({ register, errors, control }: Props) {
                     rows={4}
                     maxLength={500}
                     {...register("comment")}
-                    className="border border-gray-200 rounded-sm px-3 py-2 outline-none focus:border-gray-400 transition min-h-20 max-h-70"
+                    className="min-h-24 max-h-70 rounded-lg border border-gray-300 px-3 py-2.5 text-base outline-none transition focus:border-gray-500 focus:ring-2 focus:ring-gray-200"
                 />
 
             </div>

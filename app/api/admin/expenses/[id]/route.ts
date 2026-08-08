@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/app/lib/prisma";
-import { isAdminRequest, unauthorizedResponse } from "@/app/lib/adminApi";
+import { isAdminRequest, normalizeDateOnly, unauthorizedResponse } from "@/app/lib/adminApi";
 
 interface ExpensePatchBody {
     amount?: unknown;
     description?: unknown;
     year?: unknown;
     month?: unknown;
+    expenseDate?: unknown;
 }
 
 interface Params {
@@ -33,15 +34,23 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
         const hasAmount = body.amount !== undefined;
         const hasDescription = body.description !== undefined;
+        const hasExpenseDate = body.expenseDate !== undefined;
+        const expenseDate = hasExpenseDate ? normalizeDateOnly(body.expenseDate) : null;
         const validAmount = !hasAmount || (typeof body.amount === "number" && Number.isFinite(body.amount) && body.amount > 0);
         const validDescription = !hasDescription || body.description === null || (typeof body.description === "string" && body.description.trim().length <= 500);
 
-        if ((!hasAmount && !hasDescription) || !validAmount || !validDescription) {
-            return NextResponse.json({ error: "Вкажіть коректну суму або опис" }, { status: 400 });
-        }
-
-        const existing = await prisma.monthlyExpense.findUnique({ where: { id }, select: { id: true } });
+        const existing = await prisma.monthlyExpense.findUnique({
+            where: { id },
+            select: { id: true, year: true, month: true },
+        });
         if (!existing) return NextResponse.json({ error: "Витрату не знайдено" }, { status: 404 });
+
+        const validExpenseDate = !hasExpenseDate || (expenseDate !== undefined && (expenseDate === null ||
+            (expenseDate.getUTCFullYear() === existing.year && expenseDate.getUTCMonth() + 1 === existing.month)));
+
+        if ((!hasAmount && !hasDescription && !hasExpenseDate) || !validAmount || !validDescription || !validExpenseDate) {
+            return NextResponse.json({ error: "Вкажіть коректні дату, суму або опис" }, { status: 400 });
+        }
 
         const expense = await prisma.monthlyExpense.update({
             where: { id },
@@ -51,6 +60,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
                 ...(hasDescription ? {
                     description: typeof body.description === "string" && body.description.trim() ? body.description.trim() : null,
                 } : {}),
+                ...(hasExpenseDate ? { expenseDate: expenseDate ?? null } : {}),
             },
         });
 

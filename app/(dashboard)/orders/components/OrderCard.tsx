@@ -10,49 +10,49 @@ type Props = {
 
 const OrderCard = ({order}: Props) => {
     return (
-        <div className="text-base lg:text-lg py-5 md:py-10 px-5 text-gray-700 rounded-xl border-2 border-gray-500 bg-white">
-            <div className="flex flex-col md:flex-row justify-between gap-1 sm:gap-0">
-                <div className="space-y-1.5">
-                    <p className="inline-flex gap-2 items-center">{`Замовлення: ${order.invoiceId}`}<span>{order.fbc && <FaFacebook className={"text-blue-600 size-5 -mt-1"}/>}</span></p>
-                    <p className="">{`Місто: ${order.city}, ${order.area} обл.`}</p>
-                    <p className="">{`${order.warehouse}`}</p>
+        <article className="rounded-xl border border-gray-200 bg-white shadow-sm">
+            <div className="grid gap-4 border-b border-gray-200 px-4 py-4 sm:grid-cols-2 md:px-5">
+                <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                        <p className="font-semibold text-gray-900">Замовлення {order.invoiceId}</p>
+                        {order.fbc && <FaFacebook className="size-4 shrink-0 text-blue-600"/>}
+                    </div>
+                    <p className="mt-2 text-base text-gray-700">{order.city}, {order.area} обл.</p>
+                    <p className="mt-1 break-words text-base text-gray-600">{order.warehouse}</p>
                 </div>
-                <div className="space-y-1.5 text-left md:text-right">
-                    <p className="">{`Ім'я: ${order.firstName} ${order.lastName}`}</p>
-                    <p className="">{`Телефон: ${order.phone}`}</p>
-                    {order.email && <p className="">{`Email: ${order.email}`}</p>}
+                <div className="min-w-0 sm:text-right">
+                    <p className="font-medium text-gray-900">{order.firstName} {order.lastName}</p>
+                    <a href={`tel:${order.phone}`} className="mt-2 block text-base text-gray-700 transition hover:text-gray-950">{order.phone}</a>
+                    {order.email && <a href={`mailto:${order.email}`} className="mt-1 block truncate text-base text-gray-600 transition hover:text-gray-950">{order.email}</a>}
                 </div>
             </div>
-            <div className="flex flex-col xl:flex-row gap-5 xl:gap-20 pt-2 items-stretch h-full">
-                <div className="flex flex-col w-full xl:w-4/6 gap-3">
-                    <hr className="hidden sm:inline-block border-gray-500 w-full"/>
-                    <div className="hidden sm:grid grid-cols-3 md:grid-cols-4 text-base">
-                        <span className="font-semibold">Товар</span>
-                        <span className="hidden md:inline-block md:w-[18%] justify-self-end lg:text-center -mr-[28%] font-semibold">Ціна</span>
-                        <span className="md:w-[18%] justify-self-end text-center font-semibold">Кількість</span>
-                        <span className=" justify-self-end text-right font-semibold">Усього</span>
+            <div className="grid gap-5 p-4 md:p-5 xl:grid-cols-[minmax(0,1fr)_320px]">
+                <div className="min-w-0">
+                    <div className="hidden grid-cols-[minmax(0,1fr)_110px_90px_120px] gap-3 border-b border-gray-200 pb-3 text-sm font-medium text-gray-600 md:grid">
+                        <span>Товар</span>
+                        <span className="text-right">Ціна</span>
+                        <span className="text-center">Кількість</span>
+                        <span className="text-right">Усього</span>
                     </div>
-                    {(order.items).map(orderItem => (
-                        <div key={orderItem.id} className="flex flex-col gap-2 h-full">
-                            <hr className="border-gray-500 w-full"/>
-                            <div className="flex flex-col justify-between h-full">
-                                <OrderItem orderItem={orderItem}/>
-                            </div>
+                    <div className="divide-y divide-gray-100">
+                        {order.items.map(orderItem => <OrderItem key={orderItem.id} orderItem={orderItem}/>) }
+                    </div>
+                    {order.comment && (
+                        <div className="mt-4 rounded-lg bg-gray-50 px-4 py-3">
+                            <span className="text-sm font-medium text-gray-600">Коментар</span>
+                            <p className="mt-1 wrap-break-word text-base leading-6 text-gray-800">{order.comment}</p>
                         </div>
-                    ))}
-                    {   order.comment && (
-                        <div
-                            className="flex flex-col gap-1 rounded-lg border border-gray-400 p-3 justify-self-end">
-                            <span className="text-sm">Коментар:</span>
-                            <p className="wrap-break-word">
-                                {order.comment}
-                            </p>
+                    )}
+                    {order.promoCodeSnapshot && order.discountAmount !== null && (
+                        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg bg-purple-50 px-4 py-3 text-base">
+                            <div><span className="text-purple-500">Промокод</span><span className="ml-2 font-semibold tracking-wide text-purple-800">{order.promoCodeSnapshot}</span></div>
+                            <span className="font-medium text-purple-700">−{order.discountAmount} грн</span>
                         </div>
                     )}
                 </div>
                 <OrderSummary order={order}/>
             </div>
-        </div>
+        </article>
     )
 };
 

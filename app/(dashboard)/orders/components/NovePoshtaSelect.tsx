@@ -35,7 +35,6 @@ export default function NovaPoshtaSelect({ selectedCity, setSelectedCity, select
         onClickOutside: () => setIsWarehousesOpen(false),
     });
 
-    // Поиск городов с debounce
     useEffect(() => {
         if (cityQuery.length < 2) return;
 
@@ -44,7 +43,6 @@ export default function NovaPoshtaSelect({ selectedCity, setSelectedCity, select
                 const res = await axios.post("/api/cities", {
                     query: cityQuery,
                 });
-                console.log(res);
                 setCities(res.data);
             } catch (e) {
                 console.error(e);
@@ -53,8 +51,6 @@ export default function NovaPoshtaSelect({ selectedCity, setSelectedCity, select
 
         return () => clearTimeout(timeout);
     }, [cityQuery]);
-    //
-    // Загрузка отделений после выбора города
     useEffect(() => {
         if (!selectedCity) return;
         axios.post("/api/warehouses", { cityRef: selectedCity.ref }).then((res) => {
@@ -63,10 +59,9 @@ export default function NovaPoshtaSelect({ selectedCity, setSelectedCity, select
     }, [selectedCity]);
 
     return (
-        <div className="flex flex-col text-base gap-4 border-2 border-gray-200 rounded-md p-6 bg-white">
-            {/* Выбор города */}
+        <div className="grid gap-4 sm:grid-cols-2">
             <div>
-                <label className="block mb-1 font-medium transition">Виберіть місто*</label>
+                <label className="mb-1 block text-base font-medium text-gray-700">Виберіть місто*</label>
                 <div className="relative transition">
                     <input
                         type="text"
@@ -82,16 +77,15 @@ export default function NovaPoshtaSelect({ selectedCity, setSelectedCity, select
                             }
                         }}
                         placeholder="Виберіть місто"
-                        className="w-full border border-gray-200 rounded-md px-4 py-3"
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-base focus:border-gray-500 focus:ring-2 focus:ring-gray-200"
                     />
                     {cities.length > 0 && !selectedCity && (
-                        <div className="absolute z-10 w-full bg-white border border-gray-200 rounded-md mt-1 max-h-60 overflow-auto">
+                        <div className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-lg border border-gray-200 bg-white p-1 shadow-lg">
                             {cities.map((city) => (
                                 <div
                                     key={city.ref}
-                                    className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                                    className="cursor-pointer rounded-md px-3 py-2 text-sm hover:bg-gray-100"
                                     onClick={() => {
-                                        console.log(city)
                                         setSelectedCity(city);
                                         setIsLoading(true)
                                         setCities([]);
@@ -108,9 +102,8 @@ export default function NovaPoshtaSelect({ selectedCity, setSelectedCity, select
                 </div>
             </div>
 
-            {/* Выбор отделения */}
             <div ref={wrapperRef} className="text-base relative">
-                <label className="block mb-1 font-medium">
+                <label className="mb-1 block text-base font-medium text-gray-700">
                     Виберіть відділення
                 </label>
 
@@ -125,10 +118,9 @@ export default function NovaPoshtaSelect({ selectedCity, setSelectedCity, select
                     onFocus={() => setIsWarehousesOpen(true)}
                     placeholder="Пошук відділення..."
                     disabled={!selectedCity}
-                    className="w-full border border-gray-200 rounded-md px-4 py-3 pr-10 mb-2"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2.5 pr-10 text-base focus:border-gray-500 focus:ring-2 focus:ring-gray-200 disabled:bg-gray-100 disabled:text-gray-500"
                 />
 
-                {/* КРЕСТИК */}
                 {selectedWarehouse && (
                     <button
                         onClick={() => {
@@ -136,27 +128,25 @@ export default function NovaPoshtaSelect({ selectedCity, setSelectedCity, select
                             setWarehouseQuery("");
                             setIsWarehousesOpen(false);
                         }}
-                        className="absolute right-3 top-[45px] text-gray-400 hover:text-gray-600 cursor-pointer"
+                        className="absolute right-3 top-[35px] cursor-pointer text-gray-400 hover:text-gray-600"
                         type="button"
                     >
                         <FiX size={25} />
                     </button>
                 )}
 
-                {/* СПИСОК */}
                 {isWarehousesOpen && !selectedWarehouse && (
-                    <div className="border border-gray-200 rounded-md max-h-60 overflow-y-auto">
+                    <div className="absolute z-10 mt-1 max-h-60 w-full overflow-y-auto rounded-lg border border-gray-200 bg-white p-1 shadow-lg">
 
                         {filteredWarehouses.map((w) => (
                             <div
                                 key={w.ref}
                                 onClick={() => {
-                                    console.log(w)
                                     setSelectedWarehouse(w);
                                     setWarehouseQuery(w.description);
                                     setIsWarehousesOpen(false);
                                 }}
-                                className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                                className="cursor-pointer rounded-md px-3 py-2 text-sm hover:bg-gray-100"
                             >
                                 {w.description}
                             </div>

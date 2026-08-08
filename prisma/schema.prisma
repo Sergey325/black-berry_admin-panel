@@ -18,7 +18,6 @@ model Product {
   description      String?
   categoryId       Int?
   materialId       Int?
-  quantity         Int?
   category         Category?          @relation(fields: [categoryId], references: [id])
   material         Material?          @relation(fields: [materialId], references: [id])
   colors           ProductColor[]
@@ -52,6 +51,8 @@ model ProductSize {
   size           String
   available      Boolean      @default(true)
   productColorId Int
+  quantity       Int?
+  OrderItem      OrderItem[]
   productColor   ProductColor @relation(fields: [productColorId], references: [id], onDelete: Cascade)
 }
 
@@ -145,17 +146,21 @@ model Order {
 }
 
 model OrderItem {
-  id        Int     @id @default(autoincrement())
-  orderId   Int
-  productId Int
-  name      String
-  price     Float
-  quantity  Int
-  color     String
-  size      String?
-  imageUrl  String
-  colorName String?
-  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  id            Int          @id @default(autoincrement())
+  orderId       Int
+  productId     Int
+  name          String
+  price         Float
+  quantity      Int
+  color         String
+  size          String?
+  imageUrl      String
+  colorName     String?
+  productSizeId Int?
+  order         Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  ProductSize   ProductSize? @relation(fields: [productSizeId], references: [id])
+
+  @@index([productSizeId])
 }
 
 model TelegramUser {
@@ -177,13 +182,14 @@ model Banner {
 }
 
 model MonthlyExpense {
-  id          Int      @id @default(autoincrement())
+  id          Int       @id @default(autoincrement())
   year        Int
   month       Int
   amount      Float
   description String?
-  createdAt   DateTime @default(now())
+  createdAt   DateTime  @default(now())
   updatedAt   DateTime
+  expenseDate DateTime? @db.Date
 
   @@index([year, month])
 }

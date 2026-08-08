@@ -1,5 +1,7 @@
 import { Prisma } from "@prisma/client";
 import prisma from "@/app/lib/prisma";
+import { getMonthDistance, getMonthPeriods } from "@/app/lib/adminApi";
+import type { MonthPeriod, MonthRange } from "@/app/lib/adminApi";
 
 export const BUSINESS_TIME_ZONE = "Europe/Kyiv";
 
@@ -24,6 +26,7 @@ interface StatusRow {
 interface DailyRevenueRow {
     date: string;
     revenue: number;
+    ordersCount: bigint;
 }
 
 interface TopProductRow {
@@ -50,7 +53,7 @@ interface TopColorRow {
 }
 
 export interface MonthlyStats {
-    period: { year: number; month: number };
+    period: MonthRange;
     revenue: number;
     expenses: number;
     netProfit: number;
@@ -59,7 +62,7 @@ export interface MonthlyStats {
     pendingCashOnDeliveryAmount: number;
     refundedAmount: number;
     refundedOrdersCount: number;
-    previousMonth: {
+    previousPeriod: {
         revenue: number;
         netProfit: number;
         ordersCount: number;
@@ -67,7 +70,7 @@ export interface MonthlyStats {
         profitChangePercent: number | null;
     };
     statusBreakdown: { status: string; count: number }[];
-    dailyRevenue: { date: string; revenue: number }[];
+    dailyRevenue: { date: string; revenue: number; ordersCount: number }[];
     topProducts: {
         productId: number;
         name: string;
@@ -121,16 +124,25 @@ function startOfMonthInBusinessTime(year: number, month: number) {
     return new Date(result);
 }
 
-function getMonthRange(year: number, month: number) {
-    const nextMonth = month === 12 ? { year: year + 1, month: 1 } : { year, month: month + 1 };
+function shiftMonth(period: MonthPeriod, amount: number) {
+    const value = period.year * 12 + period.month - 1 + amount;
+    return { year: Math.floor(value / 12), month: value % 12 + 1 };
+}
+
+function getDateRange(range: MonthRange) {
+    const monthAfterRange = shiftMonth(range.to, 1);
     return {
-        start: startOfMonthInBusinessTime(year, month),
-        end: startOfMonthInBusinessTime(nextMonth.year, nextMonth.month),
+        start: startOfMonthInBusinessTime(range.from.year, range.from.month),
+        end: startOfMonthInBusinessTime(monthAfterRange.year, monthAfterRange.month),
     };
 }
 
-function getPreviousPeriod(year: number, month: number) {
-    return month === 1 ? { year: year - 1, month: 12 } : { year, month: month - 1 };
+function getPreviousRange(range: MonthRange): MonthRange {
+    const monthCount = getMonthDistance(range.from, range.to) + 1;
+    return {
+        from: shiftMonth(range.from, -monthCount),
+        to: shiftMonth(range.to, -monthCount),
+    };
 }
 
 function round(value: number) {
@@ -139,10 +151,6 @@ function round(value: number) {
 
 function percentChange(current: number, previous: number) {
     return previous === 0 ? null : round(((current - previous) / Math.abs(previous)) * 100);
-}
-
-function formatDate(year: number, month: number, day: number) {
-    return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 }
 
 async function getRevenueSummary(start: Date, end: Date) {
@@ -187,19 +195,19 @@ async function getRevenueSummary(start: Date, end: Date) {
     };
 }
 
-async function getExpenses(year: number, month: number) {
+async function getExpenses(range: MonthRange) {
     const result = await prisma.monthlyExpense.aggregate({
-        where: { year, month },
+        where: { OR: getMonthPeriods(range) },
         _sum: { amount: true },
     });
 
     return result._sum.amount ?? 0;
 }
 
-export async function getMonthlyStats(year: number, month: number): Promise<MonthlyStats> {
-    const range = getMonthRange(year, month);
-    const previousPeriod = getPreviousPeriod(year, month);
-    const previousRange = getMonthRange(previousPeriod.year, previousPeriod.month);
+export async function getStats(period: MonthRange): Promise<MonthlyStats> {
+    const range = getDateRange(period);
+    const previousPeriod = getPreviousRange(period);
+    const previousRange = getDateRange(previousPeriod);
 
     const [
         summary,
@@ -214,9 +222,9 @@ export async function getMonthlyStats(year: number, month: number): Promise<Mont
         colorRows,
     ] = await Promise.all([
         getRevenueSummary(range.start, range.end),
-        getExpenses(year, month),
+        getExpenses(period),
         getRevenueSummary(previousRange.start, previousRange.end),
-        getExpenses(previousPeriod.year, previousPeriod.month),
+        getExpenses(previousPeriod),
         prisma.$queryRaw<RefundRow[]>(Prisma.sql`
             SELECT
                 COALESCE(SUM("totalAmount"), 0)::double precision AS "refundedAmount",
@@ -258,7 +266,8 @@ export async function getMonthlyStats(year: number, month: number): Promise<Mont
                             THEN COALESCE("itemsAmount", "totalAmount")
                         ELSE "totalAmount"
                     END
-                ), 0)::double precision AS revenue
+                ), 0)::double precision AS revenue,
+                COUNT(*)::bigint AS "ordersCount"
             FROM eligible_orders
             GROUP BY date
             ORDER BY date ASC
@@ -339,11 +348,19 @@ export async function getMonthlyStats(year: number, month: number): Promise<Mont
 
     const netProfit = round(summary.revenue - expenses);
     const previousNetProfit = round(previousSummary.revenue - previousExpenses);
-    const dailyRevenue = new Map(dailyRows.map((row) => [row.date, Number(row.revenue)]));
-    const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
+    const dailyRevenue = new Map(dailyRows.map((row) => [row.date, {
+        revenue: Number(row.revenue),
+        ordersCount: Number(row.ordersCount),
+    }]));
+    const startDay = Date.UTC(period.from.year, period.from.month - 1, 1);
+    const endDay = Date.UTC(period.to.year, period.to.month, 1);
+    const days = Array.from(
+        { length: Math.round((endDay - startDay) / 86_400_000) },
+        (_, index) => new Date(startDay + index * 86_400_000).toISOString().slice(0, 10),
+    );
 
     return {
-        period: { year, month },
+        period,
         revenue: round(summary.revenue),
         expenses: round(expenses),
         netProfit,
@@ -352,7 +369,7 @@ export async function getMonthlyStats(year: number, month: number): Promise<Mont
         pendingCashOnDeliveryAmount: round(summary.pendingCashOnDeliveryAmount),
         refundedAmount: round(Number(refundRows[0]?.refundedAmount ?? 0)),
         refundedOrdersCount: Number(refundRows[0]?.refundedOrdersCount ?? 0),
-        previousMonth: {
+        previousPeriod: {
             revenue: round(previousSummary.revenue),
             netProfit: previousNetProfit,
             ordersCount: previousSummary.ordersCount,
@@ -360,9 +377,13 @@ export async function getMonthlyStats(year: number, month: number): Promise<Mont
             profitChangePercent: percentChange(netProfit, previousNetProfit),
         },
         statusBreakdown: statusRows.map((row) => ({ status: row.status, count: Number(row.count) })),
-        dailyRevenue: Array.from({ length: daysInMonth }, (_, index) => {
-            const date = formatDate(year, month, index + 1);
-            return { date, revenue: round(dailyRevenue.get(date) ?? 0) };
+        dailyRevenue: days.map((date) => {
+            const day = dailyRevenue.get(date);
+            return {
+                date,
+                revenue: round(day?.revenue ?? 0),
+                ordersCount: day?.ordersCount ?? 0,
+            };
         }),
         topProducts: productRows.map((row) => ({
             productId: row.productId,

@@ -7,34 +7,34 @@ type Props = {
 
 const OrderItem = ({orderItem}: Props) => {
     return (
-        <div className="flex flex-col sm:flex-row w-full text-gray-700 text-base lg:text-lg justify-between items-center gap-5">
-            <div
-                className="flex w-full sm:w-1/2 gap-1 items-center"
-            >
+        <div className="grid gap-3 py-3 md:grid-cols-[minmax(0,1fr)_110px_90px_120px] md:items-center">
+            <div className="flex min-w-0 items-center gap-3">
                 <Image
                     src={orderItem.imageUrl}
                     width={50}
                     height={50}
                     alt={orderItem.name}
-                    className="object-cover aspect-square rounded-md border border-gray-400 shrink-0"
+                    className="aspect-square size-[50px] shrink-0 rounded-lg border border-gray-200 object-cover"
                 />
-                <p className="text-base">
-                    <span>{orderItem.name}</span>
-                    <span className="ml-2 font-semibold">{orderItem.size}</span>
+                <p className="min-w-0 text-base font-medium text-gray-900">
+                    <span className="break-words">{orderItem.name}</span>
+                    {orderItem.size && <span className="ml-2 rounded bg-gray-100 px-1.5 py-0.5 text-sm text-gray-700">{orderItem.size}</span>}
                 </p>
-
             </div>
-            <span className="hidden md:inline-block md:w-[15%]">{orderItem.price} грн</span>
-            <div
-                className="flex justify-between items-center w-full sm:w-[45%] md:w-[30%] min-h-max min-w-max">
-                <div className="flex items-center text-base gap-1 min-h-max min-w-max">
-                    <span className="inline-block sm:hidden">Кількість: </span>
-                    <span className="sm:ml-9">{orderItem.quantity}</span>
+            <div className="flex items-center justify-between text-base md:contents">
+                <div className="flex items-center gap-2 md:contents">
+                    <span className="text-gray-700 md:text-right">
+                        {orderItem.price} грн
+                    </span>
+
+                    <span className="text-gray-700 md:text-center">
+                        <span className="md:hidden">× </span>
+                        {orderItem.quantity}
+                    </span>
                 </div>
-                <span
-                    className="text-base sm:text-lg text-gray-900 font-medium inline-block text-right "
-                >
-                    {(orderItem.price * orderItem.quantity).toFixed(2)+ " грн"}
+
+                <span className="font-semibold text-gray-900 md:text-right">
+                    {(orderItem.price * orderItem.quantity).toFixed(2)} грн
                 </span>
             </div>
         </div>

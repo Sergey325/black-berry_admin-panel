@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/app/lib/prisma";
-import { isAdminRequest, parseYearMonth, unauthorizedResponse } from "@/app/lib/adminApi";
+import { getMonthPeriods, isAdminRequest, normalizeDateOnly, parseMonthRange, unauthorizedResponse } from "@/app/lib/adminApi";
 
 interface ExpenseBody {
     year?: unknown;
     month?: unknown;
     amount?: unknown;
     description?: unknown;
+    expenseDate?: unknown;
 }
 
 function normalizeDescription(value: unknown) {
@@ -18,15 +19,15 @@ function normalizeDescription(value: unknown) {
 export async function GET(request: NextRequest) {
     if (!await isAdminRequest(request)) return unauthorizedResponse();
 
-    const period = parseYearMonth(request.nextUrl.searchParams);
-    if (!period) {
-        return NextResponse.json({ error: "Вкажіть коректні рік і місяць" }, { status: 400 });
+    const range = parseMonthRange(request.nextUrl.searchParams);
+    if (!range) {
+        return NextResponse.json({ error: "Вкажіть коректний діапазон до 12 місяців" }, { status: 400 });
     }
 
     try {
         const expenses = await prisma.monthlyExpense.findMany({
-            where: period,
-            orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+            where: { OR: getMonthPeriods(range) },
+            orderBy: [{ year: "desc" }, { month: "desc" }, { createdAt: "desc" }, { id: "desc" }],
         });
         return NextResponse.json(expenses);
     } catch (error) {
@@ -41,12 +42,14 @@ export async function POST(request: NextRequest) {
     try {
         const body = await request.json() as ExpenseBody;
         const description = normalizeDescription(body.description);
+        const expenseDate = normalizeDateOnly(body.expenseDate);
 
         if (!Number.isInteger(body.year) || Number(body.year) < 2020 || Number(body.year) > 2100 ||
             !Number.isInteger(body.month) || Number(body.month) < 1 || Number(body.month) > 12 ||
             typeof body.amount !== "number" || !Number.isFinite(body.amount) || body.amount <= 0 ||
-            description === undefined) {
-            return NextResponse.json({ error: "Перевірте рік, місяць, суму та опис" }, { status: 400 });
+            description === undefined || expenseDate === undefined ||
+            (expenseDate !== null && (expenseDate.getUTCFullYear() !== body.year || expenseDate.getUTCMonth() + 1 !== body.month))) {
+            return NextResponse.json({ error: "Перевірте дату, місяць, суму та опис" }, { status: 400 });
         }
 
         const expense = await prisma.monthlyExpense.create({
@@ -55,6 +58,7 @@ export async function POST(request: NextRequest) {
                 month: Number(body.month),
                 amount: body.amount,
                 description,
+                expenseDate,
                 updatedAt: new Date(),
             },
         });

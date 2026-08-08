@@ -33,6 +33,8 @@ export interface IOrder {
     createdAt: Date | string;
     updatedAt: Date | string;
     paidAt: Date | string | null;
+    discountAmount: number | null;
+    promoCodeSnapshot: string | null;
     paymentMethod: PaymentMethod;
     area: string;
     ttnNumber: string | null;

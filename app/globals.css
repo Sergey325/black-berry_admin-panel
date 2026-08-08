@@ -11,11 +11,11 @@
 }
 
 @layer components {
-  input {
+  input, textarea, select {
     @apply border border-gray-200 rounded-md outline-none transition focus:border-gray-400;
   }
 }
-html, body, #root {
+html, body {
   height: 100%;
 }
 

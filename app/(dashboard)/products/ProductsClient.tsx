@@ -8,6 +8,7 @@ import AllProducts from "@/app/(dashboard)/products/components/AllProducts";
 import AddProduct from "@/app/(dashboard)/products/components/AddProduct";
 import {IMaterial} from "@/app/actions/getMaterials";
 import {ICategory} from "@/app/actions/getCategories";
+import DashboardPageHeader from "@/app/(dashboard)/components/DashboardPageHeader";
 
 type Props = {
     products: IProduct[];
@@ -37,7 +38,7 @@ export default function ProductsClient({products, materials, categories}: Props)
             currentQuery = qs.parse(params.toString())
         }
 
-        const updatedQuery: any = {
+        const updatedQuery = {
             ...currentQuery,
             tab: tabTitle
         }
@@ -48,7 +49,7 @@ export default function ProductsClient({products, materials, categories}: Props)
         }, {skipNull: true})
 
         router.push(url)
-    }, [params])
+    }, [params, router, tab])
 
     const onEditProduct = (product: IProduct) => {
         setSelectedProduct(product)
@@ -56,7 +57,14 @@ export default function ProductsClient({products, materials, categories}: Props)
     }
 
     return (
-        <div className="mt-10 ">
+        <main className="py-6 md:py-10">
+            <DashboardPageHeader
+                title={tab === "AllProducts" ? "Товари" : selectedProduct ? "Редагування товару" : "Новий товар"}
+                description={tab === "AllProducts"
+                    ? "Керуйте асортиментом, цінами, кольорами та наявністю"
+                    : selectedProduct ? `Оновіть дані товару «${selectedProduct.name}»` : "Заповніть інформацію, додайте варіанти й зображення"}
+            />
+            <div className="mt-7">
             {
                 tab === "AllProducts"
                     ? <AllProducts
@@ -72,6 +80,7 @@ export default function ProductsClient({products, materials, categories}: Props)
                         resetSelectedProduct={() => setSelectedProduct(null)}
                     />
             }
-        </div>
+            </div>
+        </main>
     );
 }

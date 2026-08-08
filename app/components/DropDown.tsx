@@ -183,11 +183,11 @@ export default function Dropdown<T = string>({
                 aria-haspopup="listbox"
                 aria-expanded={isOpen}
                 aria-controls={listboxId}
-                className={`flex w-full items-center justify-between gap-2 rounded-xl border bg-white px-4 py-2.5 text-sm transition-colors
+                className={`flex w-full items-center justify-between gap-2 rounded-lg border bg-white px-3 py-2.5 text-sm transition
                     ${textCenter ? "text-center" : "text-left"}
-                    ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:border-slate-800'}
-                    ${error ? 'border-red-400' : 'border-slate-500'}
-                    ${isOpen ? 'border-slate-500 ring-1 ring-slate-800' : ''}
+                    ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:border-gray-500'}
+                    ${error ? 'border-red-400' : 'border-gray-300'}
+                    ${isOpen ? 'border-gray-500 ring-2 ring-gray-200' : ''}
                     ${buttonClassName}`}
             >
                 <span className={`truncate ${selectedOption ? 'text-neutral-900' : 'text-neutral-400'}`}>
@@ -209,7 +209,7 @@ export default function Dropdown<T = string>({
                 role="listbox"
                 tabIndex={-1}
                 className={`
-                    absolute z-50 max-h-60 w-full overflow-auto rounded-xl border border-neutral-200 bg-white p-1 shadow-lg
+                    absolute z-50 max-h-60 w-full overflow-auto rounded-lg border border-neutral-200 bg-white p-1 shadow-lg
                     transition-all duration-200 ease-out
                     ${openUp ? 'bottom-full mb-1' : 'top-full mt-1'}
                     ${isOpen ? 'translate-y-0 opacity-100 visible' : `${openUp ? 'translate-y-5' : '-translate-y-5'} opacity-0 invisible`}
@@ -217,7 +217,7 @@ export default function Dropdown<T = string>({
                 `}
             >
                 {options.length === 0 && (
-                    <li className="px-3 py-2 text-sm text-neutral-400">Нет вариантов</li>
+                    <li className="px-3 py-2 text-sm text-neutral-400">Немає варіантів</li>
                 )}
                 {options.map((option, index) => {
                     const isSelected = option.value === selectedValue;
@@ -241,7 +241,6 @@ export default function Dropdown<T = string>({
                         `}
                         >
                             <span className="truncate">{option.label}</span>
-                            {/*{isSelected && <FiCheck size={16} className="ml-2 shrink-0 text-primary" />}*/}
                         </li>
                     );
                 })}

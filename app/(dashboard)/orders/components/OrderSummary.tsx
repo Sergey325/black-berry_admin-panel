@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 import {formatDateAndTime} from "@/app/utils/formatDate";
 import axios from "axios";
 import Dropdown from "@/app/components/DropDown";
+import {FiCopy} from "react-icons/fi";
 
 type Props = {
     order: IOrder
@@ -73,46 +74,31 @@ const OrderSummary = ({order}: Props) => {
     };
 
     return (
-        <div
-            className="rounded-lg p-2 sm:p-4 lg:col-span-5 w-full xl:w-[30%] bg-gray-200 text-gray-900 self-start my-auto"
-        >
-            <h2 className="text-base md:text-xl font-medium ">
+        <aside className="self-start rounded-xl border border-gray-200 bg-gray-50 p-4 text-gray-900">
+            <h2 className="font-semibold">
                 Підсумок замовлення
             </h2>
 
-            <div className="mt-6 space-y-4 text-sx sm:text-base">
-                <div className="flex justify-between items-center">
-                    <span className="font-light text-gray-800 max-w-[60%]">Створено о</span>
-                    <span className="text-gray-800 text-right font-semibold">{formatDateAndTime(order.createdAt)}</span>
+            <div className="mt-5 space-y-4 text-base">
+                <div className="flex items-start justify-between gap-4">
+                    <span className="text-gray-600">Створено</span>
+                    <span className="text-right font-medium text-gray-800">{formatDateAndTime(order.createdAt)}</span>
                 </div>
-                <div className="flex justify-between items-center">
-                    <p className="font-light text-gray-800 max-w-[60%]">Статус</p>
-                    <Dropdown options={statusOptions} defaultValue={order.status} buttonClassName="py-1.5! px-3!" className="max-w-[145px]" textCenter/>
-                    {/*<select*/}
-                    {/*    value={order.status}*/}
-                    {/*    onChange={(e) => {*/}
-                    {/*        const status = e.target.value as OrderStatus;*/}
-                    {/*        onChangeStatus(status);*/}
-                    {/*    }}*/}
-                    {/*    className="border border-gray-200 rounded-sm px-3 py-2 text-base outline-none focus:border-gray-400 transition bg-white w-full max-w-[180px] font-semibold"*/}
-                    {/*>*/}
-                    {/*    {orderStatuses.map((opt, index) => (*/}
-                    {/*        <option key={index + order.id} value={opt.value} className="p-5">*/}
-                    {/*            {opt.label}*/}
-                    {/*        </option>*/}
-                    {/*    ))}*/}
-                    {/*</select>*/}
+                <div className="flex items-center justify-between gap-4">
+                    <p className="text-gray-600">Статус</p>
+                    <Dropdown options={statusOptions} defaultValue={order.status} buttonClassName="py-1.5! px-3!" className="max-w-[160px]"/>
                 </div>
-                <div className="flex justify-between">
-                    <span className="font-light text-gray-800 max-w-[60%]">Спосіб оплати</span>
-                    <span className="text-gray-900 font-semibold text-right">{order.paymentMethod === "CASH_ON_DELIVERY" ? "Післяплата" : "Повна оплата картою"}</span>
+                <div className="flex items-start justify-between gap-4">
+                    <span className="text-gray-600">Спосіб оплати</span>
+                    <span className="max-w-[60%] text-right font-medium text-gray-800">{order.paymentMethod === "CASH_ON_DELIVERY" ? "Післяплата" : "Повна оплата картою"}</span>
                 </div>
                 {
                     order.ttnNumber && (
-                        <div className="flex justify-between">
-                            <span className="text-gray-800 max-w-[60%]">ТТН</span>
-                            <span
-                                className="text-gray-800 cursor-pointer select-none font-semibold"
+                        <div className="flex items-center justify-between gap-4">
+                            <span className="text-gray-600">ТТН</span>
+                            <button
+                                type="button"
+                                className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 font-medium text-gray-800 transition hover:bg-gray-200"
                                 onClick={() => {
                                     if(!order.ttnNumber) return
                                     copyToClipboard(order.ttnNumber)
@@ -120,16 +106,17 @@ const OrderSummary = ({order}: Props) => {
                                 }}
                             >
                                 {order.ttnNumber}
-                            </span>
+                                <FiCopy className="size-3.5 text-gray-500"/>
+                            </button>
                         </div>
                     )
                 }
-                <div className="flex items-center justify-between border-t border-gray-800 pt-4 text-base sm:text-lg">
-                    <div className="text-base font-medium">Усього оплачено</div>
-                    <span className="text-base lg:text-xl text-gray-800 font-semibold">{order.totalAmount} грн</span>
+                <div className="flex items-end justify-between gap-4 border-t border-gray-200 pt-4">
+                    <div className="font-medium text-gray-700">Усього оплачено</div>
+                    <span className="text-lg font-semibold text-gray-950">{order.totalAmount.toLocaleString("uk-UA")} грн</span>
                 </div>
             </div>
-        </div>
+        </aside>
     );
 };
 

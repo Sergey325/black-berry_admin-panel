@@ -9,6 +9,7 @@ import type {PromoCodeListItem, PromoSelectOption} from "@/app/actions/getPromoC
 import AllPromoCodes from "@/app/(dashboard)/promoCodes/components/AllPromoCodes";
 import PromoCodeForm from "@/app/(dashboard)/promoCodes/components/PromoCodeForm";
 import {PromoCodeDetails} from "@/app/types";
+import DashboardPageHeader from "@/app/(dashboard)/components/DashboardPageHeader";
 
 interface Props {
     promoCodes: PromoCodeListItem[];
@@ -60,7 +61,14 @@ const PromoCodesClient = ({promoCodes, categories, products}: Props) => {
     };
 
     return (
-        <div className="mt-10">
+        <main className="py-6 md:py-10">
+            <DashboardPageHeader
+                title={tab === "AllPromoCodes" ? "Промокоди" : selectedPromoCode ? "Редагування промокоду" : "Новий промокод"}
+                description={tab === "AllPromoCodes"
+                    ? "Створюйте знижки, керуйте строками дії та використанням"
+                    : selectedPromoCode ? `Оновіть умови промокоду «${selectedPromoCode.code}»` : "Налаштуйте знижку та область дії промокоду"}
+            />
+            <div className="mt-7">
             {tab === "AllPromoCodes"
                 ? (
                     <AllPromoCodes
@@ -80,7 +88,8 @@ const PromoCodesClient = ({promoCodes, categories, products}: Props) => {
                         onBack={() => handleChangeTab("AllPromoCodes")}
                     />
                 )}
-        </div>
+            </div>
+        </main>
     );
 };
 
