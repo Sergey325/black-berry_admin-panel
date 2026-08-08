@@ -37,7 +37,7 @@ const CategoryRow = ({category, onEdit}: Props) => {
                     src={category.coverImage}
                     fill
                     alt={category.name}
-                    className="object-contain"
+                    className="object-contain object-right"
                 />
             </div>
 
