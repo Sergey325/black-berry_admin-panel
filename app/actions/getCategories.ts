@@ -10,6 +10,7 @@ export interface ICategory {
     description: string
     productsDescription: string
     coverImage: string
+    sizeGuideImage: string | null
     season: Season
     isOnMainPage: boolean | null
     hasLining: boolean | null

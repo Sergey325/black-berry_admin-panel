@@ -6,7 +6,7 @@ import {
     UseFormRegister,
 } from "react-hook-form";
 import ToolTip from "@/app/components/ToolTip";
-import ImagesUpload from "@/app/(dashboard)/products/components/ImagesUpload";
+import ImagesUpload from "@/app/components/ImagesUpload";
 import {FormValuesProduct} from "@/app/types";
 import CheckBox from "@/app/components/CheckBox";
 import {FiTrash2} from "react-icons/fi";

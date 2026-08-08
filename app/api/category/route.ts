@@ -33,6 +33,7 @@ export async function POST(request: Request) {
             name: body.name.trim(),
             slug: body.slug.trim(),
             coverImage: body.coverImage,
+            sizeGuideImage: body.sizeGuideImage?.trim() || null,
             season: body.season as Season,
             productsDescription: body.productsDescription.trim(),
             description: body.description.trim(),

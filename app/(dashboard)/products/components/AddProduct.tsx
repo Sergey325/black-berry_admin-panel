@@ -325,18 +325,20 @@ export default function AddProduct({product, products, materials, categories, re
                         <label className="text-base font-semibold text-gray-900">Кольори товару</label>
                         <div className="flex flex-wrap gap-2">
                             {DEFAULT_COLORS.map((item) => (
-                                <button
-                                    key={item.code + item.colorHex}
-                                    type="button"
-                                    onClick={() => appendColor({ color: item.colorHex, images: [], sizes: [{size: "S", available: true, quantity: null}, {size: "M", available: true, quantity: null}], colorName: item.colorName, colorCode: item.code, isBestSeller: false })}
-                                    className="w-7 h-7 rounded-full border border-gray-500 hover:scale-110 transition text-xs text-center font-medium"
-                                    style={{
-                                        backgroundColor: item.colorHex,
-                                        color: getContrastTextColor(item.colorHex),
-                                    }}
-                                >
-                                    {item.code}
-                                </button>
+                                <ToolTip label={item.colorName}>
+                                    <button
+                                        key={item.code + item.colorHex}
+                                        type="button"
+                                        onClick={() => appendColor({ color: item.colorHex, images: [], sizes: [{size: "S", available: true, quantity: null}, {size: "M", available: true, quantity: null}], colorName: item.colorName, colorCode: item.code, isBestSeller: false })}
+                                        className="w-7 h-7 rounded-full border border-gray-500 hover:scale-110 transition text-xs text-center font-medium"
+                                        style={{
+                                            backgroundColor: item.colorHex,
+                                            color: getContrastTextColor(item.colorHex),
+                                        }}
+                                    >
+                                        {item.code}
+                                    </button>
+                                </ToolTip>
                             ))}
                             <ToolTip label="Додати колір">
                                 <button

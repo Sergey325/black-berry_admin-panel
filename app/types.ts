@@ -26,6 +26,7 @@ export type FormValuesProduct = {
 export type FormValuesCategory = {
     name: string;
     coverImage: string;
+    sizeGuideImage: string;
     season: "SUMMER" | "WINTER" | "ALL_SEASON";
     productsDescription: string;
     description: string;

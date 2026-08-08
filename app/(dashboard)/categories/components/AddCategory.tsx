@@ -7,7 +7,7 @@ import { ICategory } from "@/app/actions/getCategories";
 import { FormValuesCategory } from "@/app/types";
 import CheckBox from "@/app/components/CheckBox";
 import slugify from "@/app/utils/slugify";
-import ImagesUpload from "@/app/(dashboard)/products/components/ImagesUpload";
+import ImagesUpload from "@/app/components/ImagesUpload";
 import Dropdown from "@/app/components/DropDown";
 import {FiTrash2} from "react-icons/fi";
 
@@ -27,6 +27,7 @@ const getErrorMessage = (error: unknown, fallback: string) => {
 const getDefaultValues = (category?: ICategory): FormValuesCategory => ({
     name: category?.name ?? "",
     coverImage: category?.coverImage ?? "",
+    sizeGuideImage: category?.sizeGuideImage ?? "",
     season: category?.season ?? "ALL_SEASON",
     productsDescription: category?.productsDescription ?? "",
     description: category?.description ?? "",
@@ -45,9 +46,9 @@ const AddCategory = ({ category, resetSelectedCategory}: Props) => {
         control,
         name: "specifications",
     });
-    const [coverImage, season] = useWatch({
+    const [coverImage, sizeGuideImage, season] = useWatch({
         control,
-        name: ["coverImage", "season"],
+        name: ["coverImage", "sizeGuideImage", "season"],
     });
 
     const onSubmit = async (data: FormValuesCategory) => {
@@ -109,18 +110,33 @@ const AddCategory = ({ category, resetSelectedCategory}: Props) => {
                     {errors.name && <span className="text-sm text-red-500">{errors.name.message}</span>}
                 </div>
 
-                <div className="flex flex-col gap-2">
-                    <label className="text-sm font-medium text-gray-700">Обкладинка категорії</label>
-                    <ImagesUpload
-                        value={coverImage ? [coverImage] : []}
-                        onChange={(images) => setValue("coverImage", images[0] ?? "", { shouldValidate: true })}
-                        folder="BlackBerry/Categories"
-                        maxFiles={1}
-                        multiple={false}
-                        uploadLabel="Завантажити обкладинку"
-                    />
-                    <input type="hidden" {...register("coverImage", { required: "Додайте обкладинку категорії" })} />
-                    {errors.coverImage && <span className="text-sm text-red-500">{errors.coverImage.message}</span>}
+                <div className="flex flex-col sm:flex-row gap-7">
+                    <div className="w-full flex flex-col gap-2 ">
+                        <label className="text-sm font-medium text-gray-700">Обкладинка категорії</label>
+                        <ImagesUpload
+                            value={coverImage ? [coverImage] : []}
+                            onChange={(images) => setValue("coverImage", images[0] ?? "", { shouldValidate: true })}
+                            folder="BlackBerry/Categories"
+                            maxFiles={1}
+                            multiple={false}
+                            uploadLabel="Завантажити обкладинку"
+                        />
+                        <input type="hidden" {...register("coverImage", { required: "Додайте обкладинку категорії" })} />
+                        {errors.coverImage && <span className="text-sm text-red-500">{errors.coverImage.message}</span>}
+                    </div>
+
+                    <div className="w-full flex flex-col gap-2">
+                        <label className="text-sm font-medium text-gray-700">Таблиця розмірів</label>
+                        <ImagesUpload
+                            value={sizeGuideImage ? [sizeGuideImage] : []}
+                            onChange={(images) => setValue("sizeGuideImage", images[0] ?? "", { shouldDirty: true })}
+                            folder="BlackBerry/Categories/SizeGuides"
+                            maxFiles={1}
+                            multiple={false}
+                            uploadLabel="Завантажити таблицю розмірів"
+                        />
+                        <input type="hidden" {...register("sizeGuideImage")} />
+                    </div>
                 </div>
 
                 <div className="flex flex-col gap-1">

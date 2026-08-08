@@ -7,7 +7,7 @@ import {useRouter} from "next/navigation";
 import {IoIosArrowBack} from "react-icons/io";
 import type {IBanner} from "@/app/actions/getBanners";
 import type {FormValuesBanner} from "@/app/types";
-import ImagesUpload from "@/app/(dashboard)/products/components/ImagesUpload";
+import ImagesUpload from "@/app/components/ImagesUpload";
 import BannerPreview from "@/app/(dashboard)/banners/components/BannerPreview";
 import {FiTrash2} from "react-icons/fi";
 
