@@ -33,6 +33,10 @@ a {
   -webkit-user-drag: none;
 }
 
+input {
+  background-color: white;
+}
+
 .no-scroll {
   overflow: hidden;
 }
