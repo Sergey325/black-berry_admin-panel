@@ -147,7 +147,7 @@ const AddOrder = ({products}: Props) => {
                 <IoIosArrowBack className="size-5 group" />
                 <span className="select-none">Повернутися до замовлень</span>
             </button>
-            <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-5">
+            <form data-scroll-navigation onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-5">
 
                 <section className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm md:p-5">
                     <div className="mb-4">

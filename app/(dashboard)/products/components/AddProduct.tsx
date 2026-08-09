@@ -243,7 +243,7 @@ export default function AddProduct({product, products, materials, categories, re
                 <span className="select-none">Повернутися до товарів</span>
             </button>
 
-            <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-7 rounded-xl border border-gray-200 bg-white p-4 shadow-sm md:p-6">
+            <form data-scroll-navigation onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-7 rounded-xl border border-gray-200 bg-white p-4 shadow-sm md:p-6">
 
                 <div className="flex flex-col gap-1">
                     <label className="text-sm font-medium text-gray-700">Назва товару</label>

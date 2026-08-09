@@ -82,7 +82,7 @@ const AddBanner = ({banner, resetSelectedBanner}: Props) => {
                 <span className="select-none group-hover:underline">Повернутися до банерів</span>
             </button>
             <div className="flex flex-col gap-8">
-                <form onSubmit={handleSubmit(onSubmit)}
+                <form data-scroll-navigation onSubmit={handleSubmit(onSubmit)}
                       className="flex flex-col gap-6 rounded-xl border border-gray-200 bg-white p-4 shadow-sm md:p-6">
                     <div className="flex flex-col gap-2">
                         <label className="text-sm font-medium text-gray-700">Зображення</label>

@@ -140,7 +140,7 @@ const PromoCodeForm = ({promoCode, categories, products, onBack}: Props) => {
                 <IoIosArrowBack className="size-5"/>
                 <span className="select-none group-hover:underline">Повернутися до промокодів</span>
             </button>
-            <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-6 rounded-xl border border-gray-300 bg-white p-3 md:p-5">
+            <form data-scroll-navigation onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-6 rounded-xl border border-gray-300 bg-white p-3 md:p-5">
                 <div className="grid gap-4 sm:grid-cols-2">
                     <div className="flex flex-col gap-1">
                         <label className="text-base font-medium md:text-lg">Код</label>
