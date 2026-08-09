@@ -298,7 +298,7 @@ export default function AddProduct({product, products, materials, categories, re
                     </div>
                 </div>
 
-                <div className="flex flex-col md:flex-row md:justify-between items-start gap-5 w-full">
+                <div className="flex flex-col lg:flex-row md:justify-between items-start gap-5 w-full">
                     <Materials materialsList={materials} initialValue={product?.material} onSelectedValueChange={(material: IMaterial) => setValue("materialId", material.id)}/>
                     <div id="product-category-select" className="w-full">
                         <SearchSelect
