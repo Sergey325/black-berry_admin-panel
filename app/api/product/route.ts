@@ -9,7 +9,7 @@ type ProductRequest = FormValuesProduct & {
 export async function POST(request: Request) {
     try {
         const body = await request.json() as ProductRequest;
-        const { id, name, description, price, discount, colors, slug, materialId, categoryId, relatedProducts } = body;
+        const { id, name, description, price, discount, hasLining, colors, slug, materialId, categoryId, relatedProducts } = body;
         const productId = Number(id)
 
         const colorsData = colors.map((c) => ({
@@ -50,6 +50,7 @@ export async function POST(request: Request) {
                     slug,
                     price,
                     discount: discount ?? 0,
+                    hasLining: Boolean(hasLining),
                     materialId,
                     categoryId,
                     colors: {
@@ -67,6 +68,7 @@ export async function POST(request: Request) {
                     slug,
                     price,
                     discount: discount ?? 0,
+                    hasLining: Boolean(hasLining),
                     materialId,
                     categoryId,
                     colors: {
