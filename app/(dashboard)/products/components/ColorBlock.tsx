@@ -105,7 +105,7 @@ const ColorBlock = ({control, register, colorIndex, onRemoveColor, errors}: Prop
                         <div key={sizeField.id} className="relative flex min-w-0 flex-col gap-3 rounded-lg border border-gray-200 bg-white p-3 pr-12 sm:flex-row sm:items-center sm:gap-8 sm:border-0 sm:bg-transparent sm:pr-3">
                             <input
                                 {...register(`colors.${colorIndex}.sizes.${sizeIndex}.size`, { required: true })}
-                                className="w-full rounded-lg border border-gray-200 px-2 py-1 uppercase outline-none transition focus:border-gray-400 sm:w-24"
+                                className="w-full rounded-lg border border-gray-200 px-2 py-1 outline-none transition focus:border-gray-400 sm:w-24"
                             />
 
 
