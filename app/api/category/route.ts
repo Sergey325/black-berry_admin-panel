@@ -57,7 +57,6 @@ export async function POST(request: Request) {
             productsDescription: body.productsDescription.trim(),
             description: body.description.trim(),
             isOnMainPage: Boolean(body.isOnMainPage),
-            hasLining: Boolean(body.hasLining),
             isDecoration: Boolean(body.isDecoration),
             defaultSizes,
         };

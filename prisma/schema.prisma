@@ -18,6 +18,7 @@ model Product {
   description      String?
   categoryId       Int?
   materialId       Int?
+  hasLining        Boolean?           @default(false)
   category         Category?          @relation(fields: [categoryId], references: [id])
   material         Material?          @relation(fields: [materialId], references: [id])
   colors           ProductColor[]
@@ -83,7 +84,6 @@ model Category {
   season              Season
   productsDescription String
   isOnMainPage        Boolean?                @default(false)
-  hasLining           Boolean?                @default(false)
   isDecoration        Boolean?                @default(false)
   sizeGuideImage      String?
   defaultSizes        String[]                @default([])

@@ -32,7 +32,6 @@ const getDefaultValues = (category?: ICategory): FormValuesCategory => ({
     productsDescription: category?.productsDescription ?? "",
     description: category?.description ?? "",
     isOnMainPage: category?.isOnMainPage ?? false,
-    hasLining: category?.hasLining ?? false,
     isDecoration: category?.isDecoration ?? false,
     defaultSizes: category?.defaultSizes ?? [],
     specifications: category?.specifications.map(({ name, value }) => ({ name, value })) ?? [],
@@ -180,13 +179,6 @@ const AddCategory = ({ category, resetSelectedCategory}: Props) => {
                         name="isOnMainPage"
                         render={({field}) => (
                             <CheckBox label="На головній" checked={field.value} onChange={field.onChange}/>
-                        )}
-                    />
-                    <Controller
-                        control={control}
-                        name="hasLining"
-                        render={({field}) => (
-                            <CheckBox label="Підкладка" checked={field.value} onChange={field.onChange}/>
                         )}
                     />
                     <Controller

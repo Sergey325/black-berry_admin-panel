@@ -1,4 +1,4 @@
-import {useFieldArray, useForm, useWatch} from "react-hook-form";
+import {Controller, useFieldArray, useForm, useWatch} from "react-hook-form";
 import axios from "axios";
 import ColorBlock, {DEFAULT_SIZES} from "@/app/(dashboard)/products/components/ColorBlock";
 import ToolTip from "@/app/components/ToolTip";
@@ -13,6 +13,7 @@ import {ICategory} from "@/app/actions/getCategories";
 import Materials from "@/app/(dashboard)/products/components/Materials";
 import slugify from "@/app/utils/slugify";
 import SearchSelect, {SearchSelectOption} from "@/app/components/SearchSelect";
+import CheckBox from "@/app/components/CheckBox";
 
 
 const DEFAULT_COLORS = [
@@ -93,6 +94,7 @@ export default function AddProduct({product, products, materials, categories, re
             description: product?.description || "",
             price: product?.price || 500,
             discount: product?.discount || 0,
+            hasLining: product?.hasLining ?? false,
             materialId: product?.material?.id || undefined,
             categoryId: product?.category?.id || null,
             colors: product?.colors.map((c) => ({
@@ -167,6 +169,7 @@ export default function AddProduct({product, products, materials, categories, re
                 description: "",
                 price: 500,
                 discount: 0,
+                hasLining: false,
                 colors: [],
 
             })
@@ -297,6 +300,14 @@ export default function AddProduct({product, products, materials, categories, re
                         {errors.discount && <span className="text-sm text-red-500">{errors.discount.message}</span>}
                     </div>
                 </div>
+
+                <Controller
+                    control={control}
+                    name="hasLining"
+                    render={({field}) => (
+                        <CheckBox label="Підкладка" checked={field.value} onChange={field.onChange}/>
+                    )}
+                />
 
                 <div className="flex flex-col lg:flex-row md:justify-between items-start gap-5 w-full">
                     <Materials materialsList={materials} initialValue={product?.material} onSelectedValueChange={(material: IMaterial) => setValue("materialId", material.id)}/>

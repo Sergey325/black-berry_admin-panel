@@ -68,6 +68,7 @@ export interface IProduct {
     description: string | null;
     price: number;
     discount: number;
+    hasLining: boolean | null;
     material: IProductMaterial | null;
     createdAt: Date;
     updatedAt: Date;

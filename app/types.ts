@@ -6,6 +6,7 @@ export type FormValuesProduct = {
     description: string;
     price: number;
     discount: number | null;
+    hasLining: boolean;
     materialId: number;
     colors: {
         color: string;
@@ -31,7 +32,6 @@ export type FormValuesCategory = {
     productsDescription: string;
     description: string;
     isOnMainPage: boolean;
-    hasLining: boolean;
     isDecoration: boolean;
     defaultSizes: string[];
     specifications: {
