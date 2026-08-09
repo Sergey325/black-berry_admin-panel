@@ -111,15 +111,25 @@ const ColorBlock = ({control, register, colorIndex, onRemoveColor, errors}: Prop
 
                             <div className="flex w-full items-center justify-between gap-2 sm:w-auto sm:justify-start">
                                 <label className="text-sm font-medium text-gray-700">Кількість</label>
-                                <input
-                                    type="number"
-                                    min="0"
-                                    step="1"
-                                    {...register(`colors.${colorIndex}.sizes.${sizeIndex}.quantity`, {
-                                        min: 0,
-                                        setValueAs: (value: string) => value === "" ? null : Number(value),
-                                    })}
-                                    className="w-24 shrink-0 rounded-lg border border-gray-200 px-2 py-1 outline-none transition focus:border-gray-400"
+                                <Controller
+                                    control={control}
+                                    name={`colors.${colorIndex}.sizes.${sizeIndex}.quantity`}
+                                    rules={{min: 0}}
+                                    render={({field}) => (
+                                        <input
+                                            ref={field.ref}
+                                            name={field.name}
+                                            type="number"
+                                            min="0"
+                                            step="1"
+                                            value={field.value ?? ""}
+                                            onBlur={field.onBlur}
+                                            onChange={(event) => field.onChange(
+                                                event.target.value === "" ? null : Number(event.target.value)
+                                            )}
+                                            className="w-24 shrink-0 rounded-lg border border-gray-200 px-2 py-1 outline-none transition focus:border-gray-400"
+                                        />
+                                    )}
                                 />
                             </div>
                             <Controller
@@ -150,7 +160,7 @@ const ColorBlock = ({control, register, colorIndex, onRemoveColor, errors}: Prop
                             key={size}
                             type="button"
                             onClick={() => appendSize({ size, available: true, quantity: null })}
-                            className="rounded-lg border border-gray-200 px-3 py-1.5 text-base transition hover:border-gray-400 hover:bg-gray-100"
+                            className="rounded-lg bg-white border border-gray-200 px-3 py-1.5 text-base transition hover:border-gray-400 hover:bg-gray-100"
                         >
                             {size}
                         </button>

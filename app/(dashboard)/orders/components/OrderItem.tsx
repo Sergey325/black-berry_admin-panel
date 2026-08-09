@@ -19,6 +19,7 @@ const OrderItem = ({orderItem}: Props) => {
                 <p className="min-w-0 text-base font-medium text-gray-900">
                     <span className="break-words">{orderItem.name}</span>
                     {orderItem.size && <span className="ml-2 rounded bg-gray-100 px-1.5 py-0.5 text-sm text-gray-700">{orderItem.size}</span>}
+                    {orderItem.colorCode && <span className="ml-2 rounded bg-gray-100 px-1.5 py-0.5 text-sm text-gray-700">Код кольору: {orderItem.colorCode}</span>}
                 </p>
             </div>
             <div className="flex items-center justify-between text-base md:contents">

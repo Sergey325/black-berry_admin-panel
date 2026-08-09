@@ -158,6 +158,7 @@ model OrderItem {
   imageUrl      String
   colorName     String?
   productSizeId Int?
+  colorCode     String?
   order         Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
   ProductSize   ProductSize? @relation(fields: [productSizeId], references: [id])
 
