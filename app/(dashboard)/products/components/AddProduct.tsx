@@ -1,6 +1,6 @@
 import {useFieldArray, useForm, useWatch} from "react-hook-form";
 import axios from "axios";
-import ColorBlock from "@/app/(dashboard)/products/components/ColorBlock";
+import ColorBlock, {DEFAULT_SIZES} from "@/app/(dashboard)/products/components/ColorBlock";
 import ToolTip from "@/app/components/ToolTip";
 import {IProduct} from "@/app/actions/getProducts";
 import toast from "react-hot-toast";
@@ -213,6 +213,18 @@ export default function AddProduct({product, products, materials, categories, re
         () => categoryOptions.filter((category) => category.id === selectedCategoryId),
         [categoryOptions, selectedCategoryId],
     );
+    const defaultSizes = useMemo(
+        () => {
+            const categorySizes = categories.find((category) => category.id === selectedCategoryId)?.defaultSizes;
+            return categorySizes?.length ? categorySizes : DEFAULT_SIZES;
+        },
+        [categories, selectedCategoryId],
+    );
+    const createDefaultSizes = () => defaultSizes.map((size) => ({
+        size,
+        available: true,
+        quantity: null,
+    }));
     const productOptions = useMemo<SearchSelectOption[]>(() => products
         .filter((item) => item.id !== product?.id)
         .map((item) => ({
@@ -328,6 +340,7 @@ export default function AddProduct({product, products, materials, categories, re
                             colorIndex={colorIndex}
                             onRemoveColor={() => handleDeleteColor(colorIndex)}
                             errors={errors}
+                            defaultSizes={defaultSizes}
                         />
                     ))}
                     <div className="flex items-center gap-4">
@@ -337,7 +350,7 @@ export default function AddProduct({product, products, materials, categories, re
                                 <ToolTip key={item.code + item.colorHex} label={item.colorName}>
                                     <button
                                         type="button"
-                                        onClick={() => appendColor({ color: item.colorHex, images: [], sizes: [{size: "XS", available: true, quantity: null}, {size: "S", available: true, quantity: null}, {size: "M", available: true, quantity: null}, {size: "L", available: true, quantity: null}, {size: "XL", available: true, quantity: null}], colorName: item.colorName, colorCode: item.code, isBestSeller: false })}
+                                        onClick={() => appendColor({ color: item.colorHex, images: [], sizes: createDefaultSizes(), colorName: item.colorName, colorCode: item.code, isBestSeller: false })}
                                         className="w-7 h-7 rounded-full border border-gray-500 hover:scale-110 transition text-xs text-center font-medium"
                                         style={{
                                             backgroundColor: item.colorHex,

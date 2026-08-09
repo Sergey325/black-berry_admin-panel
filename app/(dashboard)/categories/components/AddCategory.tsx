@@ -34,6 +34,7 @@ const getDefaultValues = (category?: ICategory): FormValuesCategory => ({
     isOnMainPage: category?.isOnMainPage ?? false,
     hasLining: category?.hasLining ?? false,
     isDecoration: category?.isDecoration ?? false,
+    defaultSizes: category?.defaultSizes ?? [],
     specifications: category?.specifications.map(({ name, value }) => ({ name, value })) ?? [],
 });
 
@@ -46,10 +47,28 @@ const AddCategory = ({ category, resetSelectedCategory}: Props) => {
         control,
         name: "specifications",
     });
-    const [coverImage, sizeGuideImage, season] = useWatch({
+    const [coverImage, sizeGuideImage, season, defaultSizes] = useWatch({
         control,
-        name: ["coverImage", "sizeGuideImage", "season"],
+        name: ["coverImage", "sizeGuideImage", "season", "defaultSizes"],
     });
+
+    const addDefaultSize = () => {
+        setValue("defaultSizes", [...defaultSizes, ""], { shouldDirty: true });
+    };
+
+    const updateDefaultSize = (index: number, value: string) => {
+        setValue("defaultSizes", defaultSizes.map((size, sizeIndex) => sizeIndex === index ? value : size), {
+            shouldDirty: true,
+            shouldValidate: true,
+        });
+    };
+
+    const removeDefaultSize = (index: number) => {
+        setValue("defaultSizes", defaultSizes.filter((_, sizeIndex) => sizeIndex !== index), {
+            shouldDirty: true,
+            shouldValidate: true,
+        });
+    };
 
     const onSubmit = async (data: FormValuesCategory) => {
         try {
@@ -177,6 +196,24 @@ const AddCategory = ({ category, resetSelectedCategory}: Props) => {
                             <CheckBox label="Декорація" checked={field.value} onChange={field.onChange}/>
                         )}
                     />
+                </div>
+
+                <div className="flex flex-col gap-4">
+                    <div className="flex items-center justify-between gap-3">
+                        <h2 className="text-base font-semibold text-gray-900">Розміри за замовчуванням</h2>
+                        <button type="button" onClick={addDefaultSize} className="border border-gray-400 rounded-lg px-3 py-1 hover:bg-gray-100 transition">Додати</button>
+                    </div>
+                    {defaultSizes.map((size, index) => (
+                        <div key={index} className="flex items-start gap-2">
+                            <input
+                                value={size}
+                                onChange={(event) => updateDefaultSize(index, event.target.value)}
+                                placeholder="Розмір"
+                                className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none transition focus:border-gray-600"
+                            />
+                            <button type="button" onClick={() => removeDefaultSize(index)} className="pt-2 text-gray-500 hover:text-red-600 transition" aria-label="Видалити розмір"><FiTrash2 className="size-6" /></button>
+                        </div>
+                    ))}
                 </div>
 
                 <div className="flex flex-col gap-4">

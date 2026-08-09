@@ -86,6 +86,7 @@ model Category {
   hasLining           Boolean?                @default(false)
   isDecoration        Boolean?                @default(false)
   sizeGuideImage      String?
+  defaultSizes        String[]                @default([])
   specifications      CategorySpecification[]
   products            Product[]
   PromoCodeCategory   PromoCodeCategory[]

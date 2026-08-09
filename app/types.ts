@@ -33,6 +33,7 @@ export type FormValuesCategory = {
     isOnMainPage: boolean;
     hasLining: boolean;
     isDecoration: boolean;
+    defaultSizes: string[];
     specifications: {
         name: string;
         value: string;

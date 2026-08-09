@@ -4,6 +4,16 @@ import prisma from "@/app/lib/prisma";
 
 type Specification = { name: string; value: string };
 
+const normalizeDefaultSizes = (value: unknown): string[] => {
+    if (!Array.isArray(value)) {
+        return [];
+    }
+
+    return value
+        .filter((size): size is string => typeof size === "string")
+        .map((size) => size.trim());
+};
+
 export async function POST(request: Request) {
     try {
         const body = await request.json();
@@ -12,6 +22,7 @@ export async function POST(request: Request) {
             name: specification.name.trim(),
             value: specification.value.trim(),
         }));
+        const defaultSizes = normalizeDefaultSizes(body.defaultSizes);
 
         if (!body.name?.trim() || !body.slug?.trim() || !body.coverImage || !body.description?.trim() || !body.productsDescription?.trim()) {
             return NextResponse.json({ error: "Заповніть усі обов'язкові поля" }, { status: 400 });
@@ -29,6 +40,14 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: "Назви характеристик не повинні повторюватися" }, { status: 400 });
         }
 
+        if (defaultSizes.some((size) => !size)) {
+            return NextResponse.json({ error: "Заповніть усі розміри" }, { status: 400 });
+        }
+
+        if (new Set(defaultSizes).size !== defaultSizes.length) {
+            return NextResponse.json({ error: "Розміри не повинні повторюватися" }, { status: 400 });
+        }
+
         const data = {
             name: body.name.trim(),
             slug: body.slug.trim(),
@@ -40,6 +59,7 @@ export async function POST(request: Request) {
             isOnMainPage: Boolean(body.isOnMainPage),
             hasLining: Boolean(body.hasLining),
             isDecoration: Boolean(body.isDecoration),
+            defaultSizes,
         };
 
         if (id) {

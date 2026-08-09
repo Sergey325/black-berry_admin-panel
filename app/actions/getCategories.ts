@@ -15,6 +15,7 @@ export interface ICategory {
     isOnMainPage: boolean | null
     hasLining: boolean | null
     isDecoration: boolean | null
+    defaultSizes: string[]
     specifications: {
         name: string
         id: number

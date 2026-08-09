@@ -17,11 +17,12 @@ type Props = {
     colorIndex: number
     onRemoveColor: (colorIndex: number) => void
     errors: FieldErrors<FormValuesProduct>
+    defaultSizes: string[]
 };
 
-const DEFAULT_SIZES = ["XS", "S", "M", "L", "XL"];
+export const DEFAULT_SIZES = ["XS", "S", "M", "L", "XL"];
 
-const ColorBlock = ({control, register, colorIndex, onRemoveColor, errors}: Props) => {
+const ColorBlock = ({control, register, colorIndex, onRemoveColor, errors, defaultSizes}: Props) => {
     const { fields: sizeFields, append: appendSize, remove: removeSize } = useFieldArray({
         control,
         name: `colors.${colorIndex}.sizes`,
@@ -155,7 +156,7 @@ const ColorBlock = ({control, register, colorIndex, onRemoveColor, errors}: Prop
                 } )}
 
                 <div className="flex flex-wrap gap-2">
-                    {DEFAULT_SIZES.map((size) => (
+                    {defaultSizes.map((size) => (
                         <button
                             key={size}
                             type="button"
