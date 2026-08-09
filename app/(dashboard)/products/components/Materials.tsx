@@ -99,12 +99,12 @@ const Material = ({
 
     return (
         <div className="w-full flex flex-col gap-3">
-            <div className="w-full flex gap-2 items-center">
+            <div className="min-w-0 flex gap-2 items-center">
                 <Dropdown
                     placeholder={initialValue?.name}
                     options={materialOptions}
-                    className=""
-                    buttonClassName={"rounded-lg! px-2! sm:px-4! "}
+                    className="min-w-0"
+                    buttonClassName={"rounded-lg! px-2! sm:px-4!"}
                 />
                 <ToolTip label="Редагувати">
                     <button type="button" onClick={() => setMaterialsEdit(!materialsEdit)} className="inline-flex size-11 items-center justify-center rounded-lg text-gray-500 transition hover:bg-blue-50 hover:text-blue-600" aria-label="Редагувати товар">
