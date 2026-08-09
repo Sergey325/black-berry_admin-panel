@@ -19,7 +19,7 @@ type Props = {
     errors: FieldErrors<FormValuesProduct>
 };
 
-const DEFAULT_SIZES = ["S", "M", "L", "XL"];
+const DEFAULT_SIZES = ["XS", "S", "M", "L", "XL"];
 
 const ColorBlock = ({control, register, colorIndex, onRemoveColor, errors}: Props) => {
     const { fields: sizeFields, append: appendSize, remove: removeSize } = useFieldArray({

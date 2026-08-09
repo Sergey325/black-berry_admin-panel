@@ -337,7 +337,7 @@ export default function AddProduct({product, products, materials, categories, re
                                 <ToolTip key={item.code + item.colorHex} label={item.colorName}>
                                     <button
                                         type="button"
-                                        onClick={() => appendColor({ color: item.colorHex, images: [], sizes: [{size: "S", available: true, quantity: null}, {size: "M", available: true, quantity: null}], colorName: item.colorName, colorCode: item.code, isBestSeller: false })}
+                                        onClick={() => appendColor({ color: item.colorHex, images: [], sizes: [{size: "XS", available: true, quantity: null}, {size: "S", available: true, quantity: null}, {size: "M", available: true, quantity: null}, {size: "L", available: true, quantity: null}, {size: "XL", available: true, quantity: null}], colorName: item.colorName, colorCode: item.code, isBestSeller: false })}
                                         className="w-7 h-7 rounded-full border border-gray-500 hover:scale-110 transition text-xs text-center font-medium"
                                         style={{
                                             backgroundColor: item.colorHex,
