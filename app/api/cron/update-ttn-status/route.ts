@@ -34,7 +34,10 @@ export async function processTtnUpdates() {
         const trackedOrders = orders.filter((order): order is typeof order & {
             ttnNumber: string;
             ttnRef: string;
-        } => order.ttnNumber !== null && order.ttnRef !== null);
+        } => order.ttnNumber !== null
+            && order.ttnRef !== null
+            && order.ttnNumber.trim().length > 0
+            && order.ttnRef.trim().length > 0);
 
         totalOrders = trackedOrders.length;
 
@@ -43,8 +46,8 @@ export async function processTtnUpdates() {
 
             try {
                 statuses = await getStatusDocuments(batch.map((order) => ({
-                    Number: order.ttnNumber,
-                    Ref: order.ttnRef,
+                    Number: order.ttnNumber.trim(),
+                    Ref: order.ttnRef.trim(),
                 })));
             } catch (error: unknown) {
                 errors += 1;
@@ -56,8 +59,8 @@ export async function processTtnUpdates() {
                 continue;
             }
 
-            const ordersByNumber = new Map(batch.map((order) => [order.ttnNumber, order]));
-            const ordersByRef = new Map(batch.map((order) => [order.ttnRef, order]));
+            const ordersByNumber = new Map(batch.map((order) => [order.ttnNumber.trim(), order]));
+            const ordersByRef = new Map(batch.map((order) => [order.ttnRef.trim(), order]));
             const updatedAt = new Date();
             const updateResults = await Promise.allSettled(statuses.map(async (statusDocument) => {
                 const order = (statusDocument.Number ? ordersByNumber.get(statusDocument.Number) : undefined)

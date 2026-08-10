@@ -59,7 +59,11 @@ export async function getStatusDocuments(
             apiKey,
             modelName: "TrackingDocument",
             calledMethod: "getStatusDocuments",
-            methodProperties: {Documents: documents},
+            methodProperties: {
+                Documents: documents.map(({Number}) => ({
+                    DocumentNumber: Number.trim(),
+                })),
+            },
         }),
     });
 
