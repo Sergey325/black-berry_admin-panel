@@ -10,14 +10,17 @@ const SHIPPED_STATUS_CODES = new Set([
     "4",
     "5",
     "6",
-    "7",
-    "8",
     "12",
     "41",
     "101",
     "104",
     "111",
     "112",
+]);
+
+const ARRIVED_STATUS_CODES = new Set([
+    "7",
+    "8",
 ]);
 
 const DELIVERED_STATUS_CODES = new Set([
@@ -34,8 +37,11 @@ export function mapNPStatusToOrderStatus(
 
     const normalizedStatusCode = String(statusCode);
     if (DELIVERED_STATUS_CODES.has(normalizedStatusCode)) return OrderStatus.DELIVERED;
-    if (normalizedStatusCode === "103") return OrderStatus.CANCELLED;
-    if (SHIPPED_STATUS_CODES.has(normalizedStatusCode)) return OrderStatus.SHIPPED;
+    if (normalizedStatusCode === "102" || normalizedStatusCode === "103") return OrderStatus.CANCELLED;
+    if (ARRIVED_STATUS_CODES.has(normalizedStatusCode)) return OrderStatus.ARRIVED;
+    if (SHIPPED_STATUS_CODES.has(normalizedStatusCode) && currentStatus !== OrderStatus.ARRIVED) {
+        return OrderStatus.SHIPPED;
+    }
 
     return null;
 }

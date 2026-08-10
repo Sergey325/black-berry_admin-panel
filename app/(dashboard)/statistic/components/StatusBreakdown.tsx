@@ -12,7 +12,8 @@ const statusLabels: Record<string, string> = {
     PAID: "Оплачено",
     PROCESSING: "В обробці",
     SHIPPED: "Відправлено",
-    DELIVERED: "Доставлено",
+    ARRIVED: "Доставлено",
+    DELIVERED: "Отримано",
     CANCELLED: "Скасовано",
     REFUNDED: "Повернено",
 };
@@ -22,6 +23,7 @@ const statusColors: Record<string, string> = {
     PAID: "bg-sky-500",
     PROCESSING: "bg-violet-500",
     SHIPPED: "bg-indigo-500",
+    ARRIVED: "bg-teal-500",
     DELIVERED: "bg-emerald-500",
     CANCELLED: "bg-gray-400",
     REFUNDED: "bg-red-500",

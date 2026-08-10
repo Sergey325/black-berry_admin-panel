@@ -18,6 +18,7 @@ const profitStatuses = [
     "PAID",
     "PROCESSING",
     "SHIPPED",
+    "ARRIVED",
     "DELIVERED",
 ];
 
