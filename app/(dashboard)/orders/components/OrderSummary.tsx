@@ -35,8 +35,12 @@ export const orderStatuses: StatusOption[] = [
         label: "Відправлено",
     },
     {
-        value: OrderStatus.DELIVERED,
+        value: OrderStatus.ARRIVED,
         label: "Доставлено",
+    },
+    {
+        value: OrderStatus.DELIVERED,
+        label: "Отримано",
     },
     {
         value: OrderStatus.CANCELLED,

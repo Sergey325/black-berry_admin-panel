@@ -5,7 +5,7 @@ import type { MonthPeriod, MonthRange } from "@/app/lib/adminApi";
 
 export const BUSINESS_TIME_ZONE = "Europe/Kyiv";
 
-const REVENUE_STATUSES = ["PAID", "PROCESSING", "SHIPPED", "DELIVERED"] as const;
+const REVENUE_STATUSES = ["PAID", "PROCESSING", "SHIPPED", "ARRIVED", "DELIVERED"] as const;
 
 interface SummaryRow {
     revenue: number;
