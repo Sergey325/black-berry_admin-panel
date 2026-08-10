@@ -1,5 +1,85 @@
 const API_URL = "https://api.novaposhta.ua/v2.0/json/";
 const API_KEY = process.env.NOVA_POSHTA_API_KEY!;
+
+export interface NovaPoshtaDocument {
+    Number: string;
+    Ref: string;
+}
+
+export interface NovaPoshtaStatusDocument {
+    Number?: string;
+    RefEW?: string;
+    Status: string;
+    StatusCode: string | number;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+    return typeof value === "object" && value !== null;
+}
+
+function isStatusDocument(value: unknown): value is NovaPoshtaStatusDocument {
+    if (!isRecord(value)) return false;
+
+    const hasIdentifier = typeof value.Number === "string" || typeof value.RefEW === "string";
+    const hasStatusCode = typeof value.StatusCode === "string" || typeof value.StatusCode === "number";
+
+    return hasIdentifier && typeof value.Status === "string" && hasStatusCode;
+}
+
+function formatApiErrors(errors: unknown) {
+    if (!Array.isArray(errors)) return "Nova Poshta API request failed";
+
+    const messages = errors.filter((error): error is string => typeof error === "string");
+    return messages.length > 0 ? messages.join(", ") : "Nova Poshta API request failed";
+}
+
+export function chunk<T>(arr: T[], size: number): T[][] {
+    if (!Number.isInteger(size) || size <= 0) {
+        throw new RangeError("Chunk size must be a positive integer");
+    }
+
+    const chunks: T[][] = [];
+    for (let index = 0; index < arr.length; index += size) {
+        chunks.push(arr.slice(index, index + size));
+    }
+
+    return chunks;
+}
+
+export async function getStatusDocuments(
+    documents: NovaPoshtaDocument[],
+): Promise<NovaPoshtaStatusDocument[]> {
+    const apiKey = process.env.NOVA_POSHTA_API_KEY;
+    if (!apiKey) throw new Error("NOVA_POSHTA_API_KEY is not configured");
+
+    const response = await fetch(API_URL, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+            apiKey,
+            modelName: "TrackingDocument",
+            calledMethod: "getStatusDocuments",
+            methodProperties: {
+                Documents: documents.map(({Number}) => ({
+                    DocumentNumber: Number.trim(),
+                })),
+            },
+        }),
+    });
+
+    if (!response.ok) {
+        throw new Error(`Nova Poshta API returned HTTP ${response.status}`);
+    }
+
+    const result: unknown = await response.json();
+    if (!isRecord(result)) throw new Error("Nova Poshta API returned an invalid response");
+    if (result.success === false) throw new Error(formatApiErrors(result.errors));
+    if (result.success !== true || !Array.isArray(result.data) || !result.data.every(isStatusDocument)) {
+        throw new Error("Nova Poshta API returned an invalid response");
+    }
+
+    return result.data;
+}
 //
 async function getOrCreateRecipient({
     firstName,
