@@ -18,7 +18,7 @@ model Product {
   description      String?
   categoryId       Int?
   materialId       Int?
-  hasLining        Boolean?           @default(false)
+  hasLining        Boolean            @default(false)
   category         Category?          @relation(fields: [categoryId], references: [id])
   material         Material?          @relation(fields: [materialId], references: [id])
   colors           ProductColor[]
@@ -143,6 +143,9 @@ model Order {
   discountPercentApplied Float?
   promoCodeId            Int?
   promoCodeSnapshot      String?
+  ttnStatus              String?
+  ttnStatusCode          String?
+  ttnStatusUpdatedAt     DateTime?
   PromoCode              PromoCode?    @relation(fields: [promoCodeId], references: [id])
   items                  OrderItem[]
 }
