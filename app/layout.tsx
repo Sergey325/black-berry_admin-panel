@@ -1,7 +1,11 @@
 import type { Metadata } from "next";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import BackToTop from "@/app/components/BackToTop";
 
+const inter = Inter({
+    subsets: ["latin", "cyrillic"],
+});
 
 export const metadata: Metadata = {
     title: "AdminPanel",
@@ -16,9 +20,9 @@ export default function RootLayout({
     return (
         <html
             lang="en"
-            className={`min-h-full 2xl:px-0 flex flex-col font-(family-name:--font-montserrat) bg-gray-50 h-full antialiased`}
+            className="min-h-full 2xl:px-0 flex flex-col bg-gray-50 h-full antialiased"
         >
-            <body className="min-h-full flex flex-col bg-gray-50">
+            <body className={`${inter.className} min-h-full flex flex-col bg-gray-50`}>
             <BackToTop/>
                 <main className="flex-auto mb-5">
                     <div className="mx-auto w-full h-full">

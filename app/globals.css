@@ -4,12 +4,6 @@
   --color-primary: #823D9A;
 }
 
-@layer base {
-  * {
-    font-family: "Montserrat", Arial, sans-serif;
-  }
-}
-
 @layer components {
   input, textarea, select {
     @apply border border-gray-200 rounded-md outline-none transition focus:border-gray-400;
