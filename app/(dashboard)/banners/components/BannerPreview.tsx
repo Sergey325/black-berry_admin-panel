@@ -1,7 +1,12 @@
 import Image from "next/image";
+import { Montserrat } from "next/font/google";
 import { FaHeart } from "react-icons/fa";
 import type { FormValuesBanner } from "@/app/types";
 import { optimizeCloudinaryUrl } from "@/app/utils/optimizeCloudinaryImage";
+
+const montserrat = Montserrat({
+    subsets: ["latin", "cyrillic"],
+});
 
 type Props = {
     banner: FormValuesBanner;
@@ -29,9 +34,9 @@ const BannerPreview = ({ banner }: Props) => {
     const features = banner.features.filter((feature) => feature.value.trim());
 
     return (
-        <section className="relative overflow-hidden rounded-xl bg-linear-to-t from-black/70 via-black/40 to-black/10 shadow-[0_0_20px_rgba(0,0,0,0.10)] lg:rounded-3xl lg:bg-none lg:bg-white">
-            <div className="relative w-[calc(100%+4px)] -ml-0.5">
-                <div className="hidden min-h-[650px] items-center lg:flex">
+        <section className={`${montserrat.className} relative overflow-hidden rounded-xl bg-linear-to-t from-black/70 via-black/40 to-black/10 shadow-[0_0_20px_rgba(0,0,0,0.10)] lg:rounded-3xl lg:bg-none lg:bg-white`}>
+            <div className="relative -ml-0.5 flex w-[calc(100%+4px)]">
+                <div className="hidden min-h-[650px] w-full items-center lg:flex">
                     <div className="relative z-10 w-1/2 px-10 xl:px-16">
                         {
                             banner.badge &&
@@ -64,10 +69,10 @@ const BannerPreview = ({ banner }: Props) => {
                         />
                     </div>
                 </div>
-                <div className="relative min-h-[450px] lg:hidden">
+                <div className="relative flex min-h-[450px] w-full lg:hidden">
                     <PreviewImage banner={banner} />
                     <div className="absolute inset-0 bg-linear-to-t from-black/60 via-black/35 to-black/10" />
-                    <div className="relative z-10 flex min-h-[450px] flex-col justify-between gap-4 px-6 pb-12 pt-10">
+                    <div className="relative z-10 flex min-h-[450px] w-full flex-1 flex-col gap-4 px-6 pb-12 pt-10 sm:justify-around">
                         <PreviewBadge badge={banner.badge} />
                         <h2 className="whitespace-pre-line text-3xl font-bold leading-tight text-white">
                             {banner.title || "Заголовок банера"}
@@ -79,7 +84,7 @@ const BannerPreview = ({ banner }: Props) => {
                         )}
                         {
                             banner.ctaLabel &&
-                            <span className="w-full rounded-full bg-primary px-6 py-3 text-center text-white sm:max-w-[400px]">
+                            <span className="mt-auto sm:mt-0 w-full rounded-full bg-primary px-6 py-3 text-center text-white sm:max-w-[400px]">
                                 {banner.ctaLabel}
                             </span>
                         }
