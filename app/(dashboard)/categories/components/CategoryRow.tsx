@@ -6,6 +6,7 @@ import Image from "next/image";
 import ToolTip from "@/app/components/ToolTip";
 import {MdEdit} from "react-icons/md";
 import {FiTrash2} from "react-icons/fi";
+import Link from "next/link";
 
 
 type Props = {
@@ -42,9 +43,9 @@ const CategoryRow = ({category, onEdit}: Props) => {
             </div>
 
             <div className="flex-1 sm:contents min-w-0">
-                <p className="wrap-break-word font-medium text-gray-900">
+                <Link href={`${process.env.NEXT_PUBLIC_SHOP_URL}/catalog/${category.slug}`} className="wrap-break-word font-medium text-gray-900 hover:text-primary transition-colors">
                     {category.name}
-                </p>
+                </Link>
 
                 <p className="text-sm font-medium text-gray-600 sm:text-center">
                     {category._count.products}

@@ -123,11 +123,11 @@ const ImagesUpload = ({
                                                  className="relative overflow-hidden rounded-lg border border-gray-200 bg-white">
                                                 <Image
                                                     alt="Upload"
-                                                    height={100} width={100} className="size-20 md:size-25 object-scale-down object-top-right"
+                                                    height={100} width={100} className="size-20 md:size-25 object-cover"
                                                     src={image}
                                                 />
                                                 <IoMdClose
-                                                    className="absolute top-0 right-0 text-gray-950 hover:text-gray-600 bg-gray-50 transition cursor-pointer"
+                                                    className="absolute top-0 right-0 text-gray-950 hover:text-red-500 hover:bg-red-50 bg-gray-50 transition-colors cursor-pointer"
                                                     size={20}
                                                     onClick={() => handleDelete(image)}
                                                 />

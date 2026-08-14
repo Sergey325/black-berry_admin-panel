@@ -4,7 +4,7 @@ export async function POST(req: Request) {
     const body = await req.json();
 
     const res = await fetch(
-        `${process.env.MAIN_SITE_URL}/api/cities`,
+        `${process.env.NEXT_PUBLIC_SHOP_URL}/api/cities`,
         {
             method: "POST",
             headers: {

@@ -7,6 +7,7 @@ import { IProduct } from "@/app/actions/getProducts";
 import ToolTip from "@/app/components/ToolTip";
 import {calculatePriceWithDiscount} from "@/app/utils/calculateDiscount";
 import {FiTrash2} from "react-icons/fi";
+import Link from "next/link";
 
 type Props = {
     product: IProduct;
@@ -43,7 +44,10 @@ export default function ProductRow({ product, onEdit }: Props) {
             />
 
             <div className="flex-1 sm:contents min-w-0">
-                <p className="wrap-break-word font-medium text-gray-900">{product.name}</p>
+                <Link
+                    href={`${process.env.NEXT_PUBLIC_SHOP_URL}/catalog/${product.category?.slug}/${product.id}-${product.slug}`}
+                    className="wrap-break-word font-medium text-gray-900 hover:text-primary transition-colors">{product.name}
+                </Link>
                 <p className="mt-0.5 text-sm text-gray-500 sm:hidden">{calculatePriceWithDiscount(product.price, product.discount)} грн</p>
                 <p className="hidden text-center text-sm font-medium text-gray-900 sm:block">{calculatePriceWithDiscount(product.price, product.discount)} грн</p>
             </div>

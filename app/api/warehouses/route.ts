@@ -6,7 +6,7 @@ export async function POST(request: Request) {
         console.log("sending warehouse request:", body);
 
         const res = await fetch(
-            `${process.env.MAIN_SITE_URL}/api/warehouses`,
+            `${process.env.NEXT_PUBLIC_SHOP_URL}/api/warehouses`,
             {
                 method: "POST",
                 headers: {
