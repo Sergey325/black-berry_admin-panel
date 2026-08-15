@@ -23,7 +23,6 @@ const getDefaultValues = (banner?: IBanner): FormValuesBanner => ({
     features: banner?.features.map((value) => ({value})) ?? [],
     ctaHref: banner?.ctaHref ?? "",
     ctaLabel: banner?.ctaLabel ?? "",
-    order: banner?.order ?? 0,
 });
 
 const getErrorMessage = (error: unknown) => axios.isAxiosError<{ error?: string }>(error)
@@ -51,7 +50,6 @@ const AddBanner = ({banner, resetSelectedBanner}: Props) => {
         features: (watchedValues.features ?? []).map((feature) => ({value: feature?.value ?? ""})),
         ctaHref: watchedValues.ctaHref ?? "",
         ctaLabel: watchedValues.ctaLabel ?? "",
-        order: watchedValues.order ?? 0,
     };
 
     const returnToBanners = () => {
@@ -152,20 +150,6 @@ const AddBanner = ({banner, resetSelectedBanner}: Props) => {
                                 className="rounded-lg border border-gray-300 px-3 py-2.5 text-base outline-none transition focus:border-gray-500 focus:ring-2 focus:ring-gray-200"
                             />
                         </div>
-                    </div>
-                    <div className="flex max-w-48 flex-col gap-1">
-                        <label className="text-sm font-medium text-gray-700">
-                            Порядок показу
-                        </label>
-                        <input
-                            type="number"
-                            min="0"
-                            {...register("order", {
-                                valueAsNumber: true,
-                                min: {value: 0, message: "Значення не може бути від'ємним"}
-                            })}
-                            className="rounded-lg border border-gray-300 px-3 py-2.5 text-base outline-none transition focus:border-gray-500 focus:ring-2 focus:ring-gray-200"/>
-                        {errors.order && <span className="text-sm text-red-500">{errors.order.message}</span>}
                     </div>
                     <button
                         type="submit"

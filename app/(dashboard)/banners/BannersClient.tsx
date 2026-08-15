@@ -46,7 +46,7 @@ const BannersClient = ({ banners }: Props) => {
             />
             <div className="mt-7">
             {tab === "AllBanners"
-                ? <AllBanners banners={banners} onEdit={onEditBanner} handleChangeTab={handleChangeTab} />
+                ? <AllBanners key={banners.map(({id, order}) => `${id}:${order}`).join("-")} banners={banners} onEdit={onEditBanner} handleChangeTab={handleChangeTab} />
                 : <AddBanner banner={selectedBanner ?? undefined} resetSelectedBanner={() => setSelectedBanner(null)} />}
             </div>
         </main>

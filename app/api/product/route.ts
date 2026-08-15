@@ -6,17 +6,30 @@ type ProductRequest = FormValuesProduct & {
     id: number | null;
 };
 
+async function getNextProductPosition(categoryId: number | null, excludedProductId?: number) {
+    const result = await prisma.product.aggregate({
+        where: {
+            categoryId,
+            id: excludedProductId ? {not: excludedProductId} : undefined,
+        },
+        _max: {position: true},
+    });
+
+    return (result._max.position ?? -1) + 1;
+}
+
 export async function POST(request: Request) {
     try {
         const body = await request.json() as ProductRequest;
         const { id, name, description, price, discount, hasLining, colors, slug, materialId, categoryId, relatedProducts } = body;
         const productId = Number(id)
 
-        const colorsData = colors.map((c) => ({
+        const colorsData = colors.map((c, position) => ({
             color: c.color,
             colorName: c.colorName,
             colorCode: c.colorCode,
             isBestSeller: c.isBestSeller,
+            position,
             images: {
                 create: c.images.map((url: string, index: number) => ({
                     url,
@@ -37,6 +50,14 @@ export async function POST(request: Request) {
         let finalProductId: number;
 
         if (productId) {
+            const currentProduct = await prisma.product.findUnique({
+                where: {id: productId},
+                select: {categoryId: true},
+            });
+            const position = currentProduct?.categoryId === categoryId
+                ? undefined
+                : await getNextProductPosition(categoryId, productId);
+
             // удаляем старые цвета (каскадно удалятся их картинки и размеры)
             await prisma.productColor.deleteMany({
                 where: { productId: productId },
@@ -53,6 +74,7 @@ export async function POST(request: Request) {
                     hasLining: Boolean(hasLining),
                     materialId,
                     categoryId,
+                    position,
                     colors: {
                         create: colorsData,
                     },
@@ -61,6 +83,7 @@ export async function POST(request: Request) {
 
             finalProductId = productId;
         } else {
+            const position = await getNextProductPosition(categoryId);
             const created = await prisma.product.create({
                 data: {
                     name,
@@ -71,6 +94,7 @@ export async function POST(request: Request) {
                     hasLining: Boolean(hasLining),
                     materialId,
                     categoryId,
+                    position,
                     colors: {
                         create: colorsData,
                     },

@@ -47,7 +47,6 @@ export type FormValuesBanner = {
     features: { value: string }[];
     ctaHref: string;
     ctaLabel: string;
-    order: number;
 };
 
 

@@ -9,7 +9,6 @@ type BannerRequest = {
     features?: string[];
     ctaHref?: string;
     ctaLabel?: string;
-    order?: number;
 };
 
 const stringValue = (value?: string) => value?.trim() ?? "";
@@ -22,14 +21,9 @@ export async function POST(request: Request) {
         const image = stringValue(body.image);
         const title = stringValue(body.title);
         const features = body.features?.map((feature) => feature.trim()).filter(Boolean) ?? [];
-        const order = body.order;
 
         if (!image || !title) {
             return NextResponse.json({ error: "Заповніть усі обов'язкові поля" }, { status: 400 });
-        }
-
-        if (typeof order !== "number" || !Number.isInteger(order) || order < 0) {
-            return NextResponse.json({ error: "Вкажіть коректний порядок" }, { status: 400 });
         }
 
         const data = {
@@ -39,13 +33,18 @@ export async function POST(request: Request) {
             badge: nullableStringValue(body.badge),
             ctaHref: nullableStringValue(body.ctaHref),
             ctaLabel: nullableStringValue(body.ctaLabel),
-            order,
         };
 
         if (typeof id === "number" && Number.isInteger(id) && id > 0) {
             await prisma.banner.update({ where: { id }, data });
         } else {
-            await prisma.banner.create({ data });
+            const lastBanner = await prisma.banner.aggregate({ _max: { order: true } });
+            await prisma.banner.create({
+                data: {
+                    ...data,
+                    order: (lastBanner._max.order ?? -1) + 1,
+                },
+            });
         }
 
         return NextResponse.json(null, { status: 200 });

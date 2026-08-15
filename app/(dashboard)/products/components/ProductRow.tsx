@@ -8,13 +8,15 @@ import ToolTip from "@/app/components/ToolTip";
 import {calculatePriceWithDiscount} from "@/app/utils/calculateDiscount";
 import {FiTrash2} from "react-icons/fi";
 import Link from "next/link";
+import {ReactNode} from "react";
 
 type Props = {
     product: IProduct;
     onEdit: (product: IProduct) => void;
+    dragHandle?: ReactNode;
 };
 
-export default function ProductRow({ product, onEdit }: Props) {
+export default function ProductRow({ product, onEdit, dragHandle }: Props) {
     const router = useRouter();
 
     const firstImage = product.colors[0]?.images[0]?.url;
@@ -33,7 +35,11 @@ export default function ProductRow({ product, onEdit }: Props) {
     };
 
     return (
-        <div className="flex items-center gap-3 border-b border-gray-200 px-3 py-3.5 transition last:border-b-0 hover:bg-gray-50/80 sm:grid sm:grid-cols-[60px_1fr_120px_100px] sm:gap-4 sm:px-4">
+        <div className="flex items-center gap-3 border-b border-gray-200 px-3 py-3.5 transition last:border-b-0 hover:bg-gray-50/80 sm:grid sm:grid-cols-[36px_60px_1fr_120px_100px] sm:gap-4 sm:px-4">
+
+            <div className="flex size-9 shrink-0 items-center justify-center">
+                {dragHandle}
+            </div>
 
             <Image
                 src={firstImage}

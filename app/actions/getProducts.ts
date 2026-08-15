@@ -21,6 +21,7 @@ export interface IProductImage {
 
 export interface IProductColor {
     id: number;
+    position: number;
     color: string;
     colorName: string;
     colorCode: string | null;
@@ -69,6 +70,7 @@ export interface IProduct {
     price: number;
     discount: number;
     hasLining: boolean | null;
+    position: number;
     material: IProductMaterial | null;
     createdAt: Date;
     updatedAt: Date;
@@ -86,18 +88,22 @@ export async function getProducts(params?: IProductsParams): Promise<IProduct[]>
     try {
         const { title, sort } = params ?? {};
 
-        const orderBy: Prisma.ProductOrderByWithRelationInput =
+        const orderBy: Prisma.ProductOrderByWithRelationInput | Prisma.ProductOrderByWithRelationInput[] =
             sort === "name_asc" ? { name: "asc" } :
                 sort === "name_desc" ? { name: "desc" } :
                     sort === "oldest" ? { createdAt: "asc" } :
-                        { createdAt: "desc" }; // newest по умолчанию
+                        sort === "newest" ? { createdAt: "desc" } :
+                            [{position: "asc"}, {id: "asc"}];
 
         const products = await prisma.product.findMany({
             where: title ? { name: { contains: title, mode: "insensitive" } } : undefined,
             include: {
                 colors: {
+                    orderBy: [{position: "asc"}, {id: "asc"}],
                     include: {
-                        images: true,
+                        images: {
+                            orderBy: {order: "asc"},
+                        },
                         sizes: true,
                     },
                 },
@@ -131,6 +137,7 @@ export async function getProducts(params?: IProductsParams): Promise<IProduct[]>
                                     },
                                 },
                                 colors: {
+                                    orderBy: [{position: "asc"}, {id: "asc"}],
                                     include: {
                                         images: {
                                             take: 1,
@@ -169,7 +176,7 @@ export async function getProducts(params?: IProductsParams): Promise<IProduct[]>
         }));
 
         return result;
-    } catch (error: any) {
-        throw new Error(error);
+    } catch (error) {
+        throw error instanceof Error ? error : new Error("Failed to get products");
     }
 }

@@ -14,6 +14,20 @@ import Materials from "@/app/(dashboard)/products/components/Materials";
 import slugify from "@/app/utils/slugify";
 import SearchSelect, {SearchSelectOption} from "@/app/components/SearchSelect";
 import CheckBox from "@/app/components/CheckBox";
+import {
+    closestCenter,
+    DndContext,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors,
+} from "@dnd-kit/core";
+import type {DragEndEvent} from "@dnd-kit/core";
+import {
+    sortableKeyboardCoordinates,
+    SortableContext,
+    verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
 
 
 const DEFAULT_COLORS = [
@@ -121,10 +135,25 @@ export default function AddProduct({product, products, materials, categories, re
 
 
 
-    const { fields: colorFields, append: appendColor, remove: removeColor } = useFieldArray({
+    const { fields: colorFields, append: appendColor, remove: removeColor, move: moveColor } = useFieldArray({
         control,
         name: "colors",
     });
+
+    const colorSensors = useSensors(
+        useSensor(PointerSensor, {activationConstraint: {distance: 6}}),
+        useSensor(KeyboardSensor, {coordinateGetter: sortableKeyboardCoordinates}),
+    );
+
+    const handleColorDragEnd = ({active, over}: DragEndEvent) => {
+        if (!over || active.id === over.id) return;
+
+        const oldIndex = colorFields.findIndex((field) => field.id === active.id);
+        const newIndex = colorFields.findIndex((field) => field.id === over.id);
+
+        if (oldIndex < 0 || newIndex < 0) return;
+        moveColor(oldIndex, newIndex);
+    };
 
 
     const onSubmit = async (data: FormValuesProduct) => {
@@ -341,17 +370,25 @@ export default function AddProduct({product, products, materials, categories, re
                 </div>
 
                 <div className="flex flex-col gap-8">
-                    {colorFields.map((colorField, colorIndex) => (
-                        <ColorBlock
-                            key={colorField.id}
-                            control={control}
-                            register={register}
-                            colorIndex={colorIndex}
-                            onRemoveColor={() => handleDeleteColor(colorIndex)}
-                            errors={errors}
-                            defaultSizes={defaultSizes}
-                        />
-                    ))}
+                    <DndContext sensors={colorSensors} collisionDetection={closestCenter} onDragEnd={handleColorDragEnd}>
+                        <SortableContext items={colorFields.map((field) => field.id)} strategy={verticalListSortingStrategy}>
+                            <div className="flex flex-col gap-3">
+                                {colorFields.map((colorField, colorIndex) => (
+                                    <ColorBlock
+                                        key={colorField.id}
+                                        id={colorField.id}
+                                        control={control}
+                                        register={register}
+                                        colorIndex={colorIndex}
+                                        onRemoveColor={() => handleDeleteColor(colorIndex)}
+                                        errors={errors}
+                                        defaultSizes={defaultSizes}
+                                        initialOpen={colorIndex === colorFields.length - 1}
+                                    />
+                                ))}
+                            </div>
+                        </SortableContext>
+                    </DndContext>
                     <div className="flex items-center gap-4">
                         <label className="text-base font-semibold text-gray-900">Кольори товару</label>
                         <div className="flex flex-wrap gap-2">

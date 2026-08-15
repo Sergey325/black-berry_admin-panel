@@ -8,13 +8,15 @@ import { MdEdit } from "react-icons/md";
 import type { IBanner } from "@/app/actions/getBanners";
 import ToolTip from "@/app/components/ToolTip";
 import {FiTrash2} from "react-icons/fi";
+import type {ReactNode} from "react";
 
 type Props = {
     banner: IBanner;
     onEdit: (banner: IBanner) => void;
+    dragHandle?: ReactNode;
 };
 
-const BannerRow = ({ banner, onEdit }: Props) => {
+const BannerRow = ({ banner, onEdit, dragHandle }: Props) => {
     const router = useRouter();
 
     const handleDelete = async () => {
@@ -33,13 +35,15 @@ const BannerRow = ({ banner, onEdit }: Props) => {
     };
 
     return (
-        <div className="flex items-center gap-3 border-b border-gray-200 px-3 py-3.5 transition last:border-b-0 hover:bg-gray-50/80 sm:grid sm:grid-cols-[140px_minmax(0,1fr)_100px_120px] sm:gap-4 sm:px-4">
+        <div className="flex items-center gap-3 px-3 py-3.5 transition hover:bg-gray-50/80 sm:grid sm:grid-cols-[36px_140px_minmax(0,1fr)_120px] sm:gap-4 sm:px-4">
+            <div className="flex size-9 shrink-0 items-center justify-center">
+                {dragHandle}
+            </div>
             <div className="relative aspect-5/3 w-28 shrink-0 overflow-hidden rounded-lg border border-gray-200">
                 <Image src={banner.image} alt={""} fill sizes="112px" className="object-cover" />
             </div>
             <div className="min-w-0 flex-1 sm:contents">
                 <p className="line-clamp-2 font-medium text-gray-900">{banner.title}</p>
-                <p className="text-center text-sm font-medium text-gray-600">{banner.order}</p>
             </div>
             <div className="flex shrink-0 items-center gap-1 sm:justify-center">
                 <ToolTip label="Редагувати"><button type="button" onClick={() => onEdit(banner)} className="inline-flex size-9 items-center justify-center rounded-lg text-gray-500 transition hover:bg-blue-50 hover:text-blue-600" aria-label="Редагувати банер"><MdEdit className="size-5" /></button></ToolTip>
