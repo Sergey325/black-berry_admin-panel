@@ -173,9 +173,7 @@ export default function AddProduct({product, products, materials, categories, re
                 colors: [],
 
             })
-            resetSelectedProduct()
-            router.replace("/products?tab=AllProducts")
-            router.refresh()
+            returnToProducts()
         })
         .catch(() => {
             toast.error("Something went wrong")

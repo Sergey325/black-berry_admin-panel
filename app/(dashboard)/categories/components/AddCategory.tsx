@@ -78,10 +78,7 @@ const AddCategory = ({ category, resetSelectedCategory}: Props) => {
             });
 
             toast.success(category ? "Категорію оновлено!" : "Категорію створено!");
-            reset(getDefaultValues());
-            resetSelectedCategory();
-            router.replace("/categories?tab=AllCategories");
-            router.refresh();
+            returnToCategories()
         } catch (error: unknown) {
             toast.error(getErrorMessage(error, "Не вдалося зберегти категорію"));
         }

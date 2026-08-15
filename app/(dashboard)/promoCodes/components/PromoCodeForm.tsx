@@ -5,7 +5,6 @@ import {Controller, useForm, useWatch} from "react-hook-form";
 import {IMaskInput} from "react-imask";
 import axios from "axios";
 import toast from "react-hot-toast";
-import {useRouter} from "next/navigation";
 import {IoIosArrowBack} from "react-icons/io";
 import type {PromoScope, PromoSelectOption} from "@/app/actions/getPromoCodes";
 import Dropdown from "@/app/components/DropDown";
@@ -77,7 +76,6 @@ const getErrorMessage = (error: unknown) => axios.isAxiosError<{error?: string}>
     : "Не вдалося зберегти промокод";
 
 const PromoCodeForm = ({promoCode, categories, products, onBack}: Props) => {
-    const router = useRouter();
     const {
         register,
         handleSubmit,
@@ -107,11 +105,6 @@ const PromoCodeForm = ({promoCode, categories, products, onBack}: Props) => {
         clearErrors(["categoryIds", "productIds"]);
     };
 
-    const returnToList = () => {
-        onBack();
-        router.replace("/promoCodes?tab=AllPromoCodes");
-    };
-
     const onSubmit = async (data: PromoCodeFormValues) => {
         const payload = {
             ...data,
@@ -127,8 +120,7 @@ const PromoCodeForm = ({promoCode, categories, products, onBack}: Props) => {
                 await axios.post("/api/promo-codes", payload);
             }
             toast.success(promoCode ? "Промокод оновлено!" : "Промокод створено!");
-            returnToList();
-            router.refresh();
+            onBack();
         } catch (error: unknown) {
             toast.error(getErrorMessage(error));
         }
@@ -136,7 +128,7 @@ const PromoCodeForm = ({promoCode, categories, products, onBack}: Props) => {
 
     return (
         <div>
-            <button type="button" className="group mb-5 flex items-center gap-1" onClick={returnToList}>
+            <button type="button" className="group mb-5 flex items-center gap-1" onClick={onBack}>
                 <IoIosArrowBack className="size-5"/>
                 <span className="select-none group-hover:underline">Повернутися до промокодів</span>
             </button>

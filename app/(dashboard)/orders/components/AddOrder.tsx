@@ -129,7 +129,7 @@ const AddOrder = ({products}: Props) => {
                     reset()
                     setSelectedCity(null)
                     setSelectedWarehouse(null)
-                    router.refresh()
+                    router.replace("/orders")
                 })
                 .catch(() => {
                     toast.error("Something went wrong")

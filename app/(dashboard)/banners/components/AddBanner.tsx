@@ -69,7 +69,6 @@ const AddBanner = ({banner, resetSelectedBanner}: Props) => {
             });
             toast.success(banner ? "Банер оновлено!" : "Банер створено!");
             returnToBanners();
-            router.refresh();
         } catch (error: unknown) {
             toast.error(getErrorMessage(error));
         }
