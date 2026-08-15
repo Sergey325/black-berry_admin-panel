@@ -9,6 +9,7 @@ import type { IBanner } from "@/app/actions/getBanners";
 import ToolTip from "@/app/components/ToolTip";
 import {FiTrash2} from "react-icons/fi";
 import type {ReactNode} from "react";
+import {showConfirmationToast} from "@/app/components/ConfirmationToast";
 
 type Props = {
     banner: IBanner;
@@ -19,19 +20,23 @@ type Props = {
 const BannerRow = ({ banner, onEdit, dragHandle }: Props) => {
     const router = useRouter();
 
-    const handleDelete = async () => {
-        if (!confirm(`Видалити банер «${banner.title.replace(/\n/g, " ")}»?`)) return;
-
-        try {
-            await axios.delete(`/api/banner/${banner.id}`);
-            toast.success("Банер успішно видалено!");
-            router.refresh();
-        } catch (error: unknown) {
-            const message = axios.isAxiosError<{ error?: string }>(error)
-                ? error.response?.data?.error
-                : undefined;
-            toast.error(message ?? "Не вдалося видалити банер");
-        }
+    const handleDelete = () => {
+        showConfirmationToast({
+            toastId: `delete-banner-${banner.id}`,
+            message: `Видалити банер «${banner.title.replace(/\n/g, " ")}»?`,
+            onConfirmAction: async () => {
+                try {
+                    await axios.delete(`/api/banner/${banner.id}`);
+                    toast.success("Банер успішно видалено!");
+                    router.refresh();
+                } catch (error: unknown) {
+                    const message = axios.isAxiosError<{ error?: string }>(error)
+                        ? error.response?.data?.error
+                        : undefined;
+                    toast.error(message ?? "Не вдалося видалити банер");
+                }
+            },
+        });
     };
 
     return (

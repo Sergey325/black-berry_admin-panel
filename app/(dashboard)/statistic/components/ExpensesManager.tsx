@@ -10,6 +10,7 @@ import {formatMonthPeriod, parseMonthPeriod} from "@/app/lib/adminApi";
 import type {MonthRange} from "@/app/lib/adminApi";
 import ToolTip from "@/app/components/ToolTip";
 import {MdEdit} from "react-icons/md";
+import {showConfirmationToast} from "@/app/components/ConfirmationToast";
 
 interface Props {
     expenses: MonthlyExpense[];
@@ -108,19 +109,23 @@ export default function ExpensesManager({expenses, range, onChanged}: Props) {
         }
     };
 
-    const deleteExpense = async (id: number) => {
-        if (!window.confirm("Видалити цю витрату?")) return;
-
-        setSaving(true);
-        try {
-            await axios.delete(`/api/admin/expenses/${id}`);
-            await onChanged();
-            toast.success("Витрату видалено");
-        } catch (error: unknown) {
-            toast.error(getErrorMessage(error, "Не вдалося видалити витрату"));
-        } finally {
-            setSaving(false);
-        }
+    const deleteExpense = (id: number) => {
+        showConfirmationToast({
+            toastId: `delete-expense-${id}`,
+            message: "Видалити цю витрату?",
+            onConfirmAction: async () => {
+                setSaving(true);
+                try {
+                    await axios.delete(`/api/admin/expenses/${id}`);
+                    await onChanged();
+                    toast.success("Витрату видалено");
+                } catch (error: unknown) {
+                    toast.error(getErrorMessage(error, "Не вдалося видалити витрату"));
+                } finally {
+                    setSaving(false);
+                }
+            },
+        });
     };
 
     return (

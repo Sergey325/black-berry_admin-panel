@@ -9,6 +9,7 @@ import {MdEdit} from "react-icons/md";
 import type {PromoCodeListItem, PromoScope} from "@/app/actions/getPromoCodes";
 import ToolTip from "@/app/components/ToolTip";
 import {formatDateAndTime} from "@/app/utils/formatDate";
+import {showConfirmationToast} from "@/app/components/ConfirmationToast";
 
 interface Props {
     promoCode: PromoCodeListItem;
@@ -54,19 +55,23 @@ const PromoCodeRow = ({promoCode, isLoadingEdit, onEdit, onDeleted, onStatusChan
         }
     };
 
-    const handleDelete = async () => {
-        if (!confirm(`Видалити промокод «${promoCode.code}»?`)) return;
-
-        setIsDeleting(true);
-        try {
-            await axios.delete(`/api/promo-codes/${promoCode.id}`);
-            onDeleted(promoCode.id);
-            toast.success("Промокод успішно видалено!");
-            router.refresh();
-        } catch (error: unknown) {
-            toast.error(getErrorMessage(error, "Не вдалося видалити промокод"));
-            setIsDeleting(false);
-        }
+    const handleDelete = () => {
+        showConfirmationToast({
+            toastId: `delete-promo-code-${promoCode.id}`,
+            message: `Видалити промокод «${promoCode.code}»?`,
+            onConfirmAction: async () => {
+                setIsDeleting(true);
+                try {
+                    await axios.delete(`/api/promo-codes/${promoCode.id}`);
+                    onDeleted(promoCode.id);
+                    toast.success("Промокод успішно видалено!");
+                    router.refresh();
+                } catch (error: unknown) {
+                    toast.error(getErrorMessage(error, "Не вдалося видалити промокод"));
+                    setIsDeleting(false);
+                }
+            },
+        });
     };
 
     const renderStatusButton = () => (

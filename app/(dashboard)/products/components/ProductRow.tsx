@@ -9,6 +9,7 @@ import {calculatePriceWithDiscount} from "@/app/utils/calculateDiscount";
 import {FiTrash2} from "react-icons/fi";
 import Link from "next/link";
 import {ReactNode} from "react";
+import {showConfirmationToast} from "@/app/components/ConfirmationToast";
 
 type Props = {
     product: IProduct;
@@ -21,17 +22,21 @@ export default function ProductRow({ product, onEdit, dragHandle }: Props) {
 
     const firstImage = product.colors[0]?.images[0]?.url;
 
-    const handleDelete = async () => {
-        if (!confirm(`Видалити товар "${product.name}"?`)) return;
-
-        await axios.delete(`/api/product/${product.id}`)
-            .then(() => {
-                toast.success("Product deleted successfully!");
-                router.refresh()
-            })
-            .catch((error) => {
-                toast.error(error?.response?.data?.error)
-            });
+    const handleDelete = () => {
+        showConfirmationToast({
+            toastId: `delete-product-${product.id}`,
+            message: `Видалити товар «${product.name}»?`,
+            onConfirmAction: async () => {
+                await axios.delete(`/api/product/${product.id}`)
+                    .then(() => {
+                        toast.success("Product deleted successfully!");
+                        router.refresh()
+                    })
+                    .catch((error) => {
+                        toast.error(error?.response?.data?.error)
+                    });
+            },
+        });
     };
 
     return (

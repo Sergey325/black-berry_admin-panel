@@ -7,6 +7,7 @@ import ToolTip from "@/app/components/ToolTip";
 import {MdEdit} from "react-icons/md";
 import {FiTrash2} from "react-icons/fi";
 import Link from "next/link";
+import {showConfirmationToast} from "@/app/components/ConfirmationToast";
 
 
 type Props = {
@@ -17,17 +18,21 @@ type Props = {
 const CategoryRow = ({category, onEdit}: Props) => {
     const router = useRouter();
 
-    const handleDelete = async () => {
-        if (!confirm(`Видалити товар "${category.name}"?`)) return;
-
-        await axios.delete(`/api/category/${category.id}`)
-            .then(() => {
-                toast.success("Категорію успішно видалено!");
-                router.refresh()
-            })
-            .catch((error) => {
-                toast.error(error?.response?.data?.error)
-            });
+    const handleDelete = () => {
+        showConfirmationToast({
+            toastId: `delete-category-${category.id}`,
+            message: `Видалити категорію «${category.name}»?`,
+            onConfirmAction: async () => {
+                await axios.delete(`/api/category/${category.id}`)
+                    .then(() => {
+                        toast.success("Категорію успішно видалено!");
+                        router.refresh()
+                    })
+                    .catch((error) => {
+                        toast.error(error?.response?.data?.error)
+                    });
+            },
+        });
     };
 
     return (
