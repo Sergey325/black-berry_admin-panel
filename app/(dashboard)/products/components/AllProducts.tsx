@@ -152,6 +152,7 @@ const ProductCategory = ({group, onEdit, canReorder}: ProductCategoryProps) => {
                         <span className="text-center">Дії</span>
                     </div>
                     <DndContext
+                        id={`products-category-${group.categoryId ?? "uncategorized"}`}
                         sensors={sensors}
                         collisionDetection={closestCenter}
                         onDragEnd={handleDragEnd}
