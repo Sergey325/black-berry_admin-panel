@@ -73,6 +73,7 @@ export type OrderItem = {
     name: string;
     color: string;
     colorName: string;
+    colorCode: string;
     size: string;
     price: number;
     quantity: number;

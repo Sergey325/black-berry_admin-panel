@@ -79,6 +79,7 @@ const AddOrder = ({products}: Props) => {
 
     const handleSelectProduct = (product: IProduct) => {
         const firstColor = product.colors[0];
+
         if (!firstColor) {
             toast.error("У товару немає доступних кольорів");
             return;
@@ -89,6 +90,7 @@ const AddOrder = ({products}: Props) => {
             colorName: firstColor.colorName,
             name: product.name,
             color: firstColor.color,
+            colorCode: firstColor.colorCode ?? "",
             size: firstColor.sizes[0]?.size ?? "",
             price: product.price,
             quantity: 1,
@@ -251,6 +253,7 @@ const AddOrder = ({products}: Props) => {
                                                         if (newColor) {
                                                             setValue(`items.${index}.productColorId`, newColor.id);
                                                             setValue(`items.${index}.colorName`, newColor.colorName);
+                                                            setValue(`items.${index}.colorCode`, newColor.colorCode ?? "");
                                                             setValue(`items.${index}.size`, newColor.sizes[0]?.size ?? "");
                                                             setValue(`items.${index}.imageUrl`, newColor.images[0]?.url ?? "");
                                                         }
