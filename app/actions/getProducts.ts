@@ -1,83 +1,80 @@
 "use server";
 
 import prisma from "@/app/lib/prisma";
-import { ICategory } from "@/app/actions/getCategories";
 import {Prisma} from "@prisma/client";
 
-export interface IProductSize {
-    id: number;
-    size: string;
-    available: boolean;
-    quantity: number | null;
-    productColorId: number;
-}
-
-export interface IProductImage {
-    id: number;
-    url: string;
-    order: number;
-    productColorId: number;
-}
-
-export interface IProductColor {
-    id: number;
-    position: number;
-    color: string;
-    colorName: string;
-    colorCode: string | null;
-    productId: number;
-    isBestSeller: boolean;
-    images: IProductImage[];
-    sizes: IProductSize[];
-}
-
-export interface IProductMaterial {
-    id: number;
-    name: string;
-}
-
-export interface IRelatedProductCategory {
-    id: number;
-    name: string;
-    slug: string;
-}
-
-export interface IRelatedProduct {
-    id: number;
-    name: string;
-    slug: string;
-    price: number;
-    discount: number;
-    material: IProductMaterial | null;
-    category: IRelatedProductCategory | null;
+const productInclude = {
     colors: {
-        id: number;
-        color: string;
-        colorName: string;
-        colorCode: string | null;
-        productId: number;
-        isBestSeller: boolean;
-        images: IProductImage[];
-        sizes: IProductSize[];
-    }[];
-}
+        orderBy: [{position: "asc"}, {id: "asc"}],
+        include: {
+            images: {
+                orderBy: {order: "asc"},
+            },
+            sizes: true,
+            ProductColorFilter: {
+                include: {
+                    CatalogColor: true,
+                },
+            },
+        },
+    },
+    material: true,
+    category: {
+        include: {
+            specifications: true,
+            _count: {
+                select: {
+                    products: true,
+                },
+            },
+        },
+    },
+    relatedTo: {
+        orderBy: {order: "asc"},
+        include: {
+            toProduct: {
+                select: {
+                    id: true,
+                    name: true,
+                    slug: true,
+                    price: true,
+                    discount: true,
+                    material: true,
+                    category: {
+                        select: {
+                            id: true,
+                            name: true,
+                            slug: true,
+                        },
+                    },
+                    colors: {
+                        orderBy: [{position: "asc"}, {id: "asc"}],
+                        include: {
+                            images: {
+                                take: 1,
+                                orderBy: {order: "asc"},
+                            },
+                            sizes: true,
+                            ProductColorFilter: {
+                                include: {
+                                    CatalogColor: true,
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+        },
+    },
+} satisfies Prisma.ProductInclude;
 
-export interface IProduct {
-    id: number;
-    name: string;
-    slug: string;
-    description: string | null;
-    price: number;
-    discount: number;
-    hasLining: boolean | null;
-    position: number;
-    material: IProductMaterial | null;
-    createdAt: Date;
-    updatedAt: Date;
-    colors: IProductColor[];
-    category: ICategory | null;
+type ProductQueryResult = Prisma.ProductGetPayload<{include: typeof productInclude}>;
+
+export type IProductColor = ProductQueryResult["colors"][number];
+export type IRelatedProduct = ProductQueryResult["relatedTo"][number]["toProduct"];
+export type IProduct = Omit<ProductQueryResult, "relatedTo"> & {
     relatedTo: IRelatedProduct[];
-}
+};
 
 export interface IProductsParams {
     title?: string;
@@ -97,60 +94,7 @@ export async function getProducts(params?: IProductsParams): Promise<IProduct[]>
 
         const products = await prisma.product.findMany({
             where: title ? { name: { contains: title, mode: "insensitive" } } : undefined,
-            include: {
-                colors: {
-                    orderBy: [{position: "asc"}, {id: "asc"}],
-                    include: {
-                        images: {
-                            orderBy: {order: "asc"},
-                        },
-                        sizes: true,
-                    },
-                },
-                material: true,
-                category: {
-                    include: {
-                        specifications: true,
-                        _count: {
-                            select: {
-                                products: true,
-                            },
-                        },
-                    },
-                },
-                relatedTo: {
-                    orderBy: { order: "asc" },
-                    include: {
-                        toProduct: {
-                            select: {
-                                id: true,
-                                name: true,
-                                slug: true,
-                                price: true,
-                                discount: true,
-                                material: true,
-                                category: {
-                                    select: {
-                                        id: true,
-                                        name: true,
-                                        slug: true,
-                                    },
-                                },
-                                colors: {
-                                    orderBy: [{position: "asc"}, {id: "asc"}],
-                                    include: {
-                                        images: {
-                                            take: 1,
-                                            orderBy: { order: "asc" },
-                                        },
-                                        sizes: true,
-                                    },
-                                },
-                            },
-                        },
-                    },
-                },
-            },
+            include: productInclude,
             orderBy,
         });
 

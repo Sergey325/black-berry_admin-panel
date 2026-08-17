@@ -15,3 +15,4 @@ Rules:
 - Prefer Server Components
 - Don't add comments
 - Follow existing architecture
+- Don't change the database schema from this project: don't edit `prisma/schema.prisma` manually, create or modify migrations, run Prisma migrations, or use `prisma db push`. Database schema changes are made in the main BlackBerry Shop project and synchronized here only with `prisma db pull`.

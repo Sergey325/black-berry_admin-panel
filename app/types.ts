@@ -9,12 +9,14 @@ export type FormValuesProduct = {
     hasLining: boolean;
     materialId: number;
     colors: {
+        id?: number;
         color: string;
         colorName: string;
         colorCode: string | null;
+        catalogColorIds: number[];
         isBestSeller: boolean;
         images: string[];
-        sizes: { size: string; available: boolean; quantity: number | null }[];
+        sizes: { id?: number; size: string; available: boolean; quantity: number | null }[];
     }[];
     relatedProducts: {
         id: number;

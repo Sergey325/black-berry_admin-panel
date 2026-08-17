@@ -2,7 +2,7 @@ import {Controller, useFieldArray, useForm, useWatch} from "react-hook-form";
 import axios from "axios";
 import ColorBlock, {DEFAULT_SIZES} from "@/app/(dashboard)/products/components/ColorBlock";
 import ToolTip from "@/app/components/ToolTip";
-import {IProduct} from "@/app/actions/getProducts";
+import {IProduct, IProductColor} from "@/app/actions/getProducts";
 import toast from "react-hot-toast";
 import {useRouter} from "next/navigation";
 import {IoIosArrowBack} from "react-icons/io";
@@ -23,6 +23,7 @@ import {
     useSensors,
 } from "@dnd-kit/core";
 import type {DragEndEvent} from "@dnd-kit/core";
+import type {ICatalogColor} from "@/app/actions/getCatalogColors";
 import {
     sortableKeyboardCoordinates,
     SortableContext,
@@ -30,51 +31,12 @@ import {
 } from "@dnd-kit/sortable";
 
 
-const DEFAULT_COLORS = [
-    { code: "06", colorHex: "#FF9A44", colorName: "Рудий" },
-    { code: "15", colorHex: "#D7EAE7", colorName: "М'ятний" },
-    { code: "27", colorHex: "#C6B1C9", colorName: "Бузковий" },
-    { code: "31", colorHex: "#ECCEDC", colorName: "Зефірний" },
-    { code: "53", colorHex: "#61616D", colorName: "Темно-сірий" },
-    { code: "55", colorHex: "#F3F2F0", colorName: "Білий" },
-    { code: "62", colorHex: "#E7DFD4", colorName: "Молочний" },
-    { code: "98", colorHex: "#E7A1CC", colorName: "Суха троянда" },
-    { code: "106", colorHex: "#A4011E", colorName: "Червоний" },
-    { code: "107", colorHex: "#B9083F", colorName: "Вишневий" },
-    { code: "141", colorHex: "#153EAC", colorName: "Синій" },
-    { code: "146", colorHex: "#D9D0E5", colorName: "Світло-лавандовий" },
-    { code: "149", colorHex: "#BB2744", colorName: "Малиновий" },
-    { code: "161", colorHex: "#FEE7E5", colorName: "Пудровий" },
-    { code: "166", colorHex: "#9280B4", colorName: "Яскраво-лавандовий" },
-    { code: "178", colorHex: "#CF6FA6", colorName: "Півонія" },
-    { code: "185", colorHex: "#E4B5CA", colorName: "Рожевий" },
-    { code: "216", colorHex: "#F6D34E", colorName: "Жовтий" },
-    { code: "268", colorHex: "#B6A8A7", colorName: "Холодний бежевий" },
-    { code: "287", colorHex: "#A5D1F1", colorName: "Блакитний" },
-    { code: "310", colorHex: "#DFC8A6", colorName: "Шампань" },
-    { code: "321", colorHex: "#6E4832", colorName: "Шоколадний" },
-    { code: "343", colorHex: "#75787D", colorName: "Сірий" },
-    { code: "377", colorHex: "#F180A7", colorName: "Яскраво-рожевий" },
-    { code: "416", colorHex: "#C4C4CD", colorName: "Світло-сірий" },
-    { code: "428", colorHex: "#A3A9B7", colorName: "Сірий" },
-    { code: "485", colorHex: "#6A8045", colorName: "Зелений" },
-    { code: "493", colorHex: "#371A13", colorName: "Гіркий шоколадний" },
-    { code: "530", colorHex: "#A68E82", colorName: "Бежевий" },
-    { code: "599", colorHex: "#C4BAAC", colorName: "Слонова кістка" },
-    { code: "745", colorHex: "#D7D2D1", colorName: "Молочний" },
-    { code: "754", colorHex: "#947E81", colorName: "Бежево-сірий" },
-    { code: "775", colorHex: "#291516", colorName: "Шоколадний" },
-    { code: "776", colorHex: "#C2C0D7", colorName: "Сіро-блакитний" },
-    { code: "788", colorHex: "#C3B0E2", colorName: "Лавандовий" },
-    { code: "796", colorHex: "#EBC4DB", colorName: "Рожевий" },
-    { code: "1060", colorHex: "#291D1B", colorName: "Чорний" },
-];
-
 type Props = {
     product?: IProduct;
     products: IProduct[];
     materials: IMaterial[];
     categories: ICategory[];
+    catalogColors: ICatalogColor[];
     resetSelectedProduct: () => void;
 }
 
@@ -99,7 +61,19 @@ const getContrastTextColor = (hexColor: string) => {
     return luminance > 0.179 ? "#111827" : "#FFFFFF";
 };
 
-export default function AddProduct({product, products, materials, categories, resetSelectedProduct}: Props) {
+const getOrderedFilterColors = (color: IProductColor): ICatalogColor[] => {
+    const snapshotCodes = color.colorCode?.match(/\d+/g) ?? [];
+    const snapshotPosition = new Map(snapshotCodes.map((code, index) => [code, index]));
+
+    return color.ProductColorFilter
+        .map(({CatalogColor}) => CatalogColor)
+        .sort((first, second) => (
+            (snapshotPosition.get(first.code) ?? Number.MAX_SAFE_INTEGER)
+            - (snapshotPosition.get(second.code) ?? Number.MAX_SAFE_INTEGER)
+        ));
+};
+
+export default function AddProduct({product, products, materials, categories, catalogColors, resetSelectedProduct}: Props) {
     const router = useRouter();
 
     const { register, control, handleSubmit, formState: { errors }, reset, getValues, setValue, clearErrors } = useForm<FormValuesProduct>({
@@ -111,20 +85,27 @@ export default function AddProduct({product, products, materials, categories, re
             hasLining: product?.hasLining ?? false,
             materialId: product?.material?.id || undefined,
             categoryId: product?.category?.id || null,
-            colors: product?.colors.map((c) => ({
-                color: c.color,
-                colorName: c.colorName,
-                colorCode: c.colorCode || null,
-                isBestSeller: c.isBestSeller || false,
-                images: c.images
-                    .sort((a, b) => a.order - b.order)
-                    .map((img) => img.url),
-                sizes: c.sizes.map((s) => ({
-                    size: s.size,
-                    available: s.available,
-                    quantity: s.quantity,
-                })),
-            })) || [],
+            colors: product?.colors.map((c) => {
+                const filterColors = getOrderedFilterColors(c);
+
+                return {
+                    id: c.id,
+                    color: c.color,
+                    colorName: c.colorName,
+                    colorCode: filterColors.map(({code}) => code).join("|") || c.colorCode || null,
+                    catalogColorIds: filterColors.map(({id}) => id),
+                    isBestSeller: c.isBestSeller || false,
+                    images: [...c.images]
+                        .sort((a, b) => a.order - b.order)
+                        .map((img) => img.url),
+                    sizes: c.sizes.map((s) => ({
+                        id: s.id,
+                        size: s.size,
+                        available: s.available,
+                        quantity: s.quantity,
+                    })),
+                };
+            }) || [],
             relatedProducts: product?.relatedTo?.map(p => ({
                 id: p.id,
                 name: p.name,
@@ -177,6 +158,10 @@ export default function AddProduct({product, products, materials, categories, re
         }
 
         for (const color of data.colors) {
+            if (color.catalogColorIds.length === 0) {
+                toast.error("Виберіть хоча б один колір для фільтрації для кожного варіанта");
+                return;
+            }
             if (color.images.length === 0) {
                 toast.error(`Додайте зображення для кольору`);
                 return;
@@ -187,11 +172,12 @@ export default function AddProduct({product, products, materials, categories, re
             }
         }
 
-        axios.post("/api/product", {
-            ...data,
-            id: product?.id || null,
-            slug: slugify(data.name)
-        }).then(() => {
+        try {
+            await axios.post("/api/product", {
+                ...data,
+                id: product?.id || null,
+                slug: slugify(data.name),
+            });
             toast.success(product?.id ? "Продукт оновлено!" : "Продукт створено!")
             reset({
                 name: "",
@@ -203,10 +189,12 @@ export default function AddProduct({product, products, materials, categories, re
 
             })
             returnToProducts()
-        })
-        .catch(() => {
-            toast.error("Something went wrong")
-        })
+        } catch (error: unknown) {
+            const message = axios.isAxiosError<{error?: string}>(error)
+                ? error.response?.data?.error
+                : undefined;
+            toast.error(message ?? "Не вдалося зберегти товар");
+        }
     };
 
     const handleDeleteColor = async (colorIndex: number) => {
@@ -383,6 +371,7 @@ export default function AddProduct({product, products, materials, categories, re
                                         onRemoveColor={() => handleDeleteColor(colorIndex)}
                                         errors={errors}
                                         defaultSizes={defaultSizes}
+                                        catalogColors={catalogColors}
                                         initialOpen={colorIndex === colorFields.length - 1}
                                     />
                                 ))}
@@ -392,15 +381,15 @@ export default function AddProduct({product, products, materials, categories, re
                     <div className="flex items-center gap-4">
                         <label className="text-base font-semibold text-gray-900">Кольори товару</label>
                         <div className="flex flex-wrap gap-2">
-                            {DEFAULT_COLORS.map((item) => (
-                                <ToolTip key={item.code + item.colorHex} label={item.colorName}>
+                            {catalogColors.map((item) => (
+                                <ToolTip key={item.id} label={item.name}>
                                     <button
                                         type="button"
-                                        onClick={() => appendColor({ color: item.colorHex, images: [], sizes: createDefaultSizes(), colorName: item.colorName, colorCode: item.code, isBestSeller: false })}
+                                        onClick={() => appendColor({color: item.hex, images: [], sizes: createDefaultSizes(), colorName: item.name, colorCode: item.code, catalogColorIds: [item.id], isBestSeller: false})}
                                         className="w-7 h-7 rounded-full border border-gray-500 hover:scale-110 transition text-xs text-center font-medium"
                                         style={{
-                                            backgroundColor: item.colorHex,
-                                            color: getContrastTextColor(item.colorHex),
+                                            backgroundColor: item.hex,
+                                            color: getContrastTextColor(item.hex),
                                         }}
                                     >
                                         {item.code}
@@ -410,7 +399,7 @@ export default function AddProduct({product, products, materials, categories, re
                             <ToolTip label="Додати колір">
                                 <button
                                     type="button"
-                                    onClick={() => appendColor({ color: "#000000", images: [], sizes: [], colorName: "", colorCode: null, isBestSeller: false })}
+                                    onClick={() => appendColor({color: "#000000", images: [], sizes: createDefaultSizes(), colorName: "", colorCode: null, catalogColorIds: [], isBestSeller: false})}
                                     className="w-7 h-7 rounded-full border border-gray-300 border-dashed flex items-center justify-center text-gray-400 hover:text-gray-800 hover:border-gray-500 transition text-center cursor-pointer"
                                 >
                                     +

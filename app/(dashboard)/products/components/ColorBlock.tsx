@@ -17,6 +17,8 @@ import {useState} from "react";
 import type {CSSProperties} from "react";
 import {useSortable} from "@dnd-kit/sortable";
 import {CSS} from "@dnd-kit/utilities";
+import CatalogColorMultiSelect, {CatalogColorPreview} from "@/app/(dashboard)/products/components/CatalogColorMultiSelect";
+import type {ICatalogColor} from "@/app/actions/getCatalogColors";
 
 type Props = {
     id: string
@@ -26,20 +28,24 @@ type Props = {
     onRemoveColor: (colorIndex: number) => void
     errors: FieldErrors<FormValuesProduct>
     defaultSizes: string[]
+    catalogColors: ICatalogColor[]
     initialOpen?: boolean
 };
 
 export const DEFAULT_SIZES = ["XS", "S", "M", "L", "XL"];
 
-const ColorBlock = ({id, control, register, colorIndex, onRemoveColor, errors, defaultSizes, initialOpen = false}: Props) => {
+const ColorBlock = ({id, control, register, colorIndex, onRemoveColor, errors, defaultSizes, catalogColors, initialOpen = false}: Props) => {
     const [open, setOpen] = useState(initialOpen);
     const { fields: sizeFields, append: appendSize, remove: removeSize } = useFieldArray({
         control,
         name: `colors.${colorIndex}.sizes`,
     });
-    const color = useWatch({control, name: `colors.${colorIndex}.color`});
     const colorName = useWatch({control, name: `colors.${colorIndex}.colorName`});
-    const colorCode = useWatch({control, name: `colors.${colorIndex}.colorCode`});
+    const catalogColorIds = useWatch({control, name: `colors.${colorIndex}.catalogColorIds`}) ?? [];
+    const selectedCatalogColors = catalogColorIds
+        .map((catalogColorId) => catalogColors.find(({id: catalogColorIdCandidate}) => catalogColorIdCandidate === catalogColorId))
+        .filter((catalogColor): catalogColor is ICatalogColor => Boolean(catalogColor));
+    const colorCode = selectedCatalogColors.map(({code}) => code).join("|");
     const images = useWatch({control, name: `colors.${colorIndex}.images`});
     const isBestSeller = useWatch({control, name: `colors.${colorIndex}.isBestSeller`});
     const colorErrors = errors.colors?.[colorIndex];
@@ -81,7 +87,7 @@ const ColorBlock = ({id, control, register, colorIndex, onRemoveColor, errors, d
                     aria-expanded={isOpen}
                 >
                     <span className="text-sm font-semibold text-gray-400">{colorIndex + 1}</span>
-                    <span className="size-9 shrink-0 rounded-lg border border-gray-300" style={{backgroundColor: color}}/>
+                    <CatalogColorPreview colors={selectedCatalogColors} className="size-9 rounded-lg"/>
                     <span className="min-w-0 flex-1">
                         <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
                             <span className="truncate text-base font-semibold text-gray-900">
@@ -131,10 +137,11 @@ const ColorBlock = ({id, control, register, colorIndex, onRemoveColor, errors, d
                     <div className="flex flex-col">
                         <label className="text-sm font-medium text-gray-700">Код кольору</label>
                         <input
-                            {...register(`colors.${colorIndex}.colorCode`)}//, { required: "Обов'язкове поле" }
+                            value={colorCode}
+                            readOnly
+                            placeholder="Формується автоматично"
                             className="max-w-[220px] rounded-lg border border-gray-300 px-3 py-2.5 text-base outline-none transition focus:border-gray-500 focus:ring-2 focus:ring-gray-200"
                         />
-                        {errors?.colors?.[colorIndex]?.colorCode && <span className="text-sm text-red-500">{errors?.colors?.[colorIndex]?.colorCode.message}</span>}
                     </div>
                     <Controller
                         control={control}
@@ -151,6 +158,24 @@ const ColorBlock = ({id, control, register, colorIndex, onRemoveColor, errors, d
                     />
                 </div>
 
+            </div>
+            <div className="flex flex-col gap-1">
+                <label className="text-sm font-medium text-gray-700">Кольори для фільтрації</label>
+                <Controller
+                    control={control}
+                    name={`colors.${colorIndex}.catalogColorIds`}
+                    rules={{
+                        validate: (value) => new Set(value).size > 0 || "Виберіть хоча б один колір",
+                    }}
+                    render={({field}) => (
+                        <CatalogColorMultiSelect
+                            colors={catalogColors}
+                            value={field.value ?? []}
+                            onChange={(ids) => field.onChange([...new Set(ids)])}
+                            error={colorErrors?.catalogColorIds?.message}
+                        />
+                    )}
+                />
             </div>
             <div className="flex flex-col gap-1">
                 <label className="text-sm font-medium text-gray-700">Зображення для цього кольору</label>

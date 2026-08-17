@@ -9,14 +9,16 @@ import AddProduct from "@/app/(dashboard)/products/components/AddProduct";
 import {IMaterial} from "@/app/actions/getMaterials";
 import {ICategory} from "@/app/actions/getCategories";
 import DashboardPageHeader from "@/app/(dashboard)/components/DashboardPageHeader";
+import type {ICatalogColor} from "@/app/actions/getCatalogColors";
 
 type Props = {
     products: IProduct[];
     materials: IMaterial[];
     categories: ICategory[];
+    catalogColors: ICatalogColor[];
 };
 
-export default function ProductsClient({products, materials, categories}: Props) {
+export default function ProductsClient({products, materials, categories, catalogColors}: Props) {
     const [selectedProduct, setSelectedProduct] = useState<IProduct | null>(null);
     const params = useSearchParams()
     const router = useRouter()
@@ -77,6 +79,7 @@ export default function ProductsClient({products, materials, categories}: Props)
                         products={products}
                         materials={materials}
                         categories={categories}
+                        catalogColors={catalogColors}
                         resetSelectedProduct={() => setSelectedProduct(null)}
                     />
             }

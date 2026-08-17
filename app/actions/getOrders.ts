@@ -1,7 +1,7 @@
 "use server";
 
 import prisma from "@/app/lib/prisma";
-import {OrderStatus, PaymentMethod} from "@prisma/client";
+import {OrderStatus, PaymentMethod, Prisma} from "@prisma/client";
 
 export interface IOrderItem {
     id: number;
@@ -54,7 +54,7 @@ export async function getOrders(params?: IOrdersParams) {
     try {
         const { status, sort } = params ?? {};
 
-        const orderBy: any =
+        const orderBy: Prisma.OrderOrderByWithRelationInput =
             sort === "price_asc" ? { totalAmount: "asc" } :
                 sort === "price_desc" ? { totalAmount: "desc" } :
                     sort === "oldest" ? { createdAt: "asc" } :
@@ -77,7 +77,7 @@ export async function getOrders(params?: IOrdersParams) {
 
         return orders;
     }
-    catch (error: any) {
-        throw new Error(error)
+    catch (error: unknown) {
+        throw error instanceof Error ? error : new Error("Failed to get orders")
     }
 }

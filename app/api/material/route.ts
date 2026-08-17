@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import prisma from "@/app/lib/prisma";
+import {Prisma} from "@prisma/client";
 
 export async function POST(req: Request) {
     const { name } = await req.json();
@@ -13,8 +14,8 @@ export async function POST(req: Request) {
             data: { name: name.trim() },
         });
         return NextResponse.json(material, { status: 201 });
-    } catch (e: any) {
-        if (e.code === "P2002") {
+    } catch (error: unknown) {
+        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
             return NextResponse.json(
                 { error: "Матеріал з такою назвою вже існує" },
                 { status: 409 }

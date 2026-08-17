@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import prisma from "@/app/lib/prisma";
+import {Prisma} from "@prisma/client";
 
 
 export async function PUT(
@@ -19,8 +20,8 @@ export async function PUT(
             data: { name: name.trim() },
         });
         return NextResponse.json(material);
-    } catch (e: any) {
-        if (e.code === "P2002") {
+    } catch (error: unknown) {
+        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
             return NextResponse.json(
                 { error: "Матеріал з такою назвою вже існує" },
                 { status: 409 }
@@ -52,7 +53,7 @@ export async function DELETE(
     try {
         await prisma.material.delete({ where: { id: materialId } });
         return NextResponse.json({ success: true });
-    } catch (e: any) {
+    } catch {
         return NextResponse.json({ error: "Помилка сервера" }, { status: 500 });
     }
 }

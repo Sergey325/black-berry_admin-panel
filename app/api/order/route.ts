@@ -2,13 +2,18 @@ import { NextResponse } from "next/server";
 import prisma from "@/app/lib/prisma";
 import { PaymentMethod } from "@prisma/client";
 import {createTTN} from "@/app/lib/novaposhta";
+import {FormValuesOrder} from "@/app/types";
+
+type ManualOrderRequest = FormValuesOrder & {
+    warehouseNumber: number;
+};
 
 export async function POST(request: Request) {
     try {
-        const body = await request.json();
+        const body = await request.json() as ManualOrderRequest;
         const { firstName, lastName, phone, email, comment, city, area, cityRef, warehouse, warehouseNumber, warehouseRef, paymentMethod, items } = body;
 
-        const totalAmount = items.reduce((acc: number, item: any) => acc + item.price * item.quantity, 0);
+        const totalAmount = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
 
         const order = await prisma.order.create({
             data: {
@@ -28,7 +33,7 @@ export async function POST(request: Request) {
                 paymentMethod: paymentMethod as PaymentMethod,
                 paidAt: new Date(),
                 items: {
-                    create: items.map((item: any) => ({
+                    create: items.map((item) => ({
                         productId: item.productId,
                         name: item.name,
                         price: item.price,
