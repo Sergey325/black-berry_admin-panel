@@ -68,7 +68,7 @@ const BackToTop = () => {
             type="button"
             aria-label={label}
             title={label}
-            className="fixed bottom-20 right-5 z-20 cursor-pointer animate-bounce rounded-full bg-[#0F172BFF] p-2 text-white shadow-xl transition hover:bg-gray-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-900 lg:right-20 lg:p-4"
+            className="fixed bottom-20 right-5 z-20 cursor-pointer animate-bounce rounded-full bg-primary-dark p-2 text-white shadow-xl transition hover:bg-gray-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-900 lg:right-20 lg:p-4"
             onClick={handleClick}
         >
             {isScrollingDown ? <AiOutlineArrowDown size={24}/> : <AiOutlineArrowUp size={24}/>}

@@ -2,6 +2,7 @@
 
 @theme {
   --color-primary: #823D9A;
+  --color-primary-dark: #0F172BFF;
 }
 
 @keyframes confirmation-toast-enter {
@@ -88,7 +89,7 @@ input {
 
 /*Handle*/
 ::-webkit-scrollbar-thumb {
-  @apply ml-1 bg-[#0F172BFF] h-[40%];
+  @apply ml-1 bg-primary-dark h-[40%];
 }
 
 * {

@@ -48,11 +48,14 @@ export interface IOrder {
 export interface IOrdersParams {
     status?: OrderStatus | "All";
     sort?: string;
+    search?: string;
 }
 
 export async function getOrders(params?: IOrdersParams) {
     try {
-        const { status, sort } = params ?? {};
+        const { status, sort, search } = params ?? {};
+        const searchTerm = search?.trim();
+        const phoneSearch = searchTerm?.replace(/\D/g, "");
 
         const orderBy: Prisma.OrderOrderByWithRelationInput =
             sort === "price_asc" ? { totalAmount: "asc" } :
@@ -60,12 +63,26 @@ export async function getOrders(params?: IOrdersParams) {
                     sort === "oldest" ? { createdAt: "asc" } :
                         { createdAt: "desc" } // newest по умолчанию
 
-        const where =
-            status === "All"
+        const where: Prisma.OrderWhereInput = {
+            ...(status === "All"
                 ? {}
                 : status
-                    ? { status: status as OrderStatus }
-                    : { status: { not: OrderStatus.PENDING } };
+                    ? {status: status as OrderStatus}
+                    : {status: {not: OrderStatus.PENDING}}),
+            ...(searchTerm
+                ? {
+                    OR: [
+                        {invoiceId: {contains: searchTerm, mode: "insensitive"}},
+                        {lastName: {contains: searchTerm, mode: "insensitive"}},
+                        {email: {contains: searchTerm, mode: "insensitive"}},
+                        {phone: {contains: searchTerm}},
+                        ...(phoneSearch && phoneSearch !== searchTerm
+                            ? [{phone: {contains: phoneSearch}}]
+                            : []),
+                    ],
+                }
+                : {}),
+        };
 
         const orders = await prisma.order.findMany({
             where,
