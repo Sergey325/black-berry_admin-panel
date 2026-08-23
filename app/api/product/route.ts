@@ -13,8 +13,19 @@ type ExistingColor = Prisma.ProductColorGetPayload<{
     include: {
         images: true;
         sizes: true;
+        ProductColorFilter: {
+            select: {
+                catalogColorId: true;
+            };
+        };
     };
 }>;
+
+type ExistingRelation = {
+    id: number;
+    toProductId: number;
+    order: number;
+};
 
 class ProductRequestError extends Error {}
 
@@ -241,32 +252,41 @@ const reconcileImages = async (
     });
 
     const retainedIds = new Set<number>();
-    const updates: Promise<unknown>[] = [];
+    const imagesToCreate: Prisma.ProductImageCreateManyInput[] = [];
+    const imagesToReorder: {id: number; order: number}[] = [];
 
     requestedUrls.forEach((url, order) => {
         const existingImage = availableByUrl.get(url)?.shift();
 
         if (existingImage) {
             retainedIds.add(existingImage.id);
-            updates.push(transaction.productImage.update({
-                where: {id: existingImage.id},
-                data: {order},
-            }));
+
+            if (existingImage.order !== order) {
+                imagesToReorder.push({id: existingImage.id, order});
+            }
+
             return;
         }
 
-        updates.push(transaction.productImage.create({
-            data: {productColorId, url, order},
-        }));
+        imagesToCreate.push({productColorId, url, order});
     });
 
     const removedIds = existingImages.filter(({id}) => !retainedIds.has(id)).map(({id}) => id);
 
-    if (removedIds.length > 0) {
-        updates.push(transaction.productImage.deleteMany({where: {id: {in: removedIds}, productColorId}}));
+    if (imagesToCreate.length > 0) {
+        await transaction.productImage.createMany({data: imagesToCreate});
     }
 
-    await Promise.all(updates);
+    for (const image of imagesToReorder) {
+        await transaction.productImage.update({
+            where: {id: image.id},
+            data: {order: image.order},
+        });
+    }
+
+    if (removedIds.length > 0) {
+        await transaction.productImage.deleteMany({where: {id: {in: removedIds}, productColorId}});
+    }
 };
 
 const reconcileSizes = async (
@@ -282,19 +302,86 @@ const reconcileSizes = async (
         throw new ProductRequestError("Некоректні ідентифікатори розмірів");
     }
 
-    const updates: Promise<unknown>[] = requestedSizes.map(({id, size, available, quantity}) => (
-        id === undefined
-            ? transaction.productSize.create({data: {productColorId, size, available, quantity}})
-            : transaction.productSize.update({where: {id}, data: {size, available, quantity}})
-    ));
+    const existingSizesById = new Map(existingSizes.map((size) => [size.id, size]));
+    const sizesToCreate: Prisma.ProductSizeCreateManyInput[] = [];
+    const sizesToUpdate: ProductColorRequest["sizes"] = [];
+
+    requestedSizes.forEach((requestedSize) => {
+        if (requestedSize.id === undefined) {
+            sizesToCreate.push({
+                productColorId,
+                size: requestedSize.size,
+                available: requestedSize.available,
+                quantity: requestedSize.quantity,
+            });
+            return;
+        }
+
+        const existingSize = existingSizesById.get(requestedSize.id);
+
+        if (
+            existingSize
+            && (
+                existingSize.size !== requestedSize.size
+                || existingSize.available !== requestedSize.available
+                || existingSize.quantity !== requestedSize.quantity
+            )
+        ) {
+            sizesToUpdate.push(requestedSize);
+        }
+    });
+
     const retainedIds = new Set(requestedExistingIds);
     const removedIds = existingSizes.filter(({id}) => !retainedIds.has(id)).map(({id}) => id);
 
-    if (removedIds.length > 0) {
-        updates.push(transaction.productSize.deleteMany({where: {id: {in: removedIds}, productColorId}}));
+    if (sizesToCreate.length > 0) {
+        await transaction.productSize.createMany({data: sizesToCreate});
     }
 
-    await Promise.all(updates);
+    for (const size of sizesToUpdate) {
+        await transaction.productSize.update({
+            where: {id: size.id},
+            data: {
+                size: size.size,
+                available: size.available,
+                quantity: size.quantity,
+            },
+        });
+    }
+
+    if (removedIds.length > 0) {
+        await transaction.productSize.deleteMany({where: {id: {in: removedIds}, productColorId}});
+    }
+};
+
+const reconcileColorFilters = async (
+    transaction: Prisma.TransactionClient,
+    productColorId: number,
+    requestedCatalogColorIds: number[],
+    existingFilters: ExistingColor["ProductColorFilter"],
+): Promise<void> => {
+    const existingCatalogColorIds = new Set(existingFilters.map(({catalogColorId}) => catalogColorId));
+    const requestedCatalogColorIdSet = new Set(requestedCatalogColorIds);
+    const removedCatalogColorIds = existingFilters
+        .map(({catalogColorId}) => catalogColorId)
+        .filter((catalogColorId) => !requestedCatalogColorIdSet.has(catalogColorId));
+    const addedCatalogColorIds = requestedCatalogColorIds
+        .filter((catalogColorId) => !existingCatalogColorIds.has(catalogColorId));
+
+    if (removedCatalogColorIds.length > 0) {
+        await transaction.productColorFilter.deleteMany({
+            where: {
+                productColorId,
+                catalogColorId: {in: removedCatalogColorIds},
+            },
+        });
+    }
+
+    if (addedCatalogColorIds.length > 0) {
+        await transaction.productColorFilter.createMany({
+            data: addedCatalogColorIds.map((catalogColorId) => ({productColorId, catalogColorId})),
+        });
+    }
 };
 
 const updateExistingColor = async (
@@ -305,30 +392,68 @@ const updateExistingColor = async (
     catalogColorCodes: Map<number, string>,
 ): Promise<void> => {
     const colorCode = color.catalogColorIds.map((catalogColorId) => catalogColorCodes.get(catalogColorId)).join("|");
-    const data: Prisma.ProductColorUpdateInput = {
-        color: color.color,
-        colorName: color.colorName,
-        colorCode,
-        isBestSeller: color.isBestSeller,
-        position,
-        ProductColorFilter: {
-            deleteMany: {},
-            create: color.catalogColorIds.map((catalogColorId) => ({
-                CatalogColor: {
-                    connect: {id: catalogColorId},
-                },
-            })),
-        },
-    };
+    const data: Prisma.ProductColorUpdateInput = {};
 
-    await transaction.productColor.update({
-        where: {id: existingColor.id},
-        data,
+    if (existingColor.color !== color.color) data.color = color.color;
+    if (existingColor.colorName !== color.colorName) data.colorName = color.colorName;
+    if (existingColor.colorCode !== colorCode) data.colorCode = colorCode;
+    if (existingColor.isBestSeller !== color.isBestSeller) data.isBestSeller = color.isBestSeller;
+    if (existingColor.position !== position) data.position = position;
+
+    if (Object.keys(data).length > 0) {
+        await transaction.productColor.update({
+            where: {id: existingColor.id},
+            data,
+        });
+    }
+
+    await reconcileColorFilters(transaction, existingColor.id, color.catalogColorIds, existingColor.ProductColorFilter);
+    await reconcileImages(transaction, existingColor.id, color.images, existingColor.images);
+    await reconcileSizes(transaction, existingColor.id, color.sizes, existingColor.sizes);
+};
+
+const reconcileRelations = async (
+    transaction: Prisma.TransactionClient,
+    productId: number,
+    requestedRelatedIds: number[],
+    existingRelations: ExistingRelation[],
+): Promise<void> => {
+    const existingRelationsByProductId = new Map(existingRelations.map((relation) => [relation.toProductId, relation]));
+    const retainedIds = new Set<number>();
+    const relationsToCreate: Prisma.ProductRelationCreateManyInput[] = [];
+    const relationsToReorder: {id: number; order: number}[] = [];
+
+    requestedRelatedIds.forEach((toProductId, order) => {
+        const existingRelation = existingRelationsByProductId.get(toProductId);
+
+        if (!existingRelation) {
+            relationsToCreate.push({fromProductId: productId, toProductId, order});
+            return;
+        }
+
+        retainedIds.add(existingRelation.id);
+
+        if (existingRelation.order !== order) {
+            relationsToReorder.push({id: existingRelation.id, order});
+        }
     });
-    await Promise.all([
-        reconcileImages(transaction, existingColor.id, color.images, existingColor.images),
-        reconcileSizes(transaction, existingColor.id, color.sizes, existingColor.sizes),
-    ]);
+
+    const removedIds = existingRelations.filter(({id}) => !retainedIds.has(id)).map(({id}) => id);
+
+    if (removedIds.length > 0) {
+        await transaction.productRelation.deleteMany({where: {id: {in: removedIds}, fromProductId: productId}});
+    }
+
+    if (relationsToCreate.length > 0) {
+        await transaction.productRelation.createMany({data: relationsToCreate});
+    }
+
+    for (const relation of relationsToReorder) {
+        await transaction.productRelation.update({
+            where: {id: relation.id},
+            data: {order: relation.order},
+        });
+    }
 };
 
 export async function POST(request: Request) {
@@ -336,20 +461,21 @@ export async function POST(request: Request) {
         const rawBody: unknown = await request.json();
         const body = parseProductRequest(rawBody);
         const colors = normalizeColors(body.colors);
+        const requestedCatalogColorIds = [...new Set(colors.flatMap(({catalogColorIds}) => catalogColorIds))];
+        const catalogColors: {id: number; code: string}[] = await prisma.catalogColor.findMany({
+            where: {id: {in: requestedCatalogColorIds}},
+            select: {id: true, code: true},
+        });
 
+        if (catalogColors.length !== requestedCatalogColorIds.length) {
+            throw new ProductRequestError("Один або кілька кольорів для фільтрації не існують");
+        }
+
+        const catalogColorCodes = new Map(catalogColors.map(({id, code}) => [id, code]));
+        const transactionStartedAt = performance.now();
         const finalProductId = await prisma.$transaction(async (transaction): Promise<number> => {
-            const requestedCatalogColorIds = [...new Set(colors.flatMap(({catalogColorIds}) => catalogColorIds))];
-            const catalogColors: {id: number; code: string}[] = await transaction.catalogColor.findMany({
-                where: {id: {in: requestedCatalogColorIds}},
-                select: {id: true, code: true},
-            });
-
-            if (catalogColors.length !== requestedCatalogColorIds.length) {
-                throw new ProductRequestError("Один або кілька кольорів для фільтрації не існують");
-            }
-
-            const catalogColorCodes = new Map(catalogColors.map(({id, code}) => [id, code]));
             let productId: number;
+            let existingRelations: ExistingRelation[] = [];
 
             if (body.id === null) {
                 const position = await getNextProductPosition(transaction, body.categoryId);
@@ -377,6 +503,18 @@ export async function POST(request: Request) {
                             include: {
                                 images: true,
                                 sizes: true,
+                                ProductColorFilter: {
+                                    select: {
+                                        catalogColorId: true,
+                                    },
+                                },
+                            },
+                        },
+                        relatedTo: {
+                            select: {
+                                id: true,
+                                toProductId: true,
+                                order: true,
                             },
                         },
                     },
@@ -392,22 +530,27 @@ export async function POST(request: Request) {
                     throw new ProductRequestError("Один або кілька варіантів кольору не належать товару");
                 }
 
-                const position = existingProduct.categoryId === body.categoryId
-                    ? undefined
-                    : await getNextProductPosition(transaction, body.categoryId, body.id);
-                const data: Prisma.ProductUpdateInput = {
-                    name: body.name,
-                    description: body.description,
-                    slug: body.slug,
-                    price: body.price,
-                    discount: body.discount ?? 0,
-                    hasLining: body.hasLining,
-                    position,
-                    material: {connect: {id: body.materialId}},
-                    category: body.categoryId === null ? {disconnect: true} : {connect: {id: body.categoryId}},
-                };
+                const discount = body.discount ?? 0;
+                const data: Prisma.ProductUpdateInput = {};
 
-                await transaction.product.update({where: {id: body.id}, data});
+                if (existingProduct.name !== body.name) data.name = body.name;
+                if ((existingProduct.description ?? "") !== body.description) data.description = body.description;
+                if (existingProduct.slug !== body.slug) data.slug = body.slug;
+                if (existingProduct.price !== body.price) data.price = body.price;
+                if (existingProduct.discount !== discount) data.discount = discount;
+                if (existingProduct.hasLining !== body.hasLining) data.hasLining = body.hasLining;
+                if (existingProduct.materialId !== body.materialId) data.material = {connect: {id: body.materialId}};
+
+                if (existingProduct.categoryId !== body.categoryId) {
+                    data.position = await getNextProductPosition(transaction, body.categoryId, body.id);
+                    data.category = body.categoryId === null
+                        ? {disconnect: true}
+                        : {connect: {id: body.categoryId}};
+                }
+
+                if (Object.keys(data).length > 0) {
+                    await transaction.product.update({where: {id: body.id}, data});
+                }
 
                 for (const [colorIndex, color] of colors.entries()) {
                     if (color.id === undefined) {
@@ -439,23 +582,18 @@ export async function POST(request: Request) {
                 }
 
                 productId = body.id;
+                existingRelations = existingProduct.relatedTo;
             }
 
             const relatedIds = [...new Set(body.relatedProducts.map(({id}) => id))].filter((id) => id !== productId);
 
-            await transaction.productRelation.deleteMany({where: {fromProductId: productId}});
-
-            if (relatedIds.length > 0) {
-                await transaction.productRelation.createMany({
-                    data: relatedIds.map((toProductId, order) => ({fromProductId: productId, toProductId, order})),
-                    skipDuplicates: true,
-                });
-            }
+            await reconcileRelations(transaction, productId, relatedIds, existingRelations);
 
             return productId;
         });
+        const transactionDurationMs = Math.round(performance.now() - transactionStartedAt);
 
-        return NextResponse.json({id: finalProductId}, {status: 200});
+        return NextResponse.json({id: finalProductId, transactionDurationMs}, {status: 200});
     } catch (error) {
         if (error instanceof ProductRequestError) {
             return NextResponse.json({error: error.message}, {status: 400});

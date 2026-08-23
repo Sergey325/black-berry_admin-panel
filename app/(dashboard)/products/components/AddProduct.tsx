@@ -24,6 +24,7 @@ import {
 } from "@dnd-kit/core";
 import type {DragEndEvent} from "@dnd-kit/core";
 import type {ICatalogColor} from "@/app/actions/getCatalogColors";
+import Loader from "@/app/components/Loader";
 import {
     sortableKeyboardCoordinates,
     SortableContext,
@@ -39,6 +40,11 @@ type Props = {
     catalogColors: ICatalogColor[];
     resetSelectedProduct: () => void;
 }
+
+type SaveProductResponse = {
+    id: number;
+    transactionDurationMs: number;
+};
 
 const getContrastTextColor = (hexColor: string) => {
     const hex = hexColor.replace("#", "");
@@ -76,7 +82,7 @@ const getOrderedFilterColors = (color: IProductColor): ICatalogColor[] => {
 export default function AddProduct({product, products, materials, categories, catalogColors, resetSelectedProduct}: Props) {
     const router = useRouter();
 
-    const { register, control, handleSubmit, formState: { errors }, reset, getValues, setValue, clearErrors } = useForm<FormValuesProduct>({
+    const { register, control, handleSubmit, formState: { errors, isSubmitting }, reset, getValues, setValue, clearErrors } = useForm<FormValuesProduct>({
         defaultValues: {
             name: product?.name,
             description: product?.description || "",
@@ -173,12 +179,13 @@ export default function AddProduct({product, products, materials, categories, ca
         }
 
         try {
-            await axios.post("/api/product", {
+            const response = await axios.post<SaveProductResponse>("/api/product", {
                 ...data,
                 id: product?.id || null,
                 slug: slugify(data.name),
             });
-            toast.success(product?.id ? "Продукт оновлено!" : "Продукт створено!")
+            const successMessage = product?.id ? "Продукт оновлено!" : "Продукт створено!";
+            toast.success(`${successMessage} (${response.data.transactionDurationMs} мс)`)
             reset({
                 name: "",
                 description: "",
@@ -267,7 +274,12 @@ export default function AddProduct({product, products, materials, categories, ca
     };
 
     return (
-        <div>
+        <div aria-busy={isSubmitting}>
+            {isSubmitting && (
+                <div className="fixed inset-0 z-50 bg-white/80 backdrop-blur-sm" role="status" aria-label="Збереження товару">
+                    <Loader />
+                </div>
+            )}
             <button type="button" className="group mb-5 inline-flex items-center gap-1 text-sm font-medium text-gray-600 transition hover:text-gray-950" onClick={returnToProducts}>
                 <IoIosArrowBack className="size-5 group" />
                 <span className="select-none">Повернутися до товарів</span>
@@ -411,8 +423,8 @@ export default function AddProduct({product, products, materials, categories, ca
                         <p className="text-sm text-gray-500">Додайте хоча б один колір товару</p>
                     )}
                 </div>
-                <button type="submit" className="rounded-lg bg-black py-3 text-base font-medium text-white transition hover:bg-gray-800">
-                    {product ? "Оновити товар" : "Зберегти товар"}
+                <button type="submit" disabled={isSubmitting} className="rounded-lg bg-black py-3 text-base font-medium text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-60">
+                    {isSubmitting ? "Збереження..." : product ? "Оновити товар" : "Зберегти товар"}
                 </button>
             </form>
         </div>

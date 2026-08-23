@@ -14,7 +14,7 @@ const navbarOptions = [
         icon: FiPackage,
     },
     {
-        href: "/orders",
+        href: "/orders?tab=AllOrders",
         path: "/orders",
         label: "Замовлення",
         icon: FiShoppingCart,
@@ -26,12 +26,12 @@ const navbarOptions = [
         icon: FiGrid,
     },
     {
-        href: "/banners",
+        href: "/banners?tab=AllBanners",
         path: "/banners",
         label: "Банери",
         icon: FiImage,
     },
-    {
+    { 
         href: "/statistic",
         path: "/statistic",
         label: "Статистика",

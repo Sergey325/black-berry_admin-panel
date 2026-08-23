@@ -91,7 +91,7 @@ const SortableProduct = ({product, onEdit, disabled}: SortableProductProps) => {
 };
 
 const ProductCategory = ({group, onEdit, canReorder}: ProductCategoryProps) => {
-    const [isOpen, setIsOpen] = useState(true);
+    const [isOpen, setIsOpen] = useState(false);
     const [orderedProducts, setOrderedProducts] = useState(group.products);
     const [isSaving, setIsSaving] = useState(false);
     const contentId = useId();
