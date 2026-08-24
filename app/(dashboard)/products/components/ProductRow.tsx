@@ -57,6 +57,8 @@ export default function ProductRow({ product, onEdit, dragHandle }: Props) {
             <div className="flex-1 sm:contents min-w-0">
                 <Link
                     href={`${process.env.NEXT_PUBLIC_SHOP_URL}/catalog/${product.category?.slug}/${product.id}-${product.slug}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="wrap-break-word font-medium text-gray-900 hover:text-primary transition-colors">{product.name}
                 </Link>
                 <p className="mt-0.5 text-sm text-gray-500 sm:hidden">{calculatePriceWithDiscount(product.price, product.discount)} грн</p>
