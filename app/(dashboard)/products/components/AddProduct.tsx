@@ -46,6 +46,20 @@ type SaveProductResponse = {
     transactionDurationMs: number;
 };
 
+const getSpecificationOverrides = (
+    categoryId: number | null | undefined,
+    categories: ICategory[],
+    overrides: IProduct["specificationOverrides"] = [],
+): FormValuesProduct["specificationOverrides"] => {
+    const overrideValues = new Map(overrides.map((override) => [override.categorySpecificationId, override.value]));
+    const specifications = categories.find((category) => category.id === categoryId)?.specifications ?? [];
+
+    return specifications.map((specification) => ({
+        categorySpecificationId: specification.id,
+        value: overrideValues.get(specification.id) ?? "",
+    }));
+};
+
 const getContrastTextColor = (hexColor: string) => {
     const hex = hexColor.replace("#", "");
     const normalizedHex = hex.length === 3
@@ -116,7 +130,12 @@ export default function AddProduct({product, products, materials, categories, ca
                 id: p.id,
                 name: p.name,
                 imageUrl: p.colors[0]?.images[0]?.url ?? "",
-            })) || []
+            })) || [],
+            specificationOverrides: getSpecificationOverrides(
+                product?.categoryId,
+                categories,
+                product?.specificationOverrides,
+            ),
         },
     });
 
@@ -183,6 +202,9 @@ export default function AddProduct({product, products, materials, categories, ca
                 ...data,
                 id: product?.id || null,
                 slug: slugify(data.name),
+                specificationOverrides: data.specificationOverrides
+                    .map((override) => ({...override, value: override.value.trim()}))
+                    .filter((override) => override.value.length > 0),
             });
             const successMessage = product?.id ? "Продукт оновлено!" : "Продукт створено!";
             toast.success(`${successMessage} (${response.data.transactionDurationMs} мс)`)
@@ -193,6 +215,7 @@ export default function AddProduct({product, products, materials, categories, ca
                 discount: 0,
                 hasLining: false,
                 colors: [],
+                specificationOverrides: [],
 
             })
             returnToProducts()
@@ -237,6 +260,10 @@ export default function AddProduct({product, products, materials, categories, ca
     const selectedCategory = useMemo(
         () => categoryOptions.filter((category) => category.id === selectedCategoryId),
         [categoryOptions, selectedCategoryId],
+    );
+    const selectedCategorySpecifications = useMemo(
+        () => categories.find((category) => category.id === selectedCategoryId)?.specifications ?? [],
+        [categories, selectedCategoryId],
     );
     const defaultSizes = useMemo(
         () => {
@@ -343,7 +370,14 @@ export default function AddProduct({product, products, materials, categories, ca
                             options={categoryOptions}
                             value={selectedCategory}
                             onChange={(selected) => {
-                                setValue("categoryId", selected[0]?.id ?? null, {shouldDirty: true});
+                                const categoryId = selected[0]?.id ?? null;
+
+                                setValue("categoryId", categoryId, {shouldDirty: true});
+                                setValue(
+                                    "specificationOverrides",
+                                    getSpecificationOverrides(categoryId, categories),
+                                    {shouldDirty: true},
+                                );
                                 clearErrors("categoryId");
                             }}
                             placeholder="Пошук категорії..."
@@ -352,6 +386,32 @@ export default function AddProduct({product, products, materials, categories, ca
                         />
                     </div>
                 </div>
+
+                {selectedCategorySpecifications.length > 0 && (
+                    <div className="flex flex-col gap-4">
+                        <div>
+                            <h2 className="text-base font-semibold text-gray-900">Перевизначення характеристик</h2>
+                            <p className="mt-1 text-sm text-gray-500">Залиште поле порожнім, щоб використовувати значення категорії.</p>
+                        </div>
+                        <div className="grid gap-4 md:grid-cols-2">
+                            {selectedCategorySpecifications.map((specification, index) => (
+                                <div key={specification.id} className="flex flex-col gap-1">
+                                    <label className="text-sm font-medium text-gray-700">{specification.name}</label>
+                                    <input
+                                        type="hidden"
+                                        {...register(`specificationOverrides.${index}.categorySpecificationId`, {valueAsNumber: true})}
+                                    />
+                                    <input
+                                        {...register(`specificationOverrides.${index}.value`)}
+                                        placeholder={specification.value}
+                                        className="rounded-lg border border-gray-300 px-3 py-2.5 text-base outline-none transition placeholder:text-gray-400 focus:border-gray-500 focus:ring-2 focus:ring-gray-200"
+                                    />
+                                    <span className="text-xs text-gray-500">За замовчуванням: {specification.value}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
 
                 <div className="flex flex-col gap-4">
                     <h2 className="text-base font-semibold text-gray-900">Зв’язані товари</h2>

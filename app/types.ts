@@ -23,6 +23,10 @@ export type FormValuesProduct = {
         name: string;
         imageUrl: string
     }[]
+    specificationOverrides: {
+        categorySpecificationId: number;
+        value: string;
+    }[];
     categoryId: number | null;
 };
 

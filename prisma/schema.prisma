@@ -8,40 +8,41 @@ datasource db {
 
 /// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
 model Product {
-  id               Int                @id @default(autoincrement())
-  name             String
-  price            Float
-  discount         Float              @default(0)
-  createdAt        DateTime           @default(now())
-  updatedAt        DateTime           @updatedAt
-  slug             String
-  description      String?
-  categoryId       Int?
-  materialId       Int?
-  hasLining        Boolean            @default(false)
-  position         Int                @default(0)
-  category         Category?          @relation(fields: [categoryId], references: [id])
-  material         Material?          @relation(fields: [materialId], references: [id])
-  colors           ProductColor[]
-  relatedTo        ProductRelation[]  @relation("ProductRelation_From")
-  relatedFrom      ProductRelation[]  @relation("ProductRelation_To")
-  PromoCodeProduct PromoCodeProduct[]
+  id                           Int                            @id @default(autoincrement())
+  name                         String
+  price                        Float
+  discount                     Float                          @default(0)
+  createdAt                    DateTime                       @default(now())
+  updatedAt                    DateTime                       @updatedAt
+  slug                         String
+  description                  String?
+  categoryId                   Int?
+  materialId                   Int?
+  hasLining                    Boolean                        @default(false)
+  position                     Int                            @default(0)
+  category                     Category?                      @relation(fields: [categoryId], references: [id])
+  material                     Material?                      @relation(fields: [materialId], references: [id])
+  colors                       ProductColor[]
+  relatedTo                    ProductRelation[]              @relation("ProductRelation_From")
+  relatedFrom                  ProductRelation[]              @relation("ProductRelation_To")
+  ProductSpecificationOverride ProductSpecificationOverride[]
+  PromoCodeProduct             PromoCodeProduct[]
 
   @@index([categoryId, position])
 }
 
 model ProductColor {
-  id           Int                  @id @default(autoincrement())
-  color        String
-  productId    Int
-  colorName    String
-  isBestSeller Boolean              @default(false)
-  colorCode    String?
-  position     Int                  @default(0)
-  product      Product              @relation(fields: [productId], references: [id], onDelete: Cascade)
+  id                 Int                  @id @default(autoincrement())
+  color              String
+  productId          Int
+  colorName          String
+  isBestSeller       Boolean              @default(false)
+  colorCode          String?
+  position           Int                  @default(0)
+  product            Product              @relation(fields: [productId], references: [id], onDelete: Cascade)
   ProductColorFilter ProductColorFilter[]
-  images       ProductImage[]
-  sizes        ProductSize[]
+  images             ProductImage[]
+  sizes              ProductSize[]
 
   @@index([productId, position])
 }
@@ -100,12 +101,13 @@ model Category {
 }
 
 model CategorySpecification {
-  id         Int      @id @default(autoincrement())
-  name       String
-  value      String
-  order      Int      @default(0)
-  categoryId Int
-  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  id                           Int                            @id @default(autoincrement())
+  name                         String
+  value                        String
+  order                        Int                            @default(0)
+  categoryId                   Int
+  category                     Category                       @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  ProductSpecificationOverride ProductSpecificationOverride[]
 
   @@unique([categoryId, name])
 }
@@ -246,10 +248,10 @@ model PromoCodeProduct {
 }
 
 model CatalogColor {
-  id            Int                  @id @default(autoincrement())
-  code          String               @unique
-  name          String
-  hex           String
+  id                 Int                  @id @default(autoincrement())
+  code               String               @unique
+  name               String
+  hex                String
   ProductColorFilter ProductColorFilter[]
 }
 
@@ -261,6 +263,17 @@ model ProductColorFilter {
 
   @@id([productColorId, catalogColorId])
   @@index([catalogColorId])
+}
+
+model ProductSpecificationOverride {
+  productId               Int
+  categorySpecificationId Int
+  value                   String
+  CategorySpecification   CategorySpecification @relation(fields: [categorySpecificationId], references: [id], onDelete: Cascade)
+  Product                 Product               @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@id([productId, categorySpecificationId])
+  @@index([categorySpecificationId])
 }
 
 enum Season {

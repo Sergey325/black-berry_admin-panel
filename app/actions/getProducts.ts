@@ -19,6 +19,7 @@ const productInclude = {
         },
     },
     material: true,
+    ProductSpecificationOverride: true,
     category: {
         include: {
             specifications: true,
@@ -72,8 +73,9 @@ type ProductQueryResult = Prisma.ProductGetPayload<{include: typeof productInclu
 
 export type IProductColor = ProductQueryResult["colors"][number];
 export type IRelatedProduct = ProductQueryResult["relatedTo"][number]["toProduct"];
-export type IProduct = Omit<ProductQueryResult, "relatedTo"> & {
+export type IProduct = Omit<ProductQueryResult, "relatedTo" | "ProductSpecificationOverride"> & {
     relatedTo: IRelatedProduct[];
+    specificationOverrides: ProductQueryResult["ProductSpecificationOverride"];
 };
 
 export interface IProductsParams {
@@ -114,9 +116,10 @@ export async function getProducts(params?: IProductsParams): Promise<IProduct[]>
             );
         }
 
-        const result: IProduct[] = products.map(({ relatedTo, ...rest }) => ({
+        const result: IProduct[] = products.map(({ relatedTo, ProductSpecificationOverride, ...rest }) => ({
             ...rest,
             relatedTo: relatedTo.map((r) => r.toProduct),
+            specificationOverrides: ProductSpecificationOverride,
         }));
 
         return result;
