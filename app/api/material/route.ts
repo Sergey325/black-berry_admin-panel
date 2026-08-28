@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/app/lib/prisma";
 import {Prisma} from "@prisma/client";
+import {tryInvalidateStorefrontCache} from "@/app/lib/storefrontCache";
 
 export async function POST(req: Request) {
     const { name } = await req.json();
@@ -13,7 +14,8 @@ export async function POST(req: Request) {
         const material = await prisma.material.create({
             data: { name: name.trim() },
         });
-        return NextResponse.json(material, { status: 201 });
+        const cacheInvalidated = await tryInvalidateStorefrontCache(["products"]);
+        return NextResponse.json({...material, cacheInvalidated}, { status: 201 });
     } catch (error: unknown) {
         if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
             return NextResponse.json(
@@ -21,6 +23,7 @@ export async function POST(req: Request) {
                 { status: 409 }
             );
         }
+        console.error(error);
         return NextResponse.json({ error: "Помилка сервера" }, { status: 500 });
     }
 }

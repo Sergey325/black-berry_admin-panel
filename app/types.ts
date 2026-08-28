@@ -1,5 +1,9 @@
 import type {PromoScope, PromoSelectOption} from "@/app/actions/getPromoCodes";
 
+export type CacheInvalidationResponse = {
+    cacheInvalidated: boolean;
+};
+
 export type FormValuesProduct = {
     name: string;
     slug: string;

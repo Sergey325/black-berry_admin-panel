@@ -10,6 +10,8 @@ import ToolTip from "@/app/components/ToolTip";
 import {FiTrash2} from "react-icons/fi";
 import type {ReactNode} from "react";
 import {showConfirmationToast} from "@/app/components/ConfirmationToast";
+import type {CacheInvalidationResponse} from "@/app/types";
+import {CACHE_INVALIDATION_WARNING} from "@/app/utils/cacheInvalidationWarning";
 
 type Props = {
     banner: IBanner;
@@ -26,8 +28,12 @@ const BannerRow = ({ banner, onEdit, dragHandle }: Props) => {
             message: `Видалити банер «${banner.title.replace(/\n/g, " ")}»?`,
             onConfirmAction: async () => {
                 try {
-                    await axios.delete(`/api/banner/${banner.id}`);
-                    toast.success("Банер успішно видалено!");
+                    const {data} = await axios.delete<CacheInvalidationResponse>(`/api/banner/${banner.id}`);
+                    if (data.cacheInvalidated) {
+                        toast.success("Банер успішно видалено!");
+                    } else {
+                        toast(CACHE_INVALIDATION_WARNING, {icon: "⚠️"});
+                    }
                     router.refresh();
                 } catch (error: unknown) {
                     const message = axios.isAxiosError<{ error?: string }>(error)

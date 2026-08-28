@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { Season } from "@prisma/client";
 import prisma from "@/app/lib/prisma";
+import {tryInvalidateStorefrontCache} from "@/app/lib/storefrontCache";
 
 type Specification = { name: string; value: string };
 
@@ -84,8 +85,9 @@ export async function POST(request: Request) {
                 },
             });
         }
+        const cacheInvalidated = await tryInvalidateStorefrontCache(["categories", "products"]);
 
-        return NextResponse.json(null, { status: 200 });
+        return NextResponse.json({cacheInvalidated}, { status: 200 });
     } catch (error: unknown) {
         console.error(error);
         if ((error as { code?: string }).code === "P2002") {

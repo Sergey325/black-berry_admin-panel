@@ -4,6 +4,7 @@ import prisma from "@/app/lib/prisma";
 import {verifyToken} from "@/app/lib/auth";
 import {cookies} from "next/headers";
 import {revalidatePath} from "next/cache";
+import {tryInvalidateStorefrontCache} from "@/app/lib/storefrontCache";
 
 export async function reorderProducts(categoryId: number, productIds: number[]) {
     const token = (await cookies()).get("admin_session")?.value;
@@ -44,8 +45,9 @@ export async function reorderProducts(categoryId: number, productIds: number[]) 
             data: {position},
         })),
     );
+    const cacheInvalidated = await tryInvalidateStorefrontCache(["products", "categories"]);
 
     revalidatePath("/products");
 
-    return {success: true};
+    return {success: true, cacheInvalidated};
 }

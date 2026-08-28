@@ -7,6 +7,7 @@ import {
     parseProductRequest,
     ProductRequestError,
 } from "@/app/api/product/product-request";
+import {tryInvalidateStorefrontCache} from "@/app/lib/storefrontCache";
 
 export async function POST(request: Request) {
     try {
@@ -19,8 +20,9 @@ export async function POST(request: Request) {
             persistProduct(transaction, body, colors, specificationOverrides)
         ));
         const transactionDurationMs = Math.round(performance.now() - transactionStartedAt);
+        const cacheInvalidated = await tryInvalidateStorefrontCache(["products", "categories"]);
 
-        return NextResponse.json({id: productId, transactionDurationMs}, {status: 200});
+        return NextResponse.json({id: productId, transactionDurationMs, cacheInvalidated}, {status: 200});
     } catch (error) {
         if (error instanceof ProductRequestError) {
             return NextResponse.json({error: error.message}, {status: 400});

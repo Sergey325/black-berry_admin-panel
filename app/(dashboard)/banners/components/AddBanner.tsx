@@ -6,10 +6,11 @@ import toast from "react-hot-toast";
 import {useRouter} from "next/navigation";
 import {IoIosArrowBack} from "react-icons/io";
 import type {IBanner} from "@/app/actions/getBanners";
-import type {FormValuesBanner} from "@/app/types";
+import type {CacheInvalidationResponse, FormValuesBanner} from "@/app/types";
 import ImagesUpload from "@/app/components/ImagesUpload";
 import BannerPreview from "@/app/(dashboard)/banners/components/BannerPreview";
 import {FiTrash2} from "react-icons/fi";
+import {CACHE_INVALIDATION_WARNING} from "@/app/utils/cacheInvalidationWarning";
 
 type Props = {
     banner?: IBanner;
@@ -60,12 +61,16 @@ const AddBanner = ({banner, resetSelectedBanner}: Props) => {
 
     const onSubmit = async (data: FormValuesBanner) => {
         try {
-            await axios.post("/api/banner", {
+            const response = await axios.post<CacheInvalidationResponse>("/api/banner", {
                 ...data,
                 id: banner?.id,
                 features: data.features.map((feature) => feature.value).filter((feature) => feature.trim()),
             });
-            toast.success(banner ? "Банер оновлено!" : "Банер створено!");
+            if (response.data.cacheInvalidated) {
+                toast.success(banner ? "Банер оновлено!" : "Банер створено!");
+            } else {
+                toast(CACHE_INVALIDATION_WARNING, {icon: "⚠️"});
+            }
             returnToBanners();
         } catch (error: unknown) {
             toast.error(getErrorMessage(error));

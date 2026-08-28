@@ -7,6 +7,8 @@ import {IMaterial} from "@/app/actions/getMaterials";
 import ToolTip from "@/app/components/ToolTip";
 import axios from "axios";
 import {FiCheck, FiTrash2, FiX} from "react-icons/fi";
+import type {CacheInvalidationResponse} from "@/app/types";
+import {CACHE_INVALIDATION_WARNING} from "@/app/utils/cacheInvalidationWarning";
 
 
 interface Props {
@@ -14,6 +16,8 @@ interface Props {
     initialValue?: IMaterial | null,
     onSelectedValueChange: (selectedValue: IMaterial) => void,
 }
+
+type MaterialMutationResponse = IMaterial & CacheInvalidationResponse;
 
 const inputClass =
     "rounded-lg border border-gray-300 bg-white px-3 py-2 outline-none transition focus:border-gray-500 focus:ring-2 focus:ring-gray-200";
@@ -48,11 +52,12 @@ const Material = ({
         if (!newName.trim()) return;
         setError(null);
         try {
-            const { data } = await axios.post<IMaterial>("/api/material", {
+            const { data } = await axios.post<MaterialMutationResponse>("/api/material", {
                 name: newName.trim(),
             });
             setMaterials([...materials, data])
             setNewName("");
+            if (!data.cacheInvalidated) setError(CACHE_INVALIDATION_WARNING);
         } catch (error: unknown) {
             setError(axios.isAxiosError<{error?: string}>(error) ? error.response?.data?.error ?? "Помилка створення" : "Помилка створення");
         }
@@ -73,7 +78,7 @@ const Material = ({
         if (!editingName.trim()) return;
         setError(null);
         try {
-            const { data } = await axios.put(`/api/material/${id}`, {
+            const { data } = await axios.put<MaterialMutationResponse>(`/api/material/${id}`, {
                 name: editingName.trim(),
             });
             setMaterials(prev =>
@@ -82,6 +87,7 @@ const Material = ({
                 )
             );
             cancelEdit();
+            if (!data.cacheInvalidated) setError(CACHE_INVALIDATION_WARNING);
         } catch (error: unknown) {
             setError(axios.isAxiosError<{error?: string}>(error) ? error.response?.data?.error ?? "Помилка редагування" : "Помилка редагування");
         }
@@ -90,8 +96,9 @@ const Material = ({
     const handleDelete = async (id: number) => {
         setError(null);
         try {
-            const { data } = await axios.delete<IMaterial>(`/api/material/${id}`);
+            const { data } = await axios.delete<MaterialMutationResponse>(`/api/material/${id}`);
             setMaterials(materials.filter(m => m.id !== data.id))
+            if (!data.cacheInvalidated) setError(CACHE_INVALIDATION_WARNING);
         } catch (error: unknown) {
             setError(axios.isAxiosError<{error?: string}>(error) ? error.response?.data?.error ?? "Помилка видалення" : "Помилка видалення");
         }

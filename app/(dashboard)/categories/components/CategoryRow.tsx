@@ -8,6 +8,8 @@ import {MdEdit} from "react-icons/md";
 import {FiTrash2} from "react-icons/fi";
 import Link from "next/link";
 import {showConfirmationToast} from "@/app/components/ConfirmationToast";
+import type {CacheInvalidationResponse} from "@/app/types";
+import {CACHE_INVALIDATION_WARNING} from "@/app/utils/cacheInvalidationWarning";
 
 
 type Props = {
@@ -23,9 +25,13 @@ const CategoryRow = ({category, onEdit}: Props) => {
             toastId: `delete-category-${category.id}`,
             message: `Видалити категорію «${category.name}»?`,
             onConfirmAction: async () => {
-                await axios.delete(`/api/category/${category.id}`)
-                    .then(() => {
-                        toast.success("Категорію успішно видалено!");
+                await axios.delete<CacheInvalidationResponse>(`/api/category/${category.id}`)
+                    .then(({data}) => {
+                        if (data.cacheInvalidated) {
+                            toast.success("Категорію успішно видалено!");
+                        } else {
+                            toast(CACHE_INVALIDATION_WARNING, {icon: "⚠️"});
+                        }
                         router.refresh()
                     })
                     .catch((error) => {

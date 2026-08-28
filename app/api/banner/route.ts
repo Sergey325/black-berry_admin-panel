@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import prisma from "@/app/lib/prisma";
+import {tryInvalidateStorefrontCache} from "@/app/lib/storefrontCache";
 
 type BannerRequest = {
     id?: number;
@@ -46,8 +47,9 @@ export async function POST(request: Request) {
                 },
             });
         }
+        const cacheInvalidated = await tryInvalidateStorefrontCache(["banners"]);
 
-        return NextResponse.json(null, { status: 200 });
+        return NextResponse.json({cacheInvalidated}, { status: 200 });
     } catch (error) {
         console.error(error);
         return NextResponse.json({ error: "Не вдалося зберегти банер" }, { status: 500 });

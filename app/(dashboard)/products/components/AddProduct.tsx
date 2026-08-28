@@ -6,7 +6,7 @@ import {IProduct, IProductColor} from "@/app/actions/getProducts";
 import toast from "react-hot-toast";
 import {useRouter} from "next/navigation";
 import {IoIosArrowBack} from "react-icons/io";
-import {FormValuesProduct} from "@/app/types";
+import {CacheInvalidationResponse, FormValuesProduct} from "@/app/types";
 import {IMaterial} from "@/app/actions/getMaterials";
 import {useMemo} from "react";
 import {ICategory} from "@/app/actions/getCategories";
@@ -25,6 +25,7 @@ import {
 import type {DragEndEvent} from "@dnd-kit/core";
 import type {ICatalogColor} from "@/app/actions/getCatalogColors";
 import Loader from "@/app/components/Loader";
+import {CACHE_INVALIDATION_WARNING} from "@/app/utils/cacheInvalidationWarning";
 import {
     sortableKeyboardCoordinates,
     SortableContext,
@@ -41,7 +42,7 @@ type Props = {
     resetSelectedProduct: () => void;
 }
 
-type SaveProductResponse = {
+type SaveProductResponse = CacheInvalidationResponse & {
     id: number;
     transactionDurationMs: number;
 };
@@ -207,7 +208,11 @@ export default function AddProduct({product, products, materials, categories, ca
                     .filter((override) => override.value.length > 0),
             });
             const successMessage = product?.id ? "Продукт оновлено!" : "Продукт створено!";
-            toast.success(`${successMessage} (${response.data.transactionDurationMs} мс)`)
+            if (response.data.cacheInvalidated) {
+                toast.success(`${successMessage} (${response.data.transactionDurationMs} мс)`);
+            } else {
+                toast(CACHE_INVALIDATION_WARNING, {icon: "⚠️"});
+            }
             reset({
                 name: "",
                 description: "",

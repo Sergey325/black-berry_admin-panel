@@ -26,6 +26,7 @@ import {CSS} from "@dnd-kit/utilities";
 import {MdDragIndicator} from "react-icons/md";
 import {reorderProducts} from "@/app/actions/reorderProducts";
 import toast from "react-hot-toast";
+import {CACHE_INVALIDATION_WARNING} from "@/app/utils/cacheInvalidationWarning";
 
 
 type Props = {
@@ -114,8 +115,12 @@ const ProductCategory = ({group, onEdit, canReorder}: ProductCategoryProps) => {
         setIsSaving(true);
 
         try {
-            await reorderProducts(group.categoryId, nextProducts.map(({id}) => id));
-            toast.success("Порядок товарів збережено");
+            const result = await reorderProducts(group.categoryId, nextProducts.map(({id}) => id));
+            if (result.cacheInvalidated) {
+                toast.success("Порядок товарів збережено");
+            } else {
+                toast(CACHE_INVALIDATION_WARNING, {icon: "⚠️"});
+            }
         } catch {
             setOrderedProducts(previousProducts);
             toast.error("Не вдалося зберегти порядок товарів");

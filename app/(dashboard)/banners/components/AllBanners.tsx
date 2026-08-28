@@ -27,6 +27,7 @@ import type {IBanner} from "@/app/actions/getBanners";
 import {reorderBanners} from "@/app/actions/reorderBanners";
 import SearchInput from "@/app/components/SearchInput";
 import BannerRow from "@/app/(dashboard)/banners/components/BannerRow";
+import {CACHE_INVALIDATION_WARNING} from "@/app/utils/cacheInvalidationWarning";
 
 type Props = {
     banners: IBanner[];
@@ -102,8 +103,12 @@ const AllBanners = ({banners, handleChangeTab, onEdit}: Props) => {
         setIsSaving(true);
 
         try {
-            await reorderBanners(nextBanners.map(({id}) => id));
-            toast.success("Порядок банерів збережено");
+            const result = await reorderBanners(nextBanners.map(({id}) => id));
+            if (result.cacheInvalidated) {
+                toast.success("Порядок банерів збережено");
+            } else {
+                toast(CACHE_INVALIDATION_WARNING, {icon: "⚠️"});
+            }
         } catch {
             setOrderedBanners(previousBanners);
             toast.error("Не вдалося зберегти порядок банерів");

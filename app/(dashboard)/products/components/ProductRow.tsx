@@ -10,6 +10,8 @@ import {FiTrash2} from "react-icons/fi";
 import Link from "next/link";
 import {ReactNode} from "react";
 import {showConfirmationToast} from "@/app/components/ConfirmationToast";
+import type {CacheInvalidationResponse} from "@/app/types";
+import {CACHE_INVALIDATION_WARNING} from "@/app/utils/cacheInvalidationWarning";
 
 type Props = {
     product: IProduct;
@@ -27,9 +29,13 @@ export default function ProductRow({ product, onEdit, dragHandle }: Props) {
             toastId: `delete-product-${product.id}`,
             message: `Видалити товар «${product.name}»?`,
             onConfirmAction: async () => {
-                await axios.delete(`/api/product/${product.id}`)
-                    .then(() => {
-                        toast.success("Product deleted successfully!");
+                await axios.delete<CacheInvalidationResponse>(`/api/product/${product.id}`)
+                    .then(({data}) => {
+                        if (data.cacheInvalidated) {
+                            toast.success("Product deleted successfully!");
+                        } else {
+                            toast(CACHE_INVALIDATION_WARNING, {icon: "⚠️"});
+                        }
                         router.refresh()
                     })
                     .catch((error) => {

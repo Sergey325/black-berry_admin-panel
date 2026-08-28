@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import prisma from "@/app/lib/prisma";
 import { deleteCloudinaryImageByUrl } from "@/app/lib/cloudinary";
+import {tryInvalidateStorefrontCache} from "@/app/lib/storefrontCache";
 
 export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
     try {
@@ -21,8 +22,9 @@ export async function DELETE(_request: Request, { params }: { params: Promise<{ 
         await deleteCloudinaryImageByUrl(banner.image);
 
         await prisma.banner.delete({ where: { id: bannerId } });
+        const cacheInvalidated = await tryInvalidateStorefrontCache(["banners"]);
 
-        return NextResponse.json(null, { status: 200 });
+        return NextResponse.json({cacheInvalidated}, { status: 200 });
     } catch (error) {
         console.error(error);
         if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {

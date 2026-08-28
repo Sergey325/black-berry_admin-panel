@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/app/lib/prisma";
 import {Prisma} from "@prisma/client";
+import {tryInvalidateStorefrontCache} from "@/app/lib/storefrontCache";
 
 
 export async function PUT(
@@ -19,7 +20,8 @@ export async function PUT(
             where: { id: Number(id) },
             data: { name: name.trim() },
         });
-        return NextResponse.json(material);
+        const cacheInvalidated = await tryInvalidateStorefrontCache(["products"]);
+        return NextResponse.json({...material, cacheInvalidated});
     } catch (error: unknown) {
         if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
             return NextResponse.json(
@@ -27,6 +29,7 @@ export async function PUT(
                 { status: 409 }
             );
         }
+        console.error(error);
         return NextResponse.json({ error: "Помилка сервера" }, { status: 500 });
     }
 }
@@ -51,9 +54,11 @@ export async function DELETE(
     }
 
     try {
-        await prisma.material.delete({ where: { id: materialId } });
-        return NextResponse.json({ success: true });
-    } catch {
+        const material = await prisma.material.delete({ where: { id: materialId } });
+        const cacheInvalidated = await tryInvalidateStorefrontCache(["products"]);
+        return NextResponse.json({...material, cacheInvalidated});
+    } catch (error: unknown) {
+        console.error(error);
         return NextResponse.json({ error: "Помилка сервера" }, { status: 500 });
     }
 }

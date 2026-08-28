@@ -2,6 +2,7 @@
 
 import prisma from "@/app/lib/prisma";
 import {DEFAULT_CATALOG_COLORS} from "@/app/lib/defaultCatalogColors";
+import {tryInvalidateStorefrontCache} from "@/app/lib/storefrontCache";
 
 export interface ICatalogColor {
     id: number;
@@ -22,6 +23,7 @@ export async function getCatalogColors(): Promise<ICatalogColor[]> {
             },
             create: color,
         })));
+        await tryInvalidateStorefrontCache(["products"]);
     }
 
     return prisma.catalogColor.findMany({

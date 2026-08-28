@@ -4,12 +4,13 @@ import { IoIosArrowBack } from "react-icons/io";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { ICategory } from "@/app/actions/getCategories";
-import { FormValuesCategory } from "@/app/types";
+import { CacheInvalidationResponse, FormValuesCategory } from "@/app/types";
 import CheckBox from "@/app/components/CheckBox";
 import slugify from "@/app/utils/slugify";
 import ImagesUpload from "@/app/components/ImagesUpload";
 import Dropdown from "@/app/components/DropDown";
 import {FiTrash2} from "react-icons/fi";
+import {CACHE_INVALIDATION_WARNING} from "@/app/utils/cacheInvalidationWarning";
 
 type Props = {
     category?: ICategory;
@@ -71,13 +72,17 @@ const AddCategory = ({ category, resetSelectedCategory}: Props) => {
 
     const onSubmit = async (data: FormValuesCategory) => {
         try {
-            await axios.post("/api/category", {
+            const response = await axios.post<CacheInvalidationResponse>("/api/category", {
                 ...data,
                 id: category?.id,
                 slug: slugify(data.name),
             });
 
-            toast.success(category ? "Категорію оновлено!" : "Категорію створено!");
+            if (response.data.cacheInvalidated) {
+                toast.success(category ? "Категорію оновлено!" : "Категорію створено!");
+            } else {
+                toast(CACHE_INVALIDATION_WARNING, {icon: "⚠️"});
+            }
             returnToCategories()
         } catch (error: unknown) {
             toast.error(getErrorMessage(error, "Не вдалося зберегти категорію"));

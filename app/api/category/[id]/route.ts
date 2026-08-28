@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import prisma from "@/app/lib/prisma";
+import {tryInvalidateStorefrontCache} from "@/app/lib/storefrontCache";
 
 export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
     try {
@@ -11,7 +12,8 @@ export async function DELETE(_request: Request, { params }: { params: Promise<{ 
         }
 
         await prisma.category.delete({ where: { id: categoryId } });
-        return NextResponse.json(null, { status: 200 });
+        const cacheInvalidated = await tryInvalidateStorefrontCache(["categories", "products"]);
+        return NextResponse.json({cacheInvalidated}, { status: 200 });
     } catch (error: unknown) {
         console.error(error);
         if ((error as { code?: string }).code === "P2025") {
