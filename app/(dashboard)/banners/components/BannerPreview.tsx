@@ -59,18 +59,38 @@ const BannerPreview = ({ banner }: Props) => {
 
                     </div>
                     <div className="absolute right-0 top-0 h-full w-3/4 laptop:w-[65%]">
-                        <PreviewImage banner={banner} />
-                        <div
-                            className="pointer-events-none absolute inset-y-0 left-0 w-[15%] bg-linear-to-r from-white to-transparent"
-                            style={{
-                                maskImage: "linear-gradient(to right, black 0%, black 55%, transparent 100%)",
-                                WebkitMaskImage: "linear-gradient(to right, black 0%, black 55%, transparent 100%)",
-                            }}
-                        />
+                        <div className="absolute inset-y-0 right-0 flex max-w-3/4 laptop:max-w-[65%]">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                                src={optimizeCloudinaryUrl(banner.image, 1500)}
+                                alt={""}
+                                draggable={false}
+                                className="block h-full w-auto max-w-full object-cover object-right select-none"
+                            />
+
+                            {/* Градиент привязан к фактическому левому краю contain-изображения. */}
+                            <div
+                                className="absolute inset-y-0 -left-0.5 w-[calc(30%+2px)] pointer-events-none
+                                                   bg-linear-to-r from-white to-transparent
+                                                   "
+                                style={{
+                                    maskImage: 'linear-gradient(to right, black 0%, black 85%, transparent 100%)',
+                                    WebkitMaskImage: 'linear-gradient(to right, black 0%, black 85%, transparent 100%)',
+                                }}
+                            />
+                        </div>
                     </div>
                 </div>
                 <div className="relative flex min-h-[450px] w-full lg:hidden">
-                    <PreviewImage banner={banner} />
+                    <Image
+                        src={optimizeCloudinaryUrl(banner.image, 1500)}
+                        alt={""}
+                        fill
+                        sizes="(max-width: 1023px) 100vw, 1px"
+                        draggable={false}
+                        className="object-cover object-center select-none"
+                    />
+
                     <div className="absolute inset-0 bg-linear-to-t from-black/60 via-black/35 to-black/10" />
                     <div className="relative z-10 flex min-h-[450px] w-full flex-1 flex-col gap-4 px-6 pb-12 pt-10 sm:justify-around">
                         <PreviewBadge badge={banner.badge} />
