@@ -5,6 +5,7 @@ import prisma from "@/app/lib/prisma";
 export interface IBanner {
     id: number;
     image: string;
+    mobileImage: string | null;
     badge: string | null;
     title: string;
     features: string[];

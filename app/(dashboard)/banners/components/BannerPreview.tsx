@@ -58,32 +58,32 @@ const BannerPreview = ({ banner }: Props) => {
                         }
 
                     </div>
-                    <div className="absolute right-0 top-0 h-full w-3/4 laptop:w-[65%]">
-                        <div className="absolute inset-y-0 right-0 flex max-w-3/4 laptop:max-w-[65%]">
+                    <div className="absolute right-0 top-0 h-full w-full">
+                        <div className="absolute inset-y-0 right-0 flex ">
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
                                 src={optimizeCloudinaryUrl(banner.image, 1500)}
                                 alt={""}
                                 draggable={false}
-                                className="block h-full w-auto max-w-full object-cover object-right select-none"
+                                className="block h-full w-full max-w-full object-cover object-right select-none"
                             />
 
                             {/* Градиент привязан к фактическому левому краю contain-изображения. */}
-                            <div
-                                className="absolute inset-y-0 -left-0.5 w-[calc(30%+2px)] pointer-events-none
-                                                   bg-linear-to-r from-white to-transparent
-                                                   "
-                                style={{
-                                    maskImage: 'linear-gradient(to right, black 0%, black 85%, transparent 100%)',
-                                    WebkitMaskImage: 'linear-gradient(to right, black 0%, black 85%, transparent 100%)',
-                                }}
-                            />
+                            {/*<div*/}
+                            {/*    className="absolute inset-y-0 -left-0.5 w-[calc(30%+2px)] pointer-events-none*/}
+                            {/*                       bg-linear-to-r from-white to-transparent*/}
+                            {/*                       "*/}
+                            {/*    style={{*/}
+                            {/*        maskImage: 'linear-gradient(to right, black 0%, black 85%, transparent 100%)',*/}
+                            {/*        WebkitMaskImage: 'linear-gradient(to right, black 0%, black 85%, transparent 100%)',*/}
+                            {/*    }}*/}
+                            {/*/>*/}
                         </div>
                     </div>
                 </div>
                 <div className="relative flex min-h-[450px] w-full lg:hidden">
                     <Image
-                        src={optimizeCloudinaryUrl(banner.image, 1500)}
+                        src={optimizeCloudinaryUrl(banner.mobileImage || banner.image, 1500)}
                         alt={""}
                         fill
                         sizes="(max-width: 1023px) 100vw, 1px"

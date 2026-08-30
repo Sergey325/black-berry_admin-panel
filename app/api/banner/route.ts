@@ -5,6 +5,7 @@ import {tryInvalidateStorefrontCache} from "@/app/lib/storefrontCache";
 type BannerRequest = {
     id?: number;
     image?: string;
+    mobileImage?: string;
     badge?: string;
     title?: string;
     features?: string[];
@@ -29,6 +30,7 @@ export async function POST(request: Request) {
 
         const data = {
             image,
+            mobileImage: nullableStringValue(body.mobileImage),
             title,
             features,
             badge: nullableStringValue(body.badge),

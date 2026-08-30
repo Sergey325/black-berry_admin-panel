@@ -19,6 +19,7 @@ type Props = {
 
 const getDefaultValues = (banner?: IBanner): FormValuesBanner => ({
     image: banner?.image ?? "",
+    mobileImage: banner?.mobileImage ?? "",
     badge: banner?.badge ?? "",
     title: banner?.title ?? "",
     features: banner?.features.map((value) => ({value})) ?? [],
@@ -46,6 +47,7 @@ const AddBanner = ({banner, resetSelectedBanner}: Props) => {
     const watchedValues = useWatch({control});
     const values: FormValuesBanner = {
         image: watchedValues.image ?? "",
+        mobileImage: watchedValues.mobileImage ?? "",
         badge: watchedValues.badge ?? "",
         title: watchedValues.title ?? "",
         features: (watchedValues.features ?? []).map((feature) => ({value: feature?.value ?? ""})),
@@ -87,7 +89,7 @@ const AddBanner = ({banner, resetSelectedBanner}: Props) => {
                 <form data-scroll-navigation onSubmit={handleSubmit(onSubmit)}
                       className="flex flex-col gap-6 rounded-xl border border-gray-200 bg-white p-4 shadow-sm md:p-6">
                     <div className="flex flex-col gap-2">
-                        <label className="text-sm font-medium text-gray-700">Зображення</label>
+                        <label className="text-sm font-medium text-gray-700">Зображення для десктопу</label>
                         <ImagesUpload
                             value={values.image ? [values.image] : []}
                             onChange={(images) => setValue("image", images[0] ?? "", {shouldValidate: true})}
@@ -101,6 +103,18 @@ const AddBanner = ({banner, resetSelectedBanner}: Props) => {
                             {...register("image", {required: "Додайте зображення банера"})
                             } />
                         {errors.image && <span className="text-sm text-red-500">{errors.image.message}</span>}
+                    </div>
+                    <div className="flex flex-col gap-2">
+                        <label className="text-sm font-medium text-gray-700">Зображення для мобільних пристроїв</label>
+                        <ImagesUpload
+                            value={values.mobileImage ? [values.mobileImage] : []}
+                            onChange={(images) => setValue("mobileImage", images[0] ?? "", {shouldValidate: true})}
+                            folder="BlackBerry/Banners"
+                            maxFiles={1}
+                            multiple={false}
+                            uploadLabel="Завантажити мобільне зображення банера"
+                        />
+                        <input type="hidden" {...register("mobileImage")}/>
                     </div>
                     <div className="flex flex-col gap-1">
                         <label className="text-sm font-medium text-gray-700">Бейдж</label>

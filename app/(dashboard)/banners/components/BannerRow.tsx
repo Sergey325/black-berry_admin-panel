@@ -50,8 +50,8 @@ const BannerRow = ({ banner, onEdit, dragHandle }: Props) => {
             <div className="flex size-9 shrink-0 items-center justify-center">
                 {dragHandle}
             </div>
-            <div className="relative aspect-5/3 w-28 shrink-0 overflow-hidden rounded-lg border border-gray-200">
-                <Image src={banner.image} alt={""} fill sizes="112px" className="object-cover" />
+            <div className="relative aspect-[2.1077] w-28 shrink-0 overflow-hidden rounded-lg border border-gray-200">
+                <Image src={banner.image} alt={""} fill sizes="112px" className="object-right" />
             </div>
             <div className="min-w-0 flex-1 sm:contents">
                 <p className="line-clamp-2 font-medium text-gray-900">{banner.title}</p>

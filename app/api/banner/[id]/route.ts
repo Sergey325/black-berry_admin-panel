@@ -13,13 +13,19 @@ export async function DELETE(_request: Request, { params }: { params: Promise<{ 
             return NextResponse.json({ error: "Некоректний ідентифікатор банера" }, { status: 400 });
         }
 
-        const banner = await prisma.banner.findUnique({ where: { id: bannerId }, select: { image: true } });
+        const banner = await prisma.banner.findUnique({
+            where: {id: bannerId},
+            select: {image: true, mobileImage: true},
+        });
 
         if (!banner) {
             return NextResponse.json({ error: "Банер не знайдено" }, { status: 404 });
         }
 
-        await deleteCloudinaryImageByUrl(banner.image);
+        await Promise.all(
+            [...new Set([banner.image, banner.mobileImage].filter((image): image is string => Boolean(image)))]
+                .map((image) => deleteCloudinaryImageByUrl(image))
+        );
 
         await prisma.banner.delete({ where: { id: bannerId } });
         const cacheInvalidated = await tryInvalidateStorefrontCache(["banners"]);

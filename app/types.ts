@@ -52,6 +52,7 @@ export type FormValuesCategory = {
 
 export type FormValuesBanner = {
     image: string;
+    mobileImage: string;
     badge: string;
     title: string;
     features: { value: string }[];

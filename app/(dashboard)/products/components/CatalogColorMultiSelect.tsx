@@ -89,7 +89,7 @@ const CatalogColorMultiSelect = ({colors, value, onChange, error}: Props) => {
                     }}
                     onFocus={() => setIsOpen(true)}
                     placeholder="Пошук за назвою або кодом..."
-                    className="min-w-0 flex-1 py-2.5 outline-none"
+                    className="min-w-0 flex-1 py-2.5 outline-none border-none"
                 />
             </div>
             {isOpen && (
