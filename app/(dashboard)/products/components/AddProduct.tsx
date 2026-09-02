@@ -2,14 +2,13 @@ import {Controller, useFieldArray, useForm, useWatch} from "react-hook-form";
 import axios from "axios";
 import ColorBlock, {DEFAULT_SIZES} from "@/app/(dashboard)/products/components/ColorBlock";
 import ToolTip from "@/app/components/ToolTip";
-import {IProduct, IProductColor} from "@/app/actions/getProducts";
+import {IProduct, IProductColor, IProductListItem} from "@/app/actions/getProducts";
 import toast from "react-hot-toast";
 import {useRouter} from "next/navigation";
 import {IoIosArrowBack} from "react-icons/io";
 import {CacheInvalidationResponse, FormValuesProduct} from "@/app/types";
 import {IMaterial} from "@/app/actions/getMaterials";
 import {useMemo} from "react";
-import {ICategory} from "@/app/actions/getCategories";
 import Materials from "@/app/(dashboard)/products/components/Materials";
 import slugify from "@/app/utils/slugify";
 import SearchSelect, {SearchSelectOption} from "@/app/components/SearchSelect";
@@ -26,6 +25,7 @@ import type {DragEndEvent} from "@dnd-kit/core";
 import type {ICatalogColor} from "@/app/actions/getCatalogColors";
 import Loader from "@/app/components/Loader";
 import {CACHE_INVALIDATION_WARNING} from "@/app/utils/cacheInvalidationWarning";
+import type {ProductFormReferences} from "@/app/actions/getProductFormReferences";
 import {
     sortableKeyboardCoordinates,
     SortableContext,
@@ -35,11 +35,10 @@ import {
 
 type Props = {
     product?: IProduct;
-    products: IProduct[];
+    products: IProductListItem[];
     materials: IMaterial[];
-    categories: ICategory[];
+    categories: ProductFormReferences["categories"];
     catalogColors: ICatalogColor[];
-    resetSelectedProduct: () => void;
 }
 
 type SaveProductResponse = CacheInvalidationResponse & {
@@ -49,7 +48,7 @@ type SaveProductResponse = CacheInvalidationResponse & {
 
 const getSpecificationOverrides = (
     categoryId: number | null | undefined,
-    categories: ICategory[],
+    categories: ProductFormReferences["categories"],
     overrides: IProduct["specificationOverrides"] = [],
 ): FormValuesProduct["specificationOverrides"] => {
     const overrideValues = new Map(overrides.map((override) => [override.categorySpecificationId, override.value]));
@@ -94,7 +93,7 @@ const getOrderedFilterColors = (color: IProductColor): ICatalogColor[] => {
         ));
 };
 
-export default function AddProduct({product, products, materials, categories, catalogColors, resetSelectedProduct}: Props) {
+export default function AddProduct({product, products, materials, categories, catalogColors}: Props) {
     const router = useRouter();
 
     const { register, control, handleSubmit, formState: { errors, isSubmitting }, reset, getValues, setValue, clearErrors } = useForm<FormValuesProduct>({
@@ -104,8 +103,8 @@ export default function AddProduct({product, products, materials, categories, ca
             price: product?.price || 500,
             discount: product?.discount || 0,
             hasLining: product?.hasLining ?? false,
-            materialId: product?.material?.id || undefined,
-            categoryId: product?.category?.id || null,
+            materialId: product?.materialId || undefined,
+            categoryId: product?.categoryId || null,
             colors: product?.colors.map((c) => {
                 const filterColors = getOrderedFilterColors(c);
 
@@ -301,7 +300,6 @@ export default function AddProduct({product, products, materials, categories, ca
     }), [productOptions, watchedRelatedProducts]);
 
     const returnToProducts = () => {
-        resetSelectedProduct();
         router.replace("/products?tab=AllProducts");
     };
 
@@ -369,7 +367,7 @@ export default function AddProduct({product, products, materials, categories, ca
                 />
 
                 <div className="flex flex-col lg:flex-row md:justify-between items-start gap-5 w-full">
-                    <Materials materialsList={materials} initialValue={product?.material} onSelectedValueChange={(material: IMaterial) => setValue("materialId", material.id)}/>
+                    <Materials materialsList={materials} initialValue={materials.find(({id}) => id === product?.materialId)} onSelectedValueChange={(material: IMaterial) => setValue("materialId", material.id)}/>
                     <div id="product-category-select" className="w-full">
                         <SearchSelect
                             options={categoryOptions}

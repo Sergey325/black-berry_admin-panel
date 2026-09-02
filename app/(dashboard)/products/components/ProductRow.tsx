@@ -3,7 +3,7 @@ import { useRouter } from "next/navigation";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { MdEdit } from "react-icons/md";
-import { IProduct } from "@/app/actions/getProducts";
+import {IProductListItem} from "@/app/actions/getProducts";
 import ToolTip from "@/app/components/ToolTip";
 import {calculatePriceWithDiscount} from "@/app/utils/calculateDiscount";
 import {FiTrash2} from "react-icons/fi";
@@ -14,8 +14,8 @@ import type {CacheInvalidationResponse} from "@/app/types";
 import {CACHE_INVALIDATION_WARNING} from "@/app/utils/cacheInvalidationWarning";
 
 type Props = {
-    product: IProduct;
-    onEdit: (product: IProduct) => void;
+    product: IProductListItem;
+    onEdit: (product: IProductListItem) => void;
     dragHandle?: ReactNode;
 };
 

@@ -49,6 +49,7 @@ export interface IOrdersParams {
     status?: OrderStatus | "All";
     sort?: string;
     search?: string;
+    tab?: string;
 }
 
 export async function getOrders(params?: IOrdersParams) {

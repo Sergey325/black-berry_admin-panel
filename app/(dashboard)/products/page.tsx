@@ -1,10 +1,6 @@
-import {getProducts, IProductsParams} from "@/app/actions/getProducts";
+import {getProductById, getProductList, IProductsParams} from "@/app/actions/getProducts";
 import ProductsClient from "@/app/(dashboard)/products/ProductsClient";
-import {getMaterials} from "@/app/actions/getMaterials";
-import {getCategories} from "@/app/actions/getCategories";
-import {getCatalogColors} from "@/app/actions/getCatalogColors";
-
-export const dynamic = 'force-dynamic'
+import {getProductFormReferences} from "@/app/actions/getProductFormReferences";
 
 type Props = {
     searchParams: Promise<IProductsParams>;
@@ -12,16 +8,22 @@ type Props = {
 
 const Products = async ({searchParams}: Props) => {
     const params = await searchParams;
+    const isFormOpen = params.tab === "AddProduct";
+    const productId = Number(params.productId);
+    const hasProductId = Number.isInteger(productId) && productId > 0;
 
-    const [products, materials, categories, catalogColors] = await Promise.all([
-        getProducts(params),
-        getMaterials(),
-        getCategories(),
-        getCatalogColors(),
-    ])
+    const [products, product, references] = await Promise.all([
+        getProductList(isFormOpen ? undefined : params),
+        isFormOpen && hasProductId ? getProductById(productId) : null,
+        isFormOpen ? getProductFormReferences() : null,
+    ]);
 
     return (
-        <ProductsClient products={products} materials={materials} categories={categories} catalogColors={catalogColors}/>
+        <ProductsClient
+            products={products}
+            product={product}
+            references={references}
+        />
     );
 };
 

@@ -1,6 +1,6 @@
 import { useFieldArray, useForm, Controller, useWatch } from "react-hook-form";
 import axios from "axios";
-import { IProduct } from "@/app/actions/getProducts";
+import {IOrderProduct} from "@/app/actions/getProducts";
 import {useEffect, useMemo, useState} from "react";
 import toast from "react-hot-toast";
 import {City, FormValuesOrder, Warehouse} from "@/app/types";
@@ -14,7 +14,7 @@ import Image from "next/image";
 import SearchSelect, {SearchSelectOption} from "@/app/components/SearchSelect";
 
 type Props = {
-    products: IProduct[];
+    products: IOrderProduct[];
 };
 
 const AddOrder = ({products}: Props) => {
@@ -77,7 +77,7 @@ const AddOrder = ({products}: Props) => {
         description: `${product.price} грн`,
     })), [products]);
 
-    const handleSelectProduct = (product: IProduct) => {
+    const handleSelectProduct = (product: IOrderProduct) => {
         const firstColor = product.colors[0];
 
         if (!firstColor) {

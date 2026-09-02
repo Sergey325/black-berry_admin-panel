@@ -1,10 +1,11 @@
 import SearchInput from "@/app/components/SearchInput";
 import {FiPlus} from "react-icons/fi";
 import ProductRow from "@/app/(dashboard)/products/components/ProductRow";
-import {IProduct} from "@/app/actions/getProducts";
+import {IProductListItem} from "@/app/actions/getProducts";
 import {useRouter, useSearchParams} from "next/navigation";
 import Dropdown from "@/app/components/DropDown";
-import {CSSProperties, useId, useMemo, useState} from "react";
+import {CSSProperties, useEffect, useId, useMemo, useState} from "react";
+import type {TransitionEvent as ReactTransitionEvent} from "react";
 import {FiChevronDown} from "react-icons/fi";
 import {
     closestCenter,
@@ -30,26 +31,35 @@ import {CACHE_INVALIDATION_WARNING} from "@/app/utils/cacheInvalidationWarning";
 
 
 type Props = {
-    products: IProduct[]
-    handleChangeTab: (tab: string) => void
-    onEdit: (product: IProduct) => void
+    products: IProductListItem[]
+    onAdd: () => void
+    onEdit: (product: IProductListItem) => void
 };
 
 type ProductGroup = {
     categoryId: number | null;
     categoryName: string;
-    products: IProduct[];
+    products: IProductListItem[];
 };
 
 type ProductCategoryProps = {
     group: ProductGroup;
-    onEdit: (product: IProduct) => void;
+    onEdit: (product: IProductListItem) => void;
     canReorder: boolean;
 };
 
+type ProductCategoryContentProps = {
+    categoryId: number | null;
+    products: IProductListItem[];
+    onEdit: (product: IProductListItem) => void;
+    canReorder: boolean;
+    isSaving: boolean;
+    onDragEnd: (event: DragEndEvent) => void;
+};
+
 type SortableProductProps = {
-    product: IProduct;
-    onEdit: (product: IProduct) => void;
+    product: IProductListItem;
+    onEdit: (product: IProductListItem) => void;
     disabled: boolean;
 };
 
@@ -91,15 +101,97 @@ const SortableProduct = ({product, onEdit, disabled}: SortableProductProps) => {
     );
 };
 
-const ProductCategory = ({group, onEdit, canReorder}: ProductCategoryProps) => {
-    const [isOpen, setIsOpen] = useState(false);
-    const [orderedProducts, setOrderedProducts] = useState(group.products);
-    const [isSaving, setIsSaving] = useState(false);
-    const contentId = useId();
+const ProductCategoryContent = ({
+                                    categoryId,
+                                    products,
+                                    onEdit,
+                                    canReorder,
+                                    isSaving,
+                                    onDragEnd,
+                                }: ProductCategoryContentProps) => {
     const sensors = useSensors(
         useSensor(PointerSensor, {activationConstraint: {distance: 6}}),
         useSensor(KeyboardSensor, {coordinateGetter: sortableKeyboardCoordinates}),
     );
+
+    return (
+        <>
+            <div className="hidden grid-cols-[36px_60px_1fr_120px_100px] items-center gap-4 border-y border-gray-200 bg-white px-4 py-2.5 text-xs font-medium uppercase tracking-wide text-gray-500 sm:grid">
+                <span></span>
+                <span></span>
+                <span>Назва</span>
+                <span className="text-center">Ціна</span>
+                <span className="text-center">Дії</span>
+            </div>
+            <DndContext
+                id={`products-category-${categoryId ?? "uncategorized"}`}
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={onDragEnd}
+            >
+                <SortableContext
+                    items={products.map(({id}) => id)}
+                    strategy={verticalListSortingStrategy}
+                >
+                    <div data-category-products>
+                        {products.map((product) => (
+                            <SortableProduct
+                                key={product.id}
+                                product={product}
+                                onEdit={onEdit}
+                                disabled={!canReorder || isSaving}
+                            />
+                        ))}
+                    </div>
+                </SortableContext>
+            </DndContext>
+        </>
+    );
+};
+
+const ProductCategory = ({group, onEdit, canReorder}: ProductCategoryProps) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const [isContentMounted, setIsContentMounted] = useState(false);
+    const [isContentVisible, setIsContentVisible] = useState(false);
+    const [orderedProducts, setOrderedProducts] = useState(group.products);
+    const [isSaving, setIsSaving] = useState(false);
+    const contentId = useId();
+
+    useEffect(() => {
+        if (!isOpen || !isContentMounted) return;
+
+        const animationFrame = requestAnimationFrame(() => {
+            setIsContentVisible(true);
+        });
+
+        return () => cancelAnimationFrame(animationFrame);
+    }, [isContentMounted, isOpen]);
+
+    useEffect(() => {
+        if (isOpen || !isContentMounted) return;
+
+        const timeout = setTimeout(() => {
+            setIsContentMounted(false);
+        }, 350);
+
+        return () => clearTimeout(timeout);
+    }, [isContentMounted, isOpen]);
+
+    const handleToggle = () => {
+        if (isOpen) {
+            setIsOpen(false);
+            setIsContentVisible(false);
+            return;
+        }
+
+        setIsContentMounted(true);
+        setIsOpen(true);
+    };
+
+    const handleTransitionEnd = (event: ReactTransitionEvent<HTMLDivElement>) => {
+        if (event.target !== event.currentTarget || event.propertyName !== "grid-template-rows") return;
+        if (!isOpen) setIsContentMounted(false);
+    };
 
     const handleDragEnd = async ({active, over}: DragEndEvent) => {
         if (!canReorder || isSaving || !over || active.id === over.id || group.categoryId === null) return;
@@ -133,7 +225,7 @@ const ProductCategory = ({group, onEdit, canReorder}: ProductCategoryProps) => {
         <section data-category-id={group.categoryId ?? "uncategorized"} className="border-b border-gray-200 last:border-b-0">
             <button
                 type="button"
-                onClick={() => setIsOpen((current) => !current)}
+                onClick={handleToggle}
                 aria-expanded={isOpen}
                 aria-controls={contentId}
                 className="flex w-full cursor-pointer items-center justify-between gap-4 bg-gray-50/70 px-4 py-3 text-left transition hover:bg-gray-100 md:px-5"
@@ -147,44 +239,28 @@ const ProductCategory = ({group, onEdit, canReorder}: ProductCategoryProps) => {
                 <FiChevronDown className={`size-5 shrink-0 text-gray-500 transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`}/>
             </button>
 
-            <div className={`grid transition-[grid-template-rows] duration-300 ${isOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}>
+            <div
+                className={`grid transition-[grid-template-rows] duration-300 ${isContentVisible ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}
+                onTransitionEnd={handleTransitionEnd}
+            >
                 <div id={contentId} inert={!isOpen} className="overflow-hidden">
-                    <div className="hidden grid-cols-[36px_60px_1fr_120px_100px] items-center gap-4 border-y border-gray-200 bg-white px-4 py-2.5 text-xs font-medium uppercase tracking-wide text-gray-500 sm:grid">
-                        <span></span>
-                        <span></span>
-                        <span>Назва</span>
-                        <span className="text-center">Ціна</span>
-                        <span className="text-center">Дії</span>
-                    </div>
-                    <DndContext
-                        id={`products-category-${group.categoryId ?? "uncategorized"}`}
-                        sensors={sensors}
-                        collisionDetection={closestCenter}
-                        onDragEnd={handleDragEnd}
-                    >
-                        <SortableContext
-                            items={orderedProducts.map(({id}) => id)}
-                            strategy={verticalListSortingStrategy}
-                        >
-                            <div data-category-products>
-                                {orderedProducts.map((product) => (
-                                    <SortableProduct
-                                        key={product.id}
-                                        product={product}
-                                        onEdit={onEdit}
-                                        disabled={!canReorder || isSaving}
-                                    />
-                                ))}
-                            </div>
-                        </SortableContext>
-                    </DndContext>
+                    {isContentMounted && (
+                        <ProductCategoryContent
+                            categoryId={group.categoryId}
+                            products={orderedProducts}
+                            onEdit={onEdit}
+                            canReorder={canReorder}
+                            isSaving={isSaving}
+                            onDragEnd={handleDragEnd}
+                        />
+                    )}
                 </div>
             </div>
         </section>
     );
 };
 
-const AllProducts = ({products, handleChangeTab, onEdit}: Props) => {
+const AllProducts = ({products, onAdd, onEdit}: Props) => {
     const router = useRouter();
     const params = useSearchParams();
 
@@ -242,7 +318,7 @@ const AllProducts = ({products, handleChangeTab, onEdit}: Props) => {
                     <button
                         type="button"
                         className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-lg bg-black px-3 text-sm font-medium text-white transition hover:bg-gray-800 sm:px-4"
-                        onClick={() => handleChangeTab("AddProduct")}
+                        onClick={onAdd}
                     >
                         <FiPlus className="size-5"/>
                         <span className="hidden sm:inline">Додати товар</span>

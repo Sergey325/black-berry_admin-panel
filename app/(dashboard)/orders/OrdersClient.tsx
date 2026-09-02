@@ -6,12 +6,12 @@ import qs from "query-string";
 import {IOrder} from "@/app/actions/getOrders";
 import AddOrder from "@/app/(dashboard)/orders/components/AddOrder";
 import AllOrders from "@/app/(dashboard)/orders/components/AllOrders";
-import {IProduct} from "@/app/actions/getProducts";
+import {IOrderProduct} from "@/app/actions/getProducts";
 import DashboardPageHeader from "@/app/(dashboard)/components/DashboardPageHeader";
 
 type Props = {
     orders: IOrder[];
-    products: IProduct[];
+    products: IOrderProduct[];
 };
 
 export default function OrdersClient({orders, products}: Props) {

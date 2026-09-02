@@ -13,22 +13,22 @@ type Props = {
 };
 
 const PreviewBadge = ({ badge }: { badge: string }) => (
-    <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-primary bg-white/80 px-4 py-1.5 text-xs text-gray-700 shadow-[0_0_5px_rgba(130,61,154,0.50)] lg:mb-7 lg:text-base">
+    <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-primary bg-white/55 px-4 py-1.5 text-xs text-gray-700 shadow-[0_0_5px_rgba(130,61,154,0.50)] lg:mb-7 lg:text-base">
         {badge || "Бейдж"}
         <FaHeart className="size-3 text-primary lg:size-4" />
     </span>
 );
 
-const PreviewImage = ({ banner }: Props) => banner.image ? (
-    <Image
-        src={optimizeCloudinaryUrl(banner.image, 1500)}
-        alt={""}
-        fill
-        sizes="(max-width: 1023px) 100vw, 50vw"
-        draggable={false}
-        className="select-none object-cover object-center"
-    />
-) : null;
+// const PreviewImage = ({ banner }: Props) => banner.image ? (
+//     <Image
+//         src={optimizeCloudinaryUrl(banner.image, 1500)}
+//         alt={""}
+//         fill
+//         sizes="(max-width: 1023px) 100vw, 50vw"
+//         draggable={false}
+//         className="select-none object-cover object-center"
+//     />
+// ) : null;
 
 const BannerPreview = ({ banner }: Props) => {
     const features = banner.features.filter((feature) => feature.value.trim());
@@ -46,7 +46,7 @@ const BannerPreview = ({ banner }: Props) => {
                             {banner.title || "Заголовок банера"}
                         </h2>
                         {features.length > 0 && (
-                            <ul className="list-disc space-y-2 pl-5 text-gray-600 marker:text-lg">
+                            <ul className="list-disc space-y-2 pl-5 text-gray-800 marker:text-lg">
                                 {features.map((feature, index) => <li key={`${feature.value}-${index}`}>{feature.value}</li>)}
                             </ul>
                         )}
