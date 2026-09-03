@@ -52,7 +52,7 @@ export default function NovaPoshtaSelect({ selectedCity, setSelectedCity, select
         return () => clearTimeout(timeout);
     }, [cityQuery]);
     useEffect(() => {
-        if (!selectedCity) return;
+        if (!selectedCity?.ref) return;
         axios.post("/api/warehouses", { cityRef: selectedCity.ref }).then((res) => {
             setWarehouses(res.data);
         }).then(() => setIsLoading(false));
@@ -71,6 +71,9 @@ export default function NovaPoshtaSelect({ selectedCity, setSelectedCity, select
 
                             setCityQuery(value);
                             setSelectedCity(null);
+                            setSelectedWarehouse(null);
+                            setWarehouseQuery("");
+                            setWarehouses([]);
 
                             if (value.length < 2) {
                                 setCities([]);

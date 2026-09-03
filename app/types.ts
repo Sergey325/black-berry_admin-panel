@@ -72,6 +72,7 @@ export type FormValuesOrder = {
     cityRef: string;
     warehouse: string;
     warehouseRef: string;
+    ttnNumber: string;
     paymentMethod: "MONOBANK" | "CASH_ON_DELIVERY";
     items: OrderItem[];
 };

@@ -21,23 +21,18 @@ export async function processTtnUpdates() {
         const orders = await prisma.order.findMany({
             where: {
                 ttnNumber: {not: null},
-                ttnRef: {not: null},
                 status: {notIn: FINAL_ORDER_STATUSES},
             },
             select: {
                 id: true,
                 status: true,
                 ttnNumber: true,
-                ttnRef: true,
             },
         });
         const trackedOrders = orders.filter((order): order is typeof order & {
             ttnNumber: string;
-            ttnRef: string;
         } => order.ttnNumber !== null
-            && order.ttnRef !== null
-            && order.ttnNumber.trim().length > 0
-            && order.ttnRef.trim().length > 0);
+            && order.ttnNumber.trim().length > 0);
 
         totalOrders = trackedOrders.length;
 
@@ -47,7 +42,6 @@ export async function processTtnUpdates() {
             try {
                 statuses = await getStatusDocuments(batch.map((order) => ({
                     Number: order.ttnNumber.trim(),
-                    Ref: order.ttnRef.trim(),
                 })));
             } catch (error: unknown) {
                 errors += 1;
@@ -60,14 +54,12 @@ export async function processTtnUpdates() {
             }
 
             const ordersByNumber = new Map(batch.map((order) => [order.ttnNumber.trim(), order]));
-            const ordersByRef = new Map(batch.map((order) => [order.ttnRef.trim(), order]));
             const updatedAt = new Date();
             const updateResults = await Promise.allSettled(statuses.map(async (statusDocument) => {
-                const order = (statusDocument.Number ? ordersByNumber.get(statusDocument.Number) : undefined)
-                    ?? (statusDocument.RefEW ? ordersByRef.get(statusDocument.RefEW) : undefined);
+                const order = ordersByNumber.get(statusDocument.Number);
 
                 if (!order) {
-                    throw new Error(`No order found for TTN ${statusDocument.Number ?? statusDocument.RefEW}`);
+                    throw new Error(`No order found for TTN ${statusDocument.Number}`);
                 }
 
                 const status = mapNPStatusToOrderStatus(statusDocument.StatusCode, order.status);

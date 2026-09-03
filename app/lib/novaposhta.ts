@@ -3,11 +3,10 @@ const API_KEY = process.env.NOVA_POSHTA_API_KEY!;
 
 export interface NovaPoshtaDocument {
     Number: string;
-    Ref: string;
 }
 
 export interface NovaPoshtaStatusDocument {
-    Number?: string;
+    Number: string;
     RefEW?: string;
     Status: string;
     StatusCode: string | number;
@@ -20,10 +19,9 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 function isStatusDocument(value: unknown): value is NovaPoshtaStatusDocument {
     if (!isRecord(value)) return false;
 
-    const hasIdentifier = typeof value.Number === "string" || typeof value.RefEW === "string";
     const hasStatusCode = typeof value.StatusCode === "string" || typeof value.StatusCode === "number";
 
-    return hasIdentifier && typeof value.Status === "string" && hasStatusCode;
+    return typeof value.Number === "string" && typeof value.Status === "string" && hasStatusCode;
 }
 
 function formatApiErrors(errors: unknown) {

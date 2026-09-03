@@ -15,46 +15,65 @@ import SearchSelect, {SearchSelectOption} from "@/app/components/SearchSelect";
 import ImagesUpload from "@/app/components/ImagesUpload";
 import {FiPlus} from "react-icons/fi";
 import Dropdown from "@/app/components/DropDown";
+import {IOrder} from "@/app/actions/getOrders";
 
 type Props = {
     products: IOrderProduct[];
+    order?: IOrder;
 };
 
-const AddOrder = ({products}: Props) => {
+const AddOrder = ({products, order}: Props) => {
     const router = useRouter();
-    const [selectedCity, setSelectedCity] = useState<City | null>(null);
-    const [selectedWarehouse, setSelectedWarehouse] = useState<Warehouse | null>(null);
+    const [selectedCity, setSelectedCity] = useState<City | null>(() => order?.city ? {
+        ref: order.cityRef ?? "",
+        name: order.city,
+        area: order.area ?? "",
+    } : null);
+    const [selectedWarehouse, setSelectedWarehouse] = useState<Warehouse | null>(() => order?.warehouse ? {
+        ref: order.warehouseRef ?? "",
+        number: order.warehouseNumber?.toString() ?? "",
+        description: order.warehouse,
+    } : null);
 
     const { register, control, handleSubmit, setValue, formState: { errors }, setError, clearErrors, reset } = useForm<FormValuesOrder>({
         defaultValues: {
-            firstName: "",
-            lastName: "",
-            phone: "",
-            email: "",
-            comment: "",
-            city: "",
-            area: "",
-            cityRef: "",
-            warehouse: "",
-            warehouseRef: "",
-            paymentMethod: "MONOBANK",
-            items: [],
+            firstName: order?.firstName ?? "",
+            lastName: order?.lastName ?? "",
+            phone: order?.phone ?? "",
+            email: order?.email ?? "",
+            comment: order?.comment ?? "",
+            city: order?.city ?? "",
+            area: order?.area ?? "",
+            cityRef: order?.cityRef ?? "",
+            warehouse: order?.warehouse ?? "",
+            warehouseRef: order?.warehouseRef ?? "",
+            ttnNumber: order?.ttnNumber ?? "",
+            paymentMethod: order?.paymentMethod ?? "MONOBANK",
+            items: order?.items.map((item) => ({
+                productId: item.productId,
+                productColorId: null,
+                name: item.name,
+                color: item.color ?? "",
+                colorName: item.colorName ?? "",
+                colorCode: item.colorCode ?? "",
+                size: item.size ?? "",
+                price: item.price,
+                quantity: item.quantity,
+                imageUrl: item.imageUrl ?? "",
+                isCustom: item.isCustom,
+            })) ?? [],
         },
     });
 
     useEffect(() => {
-        if (selectedCity) {
-            setValue("city", selectedCity.name);
-            setValue("area", selectedCity.area ?? "");
-            setValue("cityRef", selectedCity.ref);
-        }
+        setValue("city", selectedCity?.name ?? "");
+        setValue("area", selectedCity?.area ?? "");
+        setValue("cityRef", selectedCity?.ref ?? "");
     }, [selectedCity, setValue]);
 
     useEffect(() => {
-        if (selectedWarehouse) {
-            setValue("warehouse", selectedWarehouse.description);
-            setValue("warehouseRef", selectedWarehouse.ref);
-        }
+        setValue("warehouse", selectedWarehouse?.description ?? "");
+        setValue("warehouseRef", selectedWarehouse?.ref ?? "");
     }, [selectedWarehouse, setValue]);
 
     const { fields: itemFields, append: appendItem, remove: removeItem } = useFieldArray({
@@ -143,24 +162,29 @@ const AddOrder = ({products}: Props) => {
                 return;
             }
             else {
-                await axios.post("/api/order", {
+                const payload = {
                     ...data,
-                    warehouseNumber: Number(selectedWarehouse?.number),
-                    phone: data.phone.replace(/\D/g, "")
-                }).then(() => {
+                    warehouseNumber: selectedWarehouse?.number ? Number(selectedWarehouse.number) : null,
+                    phone: data.phone.replace(/\D/g, ""),
+                    ttnNumber: data.ttnNumber.trim(),
+                };
+
+                if (order) {
+                    await axios.patch(`/api/order/${order.id}`, payload);
+                    toast.success("Замовлення оновлено!");
+                } else {
+                    await axios.post("/api/order", payload);
                     toast.success("Замовлення створено!");
-                    reset()
-                    setSelectedCity(null)
-                    setSelectedWarehouse(null)
-                    router.replace("/orders")
-                })
-                .catch(() => {
-                    toast.error("Something went wrong")
-                })
+                }
+
+                reset();
+                setSelectedCity(null);
+                setSelectedWarehouse(null);
+                router.replace("/orders");
             }
         } catch(error: unknown) {
             console.error(error);
-            toast.error("Помилка створення замовлення");
+            toast.error(order ? "Помилка оновлення замовлення" : "Помилка створення замовлення");
         }
     };
 
@@ -195,6 +219,21 @@ const AddOrder = ({products}: Props) => {
                             setSelectedWarehouse={setSelectedWarehouse}
                         />
                     </div>
+                    {order && (
+                        <div className="mt-4 flex flex-col gap-1">
+                            <label className="text-base font-medium text-gray-700">Номер ТТН</label>
+                            <input
+                                inputMode="numeric"
+                                maxLength={14}
+                                placeholder="14 цифр"
+                                {...register("ttnNumber", {
+                                    validate: (value) => !value || /^\d{14}$/.test(value) || "ТТН має містити 14 цифр",
+                                })}
+                                className="rounded-lg border border-gray-300 px-3 py-2.5 text-base outline-none transition focus:border-gray-500 focus:ring-2 focus:ring-gray-200"
+                            />
+                            {errors.ttnNumber && <p className="text-sm text-red-500">{errors.ttnNumber.message}</p>}
+                        </div>
+                    )}
                 </section>
 
                 <section className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm md:p-5">
@@ -412,7 +451,7 @@ const AddOrder = ({products}: Props) => {
                 </section>
 
                 <button type="submit" className="rounded-lg bg-black py-3 text-base font-medium text-white transition hover:bg-gray-800">
-                    Створити замовлення
+                    {order ? "Оновити замовлення" : "Створити замовлення"}
                 </button>
 
             </form>

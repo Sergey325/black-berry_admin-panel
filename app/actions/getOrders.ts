@@ -51,6 +51,18 @@ export interface IOrdersParams {
     sort?: string;
     search?: string;
     tab?: string;
+    orderId?: string;
+}
+
+export async function getOrderById(orderId: number): Promise<IOrder | null> {
+    try {
+        return await prisma.order.findUnique({
+            where: {id: orderId},
+            include: {items: true},
+        });
+    } catch (error: unknown) {
+        throw error instanceof Error ? error : new Error("Failed to get order")
+    }
 }
 
 export async function getOrders(params?: IOrdersParams) {

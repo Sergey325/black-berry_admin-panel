@@ -2,13 +2,16 @@ import OrderSummary from "@/app/(dashboard)/orders/components/OrderSummary";
 import OrderItem from "@/app/(dashboard)/orders/components/OrderItem";
 import {IOrder} from "@/app/actions/getOrders";
 import {FaFacebook} from "react-icons/fa";
+import {MdEdit} from "react-icons/md";
+import ToolTip from "@/app/components/ToolTip";
 
 
 type Props = {
     order: IOrder;
+    onEdit: (order: IOrder) => void;
 };
 
-const OrderCard = ({order}: Props) => {
+const OrderCard = ({order, onEdit}: Props) => {
     return (
         <article className="rounded-xl border border-gray-200 bg-white shadow-sm">
             <div className="grid gap-4 border-b border-gray-200 px-4 py-4 sm:grid-cols-2 md:px-5">
@@ -16,12 +19,22 @@ const OrderCard = ({order}: Props) => {
                     <div className="flex items-center gap-2">
                         <p className="font-semibold text-gray-900">Замовлення {order.invoiceId || order.id}</p>
                         {order.fbc && <FaFacebook className="size-4 shrink-0 text-blue-600"/>}
+                        <ToolTip label="Редагувати">
+                            <button
+                                type="button"
+                                onClick={() => onEdit(order)}
+                                className="inline-flex size-8 items-center justify-center rounded-lg text-gray-500 transition hover:bg-gray-100 hover:text-gray-900"
+                                aria-label="Редагувати замовлення"
+                            >
+                                <MdEdit className="size-4"/>
+                            </button>
+                        </ToolTip>
                     </div>
                     {order.city && order.area && <p className="mt-2 text-base text-gray-700">{order.city}, {order.area} обл.</p>}
                     {order.warehouse && <p className="mt-1 break-words text-base text-gray-600">{order.warehouse}</p>}
                 </div>
                 <div className="min-w-0 sm:text-right">
-                    {order.firstName && order.lastName && <p className="font-medium text-gray-900">{order.firstName} {order.lastName}</p>}
+                    <p className="font-medium text-gray-900">{order.firstName} {order.lastName}</p>
                     {order.phone && <a href={`tel:${order.phone}`} className="mt-2 block text-base text-gray-700 transition hover:text-gray-950">{order.phone}</a>}
                     {order.email && <a href={`mailto:${order.email}`} className="mt-1 block truncate text-base text-gray-600 transition hover:text-gray-950">{order.email}</a>}
                 </div>

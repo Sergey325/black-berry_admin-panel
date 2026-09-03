@@ -12,7 +12,8 @@ import SearchInput from "@/app/components/SearchInput";
 
 type Props = {
     orders: IOrder[],
-    handleChangeTab: (tab: string) => void
+    onAdd: () => void;
+    onEdit: (order: IOrder) => void;
 };
 
 const profitStatuses = [
@@ -23,7 +24,7 @@ const profitStatuses = [
     "DELIVERED",
 ];
 
-const AllOrders = ({orders, handleChangeTab}: Props) => {
+const AllOrders = ({orders, onAdd, onEdit}: Props) => {
     const params = useSearchParams()
     const router = useRouter()
 
@@ -84,7 +85,7 @@ const AllOrders = ({orders, handleChangeTab}: Props) => {
                     <button
                         type="button"
                         className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-lg bg-black px-3 text-sm font-medium text-white transition hover:bg-gray-800 sm:px-4"
-                        onClick={() => handleChangeTab("AddOrder")}
+                        onClick={onAdd}
                     >
                         <FiPlus className="size-5"/>
                         <span className="hidden sm:inline">Додати замовлення</span>
@@ -138,7 +139,7 @@ const AllOrders = ({orders, handleChangeTab}: Props) => {
                             <div className="h-px flex-1 bg-gray-200" />
                         </div>
                         <div className="space-y-3">
-                            {orders.map(order => <OrderCard key={order.id} order={order}/>) }
+                            {orders.map(order => <OrderCard key={order.id} order={order} onEdit={onEdit}/>) }
                         </div>
                     </section>
                 );
