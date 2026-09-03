@@ -23,25 +23,25 @@ export interface IOrder {
     invoiceId: string | null;
     status: OrderStatus;
     totalAmount: number;
-    firstName: string;
-    lastName: string
+    firstName: string | null;
+    lastName: string | null;
     phone: string | null;
     email: string | null;
     comment: string| null;
-    city: string;
-    cityRef: string;
-    warehouse: string;
-    warehouseRef: string;
+    city: string | null;
+    cityRef: string | null;
+    warehouse: string | null;
+    warehouseRef: string | null;
     createdAt: Date | string;
     updatedAt: Date | string;
     paidAt: Date | string | null;
     discountAmount: number | null;
     promoCodeSnapshot: string | null;
     paymentMethod: PaymentMethod;
-    area: string;
+    area: string | null;
     ttnNumber: string | null;
     ttnRef: string | null;
-    warehouseNumber: number;
+    warehouseNumber: number | null;
     fbc: string | null;
     items: IOrderItem[]
 }

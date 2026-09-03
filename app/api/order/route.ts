@@ -53,13 +53,13 @@ export async function POST(request: Request) {
             },
         });
 
-        if (order.phone && order.firstName && order.lastName && order.warehouseRef && order.cityRef) try {
+        if (order.phone && order.firstName && order.lastName && order.warehouseRef && order.cityRef && order.warehouseNumber) try {
             const { ttnNumber, ttnRef } = await createTTN({
                 recipientFirstName:order.firstName,
                 recipientLastName: order.lastName,
                 recipientPhone: order.phone,
                 recipientCityRef: order.cityRef,
-                recipientWarehouseRef: order.warehouseRef!,
+                recipientWarehouseRef: order.warehouseRef,
                 recipientWarehouseNumber: order.warehouseNumber.toString(),
                 serviceType: order.warehouse?.includes("Відділення") ? "WarehouseWarehouse" : "WarehousePostomat",
                 cost: order.totalAmount,
