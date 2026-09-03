@@ -14,15 +14,15 @@ const OrderCard = ({order}: Props) => {
             <div className="grid gap-4 border-b border-gray-200 px-4 py-4 sm:grid-cols-2 md:px-5">
                 <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                        <p className="font-semibold text-gray-900">Замовлення {order.invoiceId}</p>
+                        <p className="font-semibold text-gray-900">Замовлення {order.invoiceId || order.id}</p>
                         {order.fbc && <FaFacebook className="size-4 shrink-0 text-blue-600"/>}
                     </div>
-                    <p className="mt-2 text-base text-gray-700">{order.city}, {order.area} обл.</p>
-                    <p className="mt-1 break-words text-base text-gray-600">{order.warehouse}</p>
+                    {order.city && order.area && <p className="mt-2 text-base text-gray-700">{order.city}, {order.area} обл.</p>}
+                    {order.warehouse && <p className="mt-1 break-words text-base text-gray-600">{order.warehouse}</p>}
                 </div>
                 <div className="min-w-0 sm:text-right">
-                    <p className="font-medium text-gray-900">{order.firstName} {order.lastName}</p>
-                    <a href={`tel:${order.phone}`} className="mt-2 block text-base text-gray-700 transition hover:text-gray-950">{order.phone}</a>
+                    {order.firstName && order.lastName && <p className="font-medium text-gray-900">{order.firstName} {order.lastName}</p>}
+                    {order.phone && <a href={`tel:${order.phone}`} className="mt-2 block text-base text-gray-700 transition hover:text-gray-950">{order.phone}</a>}
                     {order.email && <a href={`mailto:${order.email}`} className="mt-1 block truncate text-base text-gray-600 transition hover:text-gray-950">{order.email}</a>}
                 </div>
             </div>

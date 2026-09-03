@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
-import { FiRefreshCw } from "react-icons/fi";
+import {FiImage, FiRefreshCw} from "react-icons/fi";
 import DailyRevenueChart from "@/app/(dashboard)/statistic/components/DailyRevenueChart";
 import ExpensesManager from "@/app/(dashboard)/statistic/components/ExpensesManager";
 import StatusBreakdown from "@/app/(dashboard)/statistic/components/StatusBreakdown";
@@ -170,9 +170,15 @@ export default function StatisticsClient({ range, normalizeUrl }: Props) {
                                         <span>Товар</span><span className="text-center">Продано</span><span className="text-right">Дохід</span>
                                     </div>
                                     {stats.topProducts.map((product) => (
-                                        <div key={product.productId} className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-t border-gray-200 px-4 py-3 first:border-t-0 last:border-b-0 sm:grid-cols-[minmax(0,1fr)_90px_170px] sm:border-t-0 sm:border-b">
+                                        <div key={`${product.productId ?? "custom"}-${product.name}`} className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-t border-gray-200 px-4 py-3 first:border-t-0 last:border-b-0 sm:grid-cols-[minmax(0,1fr)_90px_170px] sm:border-t-0 sm:border-b">
                                             <div className="flex min-w-0 items-center gap-3">
-                                                <Image src={product.imageUrl} width={48} height={48} alt={product.name} className="size-12 shrink-0 rounded-md border border-gray-200 object-cover" />
+                                                {product.imageUrl ? (
+                                                    <Image src={product.imageUrl} width={48} height={48} alt={product.name} className="size-12 shrink-0 rounded-md border border-gray-200 object-cover" />
+                                                ) : (
+                                                    <span className="flex size-12 shrink-0 items-center justify-center rounded-md border border-gray-200 bg-gray-50 text-gray-400">
+                                                        <FiImage className="size-5"/>
+                                                    </span>
+                                                )}
                                                 <span className="min-w-0 break-words text-sm sm:text-base" title={product.name}>{product.name}</span>
                                             </div>
                                             <span className="shrink-0 text-right text-sm text-gray-500 sm:text-center sm:text-base sm:text-gray-900">

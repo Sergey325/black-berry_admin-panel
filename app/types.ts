@@ -77,8 +77,8 @@ export type FormValuesOrder = {
 };
 
 export type OrderItem = {
-    productId: number;
-    productColorId: number;
+    productId: number | null;
+    productColorId: number | null;
     name: string;
     color: string;
     colorName: string;
@@ -87,6 +87,7 @@ export type OrderItem = {
     price: number;
     quantity: number;
     imageUrl: string;
+    isCustom: boolean;
 };
 
 export interface PromoCodeDetails {
@@ -155,9 +156,9 @@ export interface MonthlyStats {
     statusBreakdown: { status: string; count: number }[];
     dailyRevenue: { date: string; revenue: number; ordersCount: number }[];
     topProducts: {
-        productId: number;
+        productId: number | null;
         name: string;
-        imageUrl: string;
+        imageUrl: string | null;
         totalSold: number;
         revenue: number;
         pendingGoodsValue: number;

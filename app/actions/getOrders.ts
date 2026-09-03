@@ -6,15 +6,16 @@ import {OrderStatus, PaymentMethod, Prisma} from "@prisma/client";
 export interface IOrderItem {
     id: number;
     orderId: number;
-    productId: number;
+    productId: number | null;
     name: string;
     price: number;
     quantity: number;
-    color: string;
+    color: string | null;
     colorName: string | null;
     colorCode: string | null;
     size: string | null;
-    imageUrl: string;
+    imageUrl: string | null;
+    isCustom: boolean;
 }
 
 export interface IOrder {
@@ -24,7 +25,7 @@ export interface IOrder {
     totalAmount: number;
     firstName: string;
     lastName: string
-    phone: string;
+    phone: string | null;
     email: string | null;
     comment: string| null;
     city: string;

@@ -1,4 +1,4 @@
-import { useFieldArray, useForm, Controller, useWatch } from "react-hook-form";
+import { useFieldArray, useForm, useWatch } from "react-hook-form";
 import axios from "axios";
 import {IOrderProduct} from "@/app/actions/getProducts";
 import {useEffect, useMemo, useState} from "react";
@@ -12,6 +12,9 @@ import {IoIosArrowBack} from "react-icons/io";
 import {FiTrash2} from "react-icons/fi";
 import Image from "next/image";
 import SearchSelect, {SearchSelectOption} from "@/app/components/SearchSelect";
+import ImagesUpload from "@/app/components/ImagesUpload";
+import {FiPlus} from "react-icons/fi";
+import Dropdown from "@/app/components/DropDown";
 
 type Props = {
     products: IOrderProduct[];
@@ -95,6 +98,24 @@ const AddOrder = ({products}: Props) => {
             price: product.price,
             quantity: 1,
             imageUrl: firstColor.images[0]?.url ?? "",
+            isCustom: false,
+        });
+        clearErrors("items");
+    };
+
+    const handleAddCustomProduct = () => {
+        appendItem({
+            productId: null,
+            productColorId: null,
+            name: "",
+            color: "",
+            colorName: "",
+            colorCode: "",
+            size: "",
+            price: 0,
+            quantity: 1,
+            imageUrl: "",
+            isCustom: true,
         });
         clearErrors("items");
     };
@@ -103,16 +124,16 @@ const AddOrder = ({products}: Props) => {
 
     const onSubmit = async (data: FormValuesOrder) => {
         try {
-            if (!selectedCity || !selectedWarehouse) {
-                toast.error("Введіть місто та виберіть відділення")
-                document.getElementById("order-delivery")?.scrollIntoView({
-                    behavior: "smooth",
-                    block: "center",
-                });
-
-                return;
-            }
-            else if (!data.items.length) {
+            // if (!selectedCity || !selectedWarehouse) {
+            //     toast.error("Введіть місто та виберіть відділення")
+            //     document.getElementById("order-delivery")?.scrollIntoView({
+            //         behavior: "smooth",
+            //         block: "center",
+            //     });
+            //
+            //     return;
+            // }
+            if (!data.items.length) {
                 toast.error("Додайте товар замовлення")
                 document.getElementById("order-items")?.scrollIntoView({
                     behavior: "smooth",
@@ -194,16 +215,26 @@ const AddOrder = ({products}: Props) => {
                         <p className="mt-1 text-base text-gray-600">Додайте позиції та налаштуйте варіанти</p>
                     </div>
 
-                    <SearchSelect
-                        options={productOptions}
-                        value={[]}
-                        onChange={(selected) => {
-                            const selectedProduct = products.find((product) => product.id === selected[0]?.id);
-                            if (selectedProduct) handleSelectProduct(selectedProduct);
-                        }}
-                        placeholder="Пошук товару..."
-                        showImages
-                    />
+                    <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
+                        <SearchSelect
+                            options={productOptions}
+                            value={[]}
+                            onChange={(selected) => {
+                                const selectedProduct = products.find((product) => product.id === selected[0]?.id);
+                                if (selectedProduct) handleSelectProduct(selectedProduct);
+                            }}
+                            placeholder="Пошук товару..."
+                            showImages
+                        />
+                        <button
+                            type="button"
+                            onClick={handleAddCustomProduct}
+                            className="inline-flex h-[41.6px] items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-base font-medium text-gray-800 transition hover:border-gray-500 hover:bg-gray-50"
+                        >
+                            <FiPlus className="size-5"/>
+                            Додати власний товар
+                        </button>
+                    </div>
 
                     {errors.items?.root && (
                         <p className="text-red-500 text-sm">
@@ -214,16 +245,58 @@ const AddOrder = ({products}: Props) => {
                         const currentItem = watchedItems?.[index];
                         const product = products.find(p => p.id === currentItem?.productId);
                         const selectedColor = product?.colors.find(c => c.color === currentItem?.color);
+                        const isCustom = currentItem?.isCustom ?? field.isCustom;
+                        const colorsOptions =
+                            product?.colors.map(color => {
+                                return {
+                                    value: color.color,
+                                    label: color.colorName,
+                                    onClick: () => {
+                                        setValue(`items.${index}.productColorId`, color.id);
+                                        setValue(`items.${index}.colorName`, color.colorName);
+                                        setValue(`items.${index}.colorCode`, color.colorCode ?? "");
+                                        setValue(`items.${index}.size`, color.sizes[0]?.size ?? "");
+                                        setValue(`items.${index}.imageUrl`, color.images[0]?.url ?? "");
+                                    }
+                                }
+                            }) || []
+
+                        const sizesOptions =
+                            selectedColor?.sizes.map(size => {
+                                return {
+                                    value: size.size,
+                                    label:size.size,
+                                    onClick: () => setValue(`items.${index}.size`, size.size)
+                                }
+                            }) || []
+
 
                         return (
                             <div key={field.id} className="flex flex-col gap-4 rounded-xl border border-gray-200 bg-gray-50/60 p-4">
-                                <div className="flex items-center gap-3">
+
+                                <div className="flex items-center justify-center gap-3">
                                     {currentItem?.imageUrl && (
                                         <Image src={currentItem.imageUrl} width={48} height={48} className="size-12 rounded object-cover" alt="" />
                                     )}
-                                    <p className="font-medium flex-1">{currentItem?.name}</p>
+                                    <div className="min-w-0 flex-1">
+                                        {isCustom ? (
+                                            <>
+                                                <input
+                                                    {...register(`items.${index}.name`, {required: "Введіть назву товару"})}
+                                                    placeholder="Назва товару*"
+                                                    className="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-base outline-none transition focus:border-gray-500 focus:ring-2 focus:ring-gray-200"
+                                                />
+                                                {errors.items?.[index]?.name && (
+                                                    <p className="mt-1 text-sm text-red-500">{errors.items[index].name.message}</p>
+                                                )}
+                                            </>
+                                        ) : (
+                                            <p className="font-medium">{currentItem?.name}</p>
+                                        )}
+                                    </div>
                                     <ToolTip label="Видалити">
-                                        <FiTrash2
+                                        <button
+                                            type="button"
                                             onClick={() => {
                                                 removeItem(index);
                                                 if (itemFields.length === 1) {
@@ -233,53 +306,49 @@ const AddOrder = ({products}: Props) => {
                                                     });
                                                 }
                                             }}
-                                        className="size-5 cursor-pointer text-gray-500 transition hover:text-red-600"
-                                        />
+                                            className="inline-flex size-9 items-center justify-center rounded-lg text-gray-500 transition hover:bg-red-50 hover:text-red-600"
+                                            aria-label="Видалити товар"
+                                        >
+                                            <FiTrash2 className="size-5"/>
+                                        </button>
                                     </ToolTip>
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                                     <div className="flex flex-col gap-1">
                                         <label className="text-sm font-medium text-gray-700">Колір</label>
-                                        <Controller
-                                            control={control}
-                                            name={`items.${index}.color`}
-                                            render={({ field }) => (
-                                                <select
-                                                    {...field}
-                                                    onChange={(e) => {
-                                                        field.onChange(e);
-                                                        const newColor = product?.colors.find(c => c.color === e.target.value);
-                                                        if (newColor) {
-                                                            setValue(`items.${index}.productColorId`, newColor.id);
-                                                            setValue(`items.${index}.colorName`, newColor.colorName);
-                                                            setValue(`items.${index}.colorCode`, newColor.colorCode ?? "");
-                                                            setValue(`items.${index}.size`, newColor.sizes[0]?.size ?? "");
-                                                            setValue(`items.${index}.imageUrl`, newColor.images[0]?.url ?? "");
-                                                        }
-                                                    }}
-                                                    className="rounded-lg border border-gray-300 bg-white px-2 py-2 text-base outline-none"
-                                                >
-                                                    {product?.colors.map(c => (
-                                                        <option key={c.id} value={c.color} style={{backgroundColor: c.color, color: c.color === "#000000" ? "#ffffff" : "#000000"}} className="hover:opacity-70 ">
-                                                            {c.colorName}
-                                                        </option>
-                                                    ))}
-                                                </select>
-                                            )}
-                                        />
+                                        {isCustom ? (
+                                            <input
+                                                {...register(`items.${index}.colorName`)}
+                                                placeholder="Необов'язково"
+                                                className="rounded-lg border border-gray-300 bg-white px-2 py-2 text-base outline-none"
+                                            />
+                                        ) : (
+                                            <Dropdown
+                                                value={currentItem?.color}
+                                                options={colorsOptions}
+                                                className="min-w-0"
+                                                buttonClassName={"rounded-lg! px-2! sm:px-4!"}
+                                            />
+                                        )}
                                     </div>
 
                                     <div className="flex flex-col gap-1">
                                         <label className="text-sm font-medium text-gray-700">Розмір</label>
-                                        <select
-                                            {...register(`items.${index}.size`)}
-                                            className="rounded-lg border border-gray-300 bg-white px-2 py-2 text-base outline-none"
-                                        >
-                                            {selectedColor?.sizes.map(s => (
-                                                <option key={s.id} value={s.size}>{s.size}</option>
-                                            ))}
-                                        </select>
+                                        {isCustom ? (
+                                            <input
+                                                {...register(`items.${index}.size`)}
+                                                placeholder="Необов'язково"
+                                                className="rounded-lg border border-gray-300 bg-white px-2 py-2 text-base outline-none"
+                                            />
+                                        ) : (
+                                            <Dropdown
+                                                value={currentItem?.size}
+                                                options={sizesOptions}
+                                                className="min-w-0"
+                                                buttonClassName={"rounded-lg! px-2! sm:px-4!"}
+                                            />
+                                        )}
                                     </div>
 
                                     <div className="flex flex-col gap-1">
@@ -287,9 +356,16 @@ const AddOrder = ({products}: Props) => {
                                         <input
                                             type="number"
                                             min={1}
-                                            {...register(`items.${index}.price`, { valueAsNumber: true })}
+                                            {...register(`items.${index}.price`, {
+                                                valueAsNumber: true,
+                                                required: "Введіть ціну",
+                                                min: {value: 1, message: "Мінімальна ціна — 1 грн"},
+                                            })}
                                             className="rounded-lg border border-gray-300 bg-white px-2 py-2 text-base outline-none"
                                         />
+                                        {errors.items?.[index]?.price && (
+                                            <p className="text-sm text-red-500">{errors.items[index].price.message}</p>
+                                        )}
                                     </div>
 
                                     <div className="flex flex-col gap-1">
@@ -297,12 +373,32 @@ const AddOrder = ({products}: Props) => {
                                         <input
                                             type="number"
                                             min={1}
-                                            {...register(`items.${index}.quantity`, { valueAsNumber: true, min: 1 })}
+                                            {...register(`items.${index}.quantity`, {
+                                                valueAsNumber: true,
+                                                required: "Введіть кількість",
+                                                min: {value: 1, message: "Мінімальна кількість — 1"},
+                                            })}
                                             className="rounded-lg border border-gray-300 bg-white px-2 py-2 text-base outline-none"
                                         />
+                                        {errors.items?.[index]?.quantity && (
+                                            <p className="text-sm text-red-500">{errors.items[index].quantity.message}</p>
+                                        )}
                                     </div>
 
                                 </div>
+                                {isCustom && (
+                                    <div className="flex flex-col gap-2">
+                                        <label className="text-sm font-medium text-gray-700">Зображення</label>
+                                        <ImagesUpload
+                                            value={currentItem?.imageUrl ? [currentItem.imageUrl] : []}
+                                            onChange={(images) => setValue(`items.${index}.imageUrl`, images[0] ?? "", {shouldDirty: true})}
+                                            folder="BlackBerry/Orders/CustomItems"
+                                            maxFiles={1}
+                                            multiple={false}
+                                            uploadLabel="Додати зображення (необов'язково)"
+                                        />
+                                    </div>
+                                )}
                             </div>
                         );
                     })}

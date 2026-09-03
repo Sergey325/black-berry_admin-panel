@@ -30,9 +30,9 @@ interface DailyRevenueRow {
 }
 
 interface TopProductRow {
-    productId: number;
+    productId: number | null;
     name: string;
-    imageUrl: string;
+    imageUrl: string | null;
     totalSold: bigint;
     revenue: number;
     pendingGoodsValue: number;
@@ -72,9 +72,9 @@ export interface MonthlyStats {
     statusBreakdown: { status: string; count: number }[];
     dailyRevenue: { date: string; revenue: number; ordersCount: number }[];
     topProducts: {
-        productId: number;
+        productId: number | null;
         name: string;
-        imageUrl: string;
+        imageUrl: string | null;
         totalSold: number;
         revenue: number;
         pendingGoodsValue: number;
@@ -296,7 +296,7 @@ export async function getStats(period: MonthRange): Promise<MonthlyStats> {
             WHERE o."paidAt" >= ${range.start}
               AND o."paidAt" < ${range.end}
               AND o."status"::text IN (${Prisma.join(REVENUE_STATUSES)})
-            GROUP BY oi."productId"
+            GROUP BY oi."productId", CASE WHEN oi."productId" IS NULL THEN oi."name" ELSE NULL END
             ORDER BY "totalSold" DESC, revenue DESC
             LIMIT 10
         `),
@@ -340,6 +340,7 @@ export async function getStats(period: MonthRange): Promise<MonthlyStats> {
             WHERE o."paidAt" >= ${range.start}
               AND o."paidAt" < ${range.end}
               AND o."status"::text IN (${Prisma.join(REVENUE_STATUSES)})
+              AND oi."color" IS NOT NULL
             GROUP BY oi."color"
             ORDER BY "totalSold" DESC, color ASC
             LIMIT 10

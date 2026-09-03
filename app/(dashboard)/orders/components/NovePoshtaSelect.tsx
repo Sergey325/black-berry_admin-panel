@@ -61,7 +61,7 @@ export default function NovaPoshtaSelect({ selectedCity, setSelectedCity, select
     return (
         <div className="grid gap-4 sm:grid-cols-2">
             <div>
-                <label className="mb-1 block text-base font-medium text-gray-700">Виберіть місто*</label>
+                <label className="mb-1 block text-base font-medium text-gray-700">Виберіть місто</label>
                 <div className="relative transition">
                     <input
                         type="text"

@@ -14,12 +14,11 @@ export default function ContactForm({ register, errors, control }: Props) {
         <div className="flex flex-col gap-5">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="flex flex-col gap-1">
-                    <label className="text-base font-medium text-gray-700">Ім&#39;я*</label>
+                    <label className="text-base font-medium text-gray-700">Ім&#39;я</label>
                     <input
                         autoComplete="given-name"
                         maxLength={25}
                         {...register("firstName", {
-                            required: "Введіть ім'я",
                             pattern: {
                                 value: /^[А-Яа-яІіЇїЄєҐґ' -]+$/,
                                 message: "Тільки українські літери",
@@ -34,12 +33,11 @@ export default function ContactForm({ register, errors, control }: Props) {
                     )}
                 </div>
                 <div className="flex flex-col gap-1">
-                    <label className="text-base font-medium text-gray-700">Прізвище*</label>
+                    <label className="text-base font-medium text-gray-700">Прізвище</label>
                     <input
                         autoComplete="family-name"
                         maxLength={25}
                         {...register("lastName", {
-                            required: "Введіть прізвище",
                             pattern: {
                                 value: /^[А-Яа-яІіЇїЄєҐґ' -]+$/,
                                 message: "Тільки українські літери",
@@ -54,14 +52,13 @@ export default function ContactForm({ register, errors, control }: Props) {
                     )}
                 </div>
                 <div className="flex flex-col gap-1">
-                    <label className="text-base font-medium text-gray-700">Номер телефону*</label>
+                    <label className="text-base font-medium text-gray-700">Номер телефону</label>
                     <Controller
                         control={control}
                         name="phone"
                         rules={{
-                            required: "Введіть номер телефону",
                             validate: (value) =>
-                                value.length === 19 || "Невірний номер телефону",
+                                !value || value.length === 19 || "Невірний номер телефону",
                         }}
                         render={({ field }) => (
                             <IMaskInput

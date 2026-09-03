@@ -12,6 +12,7 @@ export async function POST(request: Request) {
     try {
         const body = await request.json() as ManualOrderRequest;
         const { firstName, lastName, phone, email, comment, city, area, cityRef, warehouse, warehouseNumber, warehouseRef, paymentMethod, items } = body;
+        const normalizedPhone = phone.replace(/\D/g, "") || null;
 
         const totalAmount = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
 
@@ -21,28 +22,29 @@ export async function POST(request: Request) {
                 totalAmount,
                 firstName,
                 lastName,
-                phone,
+                phone: normalizedPhone,
                 email,
                 comment,
                 city,
-                area: area ?? "",
-                cityRef: cityRef ?? "",
-                warehouse: warehouse ?? "",
-                warehouseNumber: warehouseNumber ?? "",
-                warehouseRef: warehouseRef ?? "",
+                area: area,
+                cityRef: cityRef,
+                warehouse: warehouse,
+                warehouseNumber: warehouseNumber,
+                warehouseRef: warehouseRef,
                 paymentMethod: paymentMethod as PaymentMethod,
                 paidAt: new Date(),
                 items: {
                     create: items.map((item) => ({
-                        productId: item.productId,
-                        name: item.name,
+                        productId: item.isCustom ? null : item.productId,
+                        name: item.name.trim(),
                         price: item.price,
                         quantity: item.quantity,
-                        color: item.color,
-                        colorCode: item.colorCode,
-                        colorName: item.colorName,
-                        size: item.size,
-                        imageUrl: item.imageUrl,
+                        color: item.color.trim() || null,
+                        colorCode: item.colorCode.trim() || null,
+                        colorName: item.colorName.trim() || null,
+                        size: item.size.trim() || null,
+                        imageUrl: item.imageUrl.trim() || null,
+                        isCustom: item.isCustom,
                     })),
                 },
             },
@@ -51,7 +53,7 @@ export async function POST(request: Request) {
             },
         });
 
-        try {
+        if (order.phone && order.firstName && order.lastName && order.warehouseRef && order.cityRef) try {
             const { ttnNumber, ttnRef } = await createTTN({
                 recipientFirstName:order.firstName,
                 recipientLastName: order.lastName,

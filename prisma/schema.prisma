@@ -127,22 +127,22 @@ model Order {
   invoiceId              String?       @unique
   status                 OrderStatus   @default(PENDING)
   totalAmount            Float
-  firstName              String
-  lastName               String
-  phone                  String
+  firstName              String?
+  lastName               String?
+  phone                  String?
   email                  String?
   comment                String?
-  city                   String
-  cityRef                String
-  warehouse              String
-  warehouseRef           String
+  city                   String?
+  cityRef                String?
+  warehouse              String?
+  warehouseRef           String?
   createdAt              DateTime      @default(now())
   updatedAt              DateTime      @updatedAt
   paymentMethod          PaymentMethod
-  area                   String
+  area                   String?
   ttnNumber              String?
   ttnRef                 String?
-  warehouseNumber        Int
+  warehouseNumber        Int?
   clientIp               String?
   fbc                    String?
   fbp                    String?
@@ -162,16 +162,17 @@ model Order {
 model OrderItem {
   id            Int          @id @default(autoincrement())
   orderId       Int
-  productId     Int
+  productId     Int?
   name          String
   price         Float
   quantity      Int
-  color         String
+  color         String?
   size          String?
-  imageUrl      String
+  imageUrl      String?
   colorName     String?
   productSizeId Int?
   colorCode     String?
+  isCustom      Boolean      @default(false)
   order         Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
   ProductSize   ProductSize? @relation(fields: [productSizeId], references: [id])
 
