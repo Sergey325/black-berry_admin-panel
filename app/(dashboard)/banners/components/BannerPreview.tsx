@@ -98,7 +98,7 @@ const BannerPreview = ({ banner }: Props) => {
                             {banner.title || "Заголовок банера"}
                         </h2>
                         {features.length > 0 && (
-                            <ul className="list-disc space-y-2 pl-5 text-white/90 marker:text-lg">
+                            <ul className="list-disc space-y-2 pl-5 text-gray-800 marker:text-lg">
                                 {features.map((feature, index) => <li key={`${feature.value}-${index}`}>{feature.value}</li>)}
                             </ul>
                         )}

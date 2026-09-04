@@ -56,7 +56,7 @@ const Navbar = () => {
 
     return (
         <>
-            <header className="sticky top-0 z-40 w-full border-b border-gray-200 bg-white/95 text-gray-800 shadow-sm backdrop-blur select-none">
+            <header className="sticky top-0 z-40 w-full border-b border-gray-200 bg-white/95 text-gray-800 shadow-sm backdrop-blur select-none print:hidden">
                 <nav className="mx-auto flex h-14 max-w-[1414px] items-center px-3 md:h-16 md:justify-center md:px-6">
                     <div className="hidden w-full items-center gap-1 rounded-xl border border-gray-200 bg-gray-100/80 p-1 sm:flex">
                         {navbarOptions.map((option) => {

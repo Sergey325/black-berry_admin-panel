@@ -11,7 +11,7 @@ type ManualOrderRequest = FormValuesOrder & {
 export async function POST(request: Request) {
     try {
         const body = await request.json() as ManualOrderRequest;
-        const { firstName, lastName, phone, email, comment, city, area, cityRef, warehouse, warehouseNumber, warehouseRef, paymentMethod, items } = body;
+        const { firstName, lastName, phone, email, comment, city, area, cityRef, warehouse, warehouseNumber, warehouseRef, paymentMethod, trafficSource, items } = body;
         const normalizedPhone = phone.replace(/\D/g, "") || null;
 
         const totalAmount = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
@@ -32,6 +32,7 @@ export async function POST(request: Request) {
                 warehouseNumber: warehouseNumber,
                 warehouseRef: warehouseRef,
                 paymentMethod: paymentMethod as PaymentMethod,
+                trafficSource,
                 paidAt: new Date(),
                 items: {
                     create: items.map((item) => ({

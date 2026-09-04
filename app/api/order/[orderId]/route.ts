@@ -96,6 +96,7 @@ export async function PATCH(
                     warehouseNumber: body.warehouseNumber,
                     warehouseRef: body.warehouseRef,
                     paymentMethod: body.paymentMethod as PaymentMethod,
+                    trafficSource: body.trafficSource,
                     ttnNumber: normalizedTtnNumber,
                     ...(ttnChanged ? {
                         ttnRef: null,

@@ -1,4 +1,4 @@
-import { useFieldArray, useForm, useWatch } from "react-hook-form";
+import {Controller, useFieldArray, useForm, useWatch} from "react-hook-form";
 import axios from "axios";
 import {IOrderProduct} from "@/app/actions/getProducts";
 import {useEffect, useMemo, useState} from "react";
@@ -15,12 +15,20 @@ import SearchSelect, {SearchSelectOption} from "@/app/components/SearchSelect";
 import ImagesUpload from "@/app/components/ImagesUpload";
 import {FiPlus} from "react-icons/fi";
 import Dropdown from "@/app/components/DropDown";
-import {IOrder} from "@/app/actions/getOrders";
+import type {IOrder} from "@/app/actions/getOrders";
+import type {TrafficSource} from "@prisma/client";
 
 type Props = {
     products: IOrderProduct[];
     order?: IOrder;
 };
+
+const trafficSourceOptions = [
+    {value: "FACEBOOK", label: "Facebook"},
+    {value: "INSTAGRAM", label: "Instagram"},
+    {value: "GOOGLE_SEARCH", label: "Google Search"},
+    {value: "GOOGLE_FREE_LISTING", label: "Google Free Listing"},
+] satisfies {value: TrafficSource; label: string}[];
 
 const AddOrder = ({products, order}: Props) => {
     const router = useRouter();
@@ -49,6 +57,7 @@ const AddOrder = ({products, order}: Props) => {
             warehouseRef: order?.warehouseRef ?? "",
             ttnNumber: order?.ttnNumber ?? "",
             paymentMethod: order?.paymentMethod ?? "MONOBANK",
+            trafficSource: order?.trafficSource ?? null,
             items: order?.items.map((item) => ({
                 productId: item.productId,
                 productColorId: null,
@@ -234,6 +243,25 @@ const AddOrder = ({products, order}: Props) => {
                             {errors.ttnNumber && <p className="text-sm text-red-500">{errors.ttnNumber.message}</p>}
                         </div>
                     )}
+                </section>
+
+                <section className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm md:p-5">
+                    <div className="mb-4">
+                        <h2 className="font-semibold text-gray-900">Джерело замовлення</h2>
+                        <p className="mt-1 text-base text-gray-600">Звідки клієнт дізнався про магазин</p>
+                    </div>
+                    <Controller
+                        control={control}
+                        name="trafficSource"
+                        render={({field}) => (
+                            <Dropdown<TrafficSource | null>
+                                options={trafficSourceOptions}
+                                value={field.value}
+                                onChange={(option) => field.onChange(option.value)}
+                                placeholder="Оберіть джерело"
+                            />
+                        )}
+                    />
                 </section>
 
                 <section className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm md:p-5">

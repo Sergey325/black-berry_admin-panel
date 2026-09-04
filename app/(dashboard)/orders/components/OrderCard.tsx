@@ -1,14 +1,52 @@
 import OrderSummary from "@/app/(dashboard)/orders/components/OrderSummary";
 import OrderItem from "@/app/(dashboard)/orders/components/OrderItem";
-import {IOrder} from "@/app/actions/getOrders";
-import {FaFacebook} from "react-icons/fa";
+import type {IOrder} from "@/app/actions/getOrders";
+import {FaFacebook, FaGoogle, FaInstagram} from "react-icons/fa";
 import {MdEdit} from "react-icons/md";
 import ToolTip from "@/app/components/ToolTip";
+import type {TrafficSource} from "@prisma/client";
 
 
 type Props = {
     order: IOrder;
     onEdit: (order: IOrder) => void;
+};
+
+const trafficSourceIcons = {
+    FACEBOOK: {
+        icon: FaFacebook,
+        label: "Facebook",
+        className: "text-blue-600 size-4.5",
+    },
+    INSTAGRAM: {
+        icon: FaInstagram,
+        label: "Instagram",
+        className: "text-pink-600 size-5",
+    },
+    GOOGLE_SEARCH: {
+        icon: FaGoogle,
+        label: "Google Search",
+        className: "text-blue-500",
+    },
+    GOOGLE_FREE_LISTING: {
+        icon: FaGoogle,
+        label: "Google Free Listing",
+        className: "text-green-600",
+    },
+} as const satisfies Record<TrafficSource, {
+    icon: typeof FaFacebook;
+    label: string;
+    className: string;
+}>;
+
+const TrafficSourceIcon = ({trafficSource}: {trafficSource: TrafficSource | null}) => {
+    if (!trafficSource) {
+        return null;
+    }
+
+    const {icon: Icon, label, className} = trafficSourceIcons[trafficSource];
+
+    return <Icon className={`size-4 shrink-0 ${className}`} aria-label={label}/>;
 };
 
 const OrderCard = ({order, onEdit}: Props) => {
@@ -17,8 +55,10 @@ const OrderCard = ({order, onEdit}: Props) => {
             <div className="grid gap-4 border-b border-gray-200 px-4 py-4 sm:grid-cols-2 md:px-5">
                 <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                        <p className="font-semibold text-gray-900">Замовлення {order.invoiceId || order.id}</p>
-                        {order.fbc && <FaFacebook className="size-4 shrink-0 text-blue-600"/>}
+                        <p className="font-semibold text-gray-900">Замовлення {order.id}</p>
+                        <ToolTip label={order.trafficSource || ""}>
+                            <TrafficSourceIcon trafficSource={order.trafficSource}/>
+                        </ToolTip>
                         <ToolTip label="Редагувати">
                             <button
                                 type="button"
@@ -26,7 +66,7 @@ const OrderCard = ({order, onEdit}: Props) => {
                                 className="inline-flex size-8 items-center justify-center rounded-lg text-gray-500 transition hover:bg-gray-100 hover:text-gray-900"
                                 aria-label="Редагувати замовлення"
                             >
-                                <MdEdit className="size-4"/>
+                                <MdEdit className="size-5"/>
                             </button>
                         </ToolTip>
                     </div>

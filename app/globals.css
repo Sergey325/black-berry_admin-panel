@@ -117,3 +117,24 @@ input {
   scrollbar-width: thin;
   scrollbar-color: #0F172BFF transparent;
 }
+
+@media print {
+  @page {
+    size: A4;
+    margin: 12mm;
+  }
+
+  body {
+    background: white;
+  }
+
+  .order-print-card {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .order-print-page {
+    break-after: page;
+    page-break-after: always;
+  }
+}

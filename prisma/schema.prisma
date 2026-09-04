@@ -123,9 +123,9 @@ model NovaPoshtaCity {
 }
 
 model Order {
-  id                     Int           @id @default(autoincrement())
-  invoiceId              String?       @unique
-  status                 OrderStatus   @default(PENDING)
+  id                     Int            @id @default(autoincrement())
+  invoiceId              String?        @unique
+  status                 OrderStatus    @default(PENDING)
   totalAmount            Float
   firstName              String?
   lastName               String?
@@ -136,8 +136,8 @@ model Order {
   cityRef                String?
   warehouse              String?
   warehouseRef           String?
-  createdAt              DateTime      @default(now())
-  updatedAt              DateTime      @updatedAt
+  createdAt              DateTime       @default(now())
+  updatedAt              DateTime       @updatedAt
   paymentMethod          PaymentMethod
   area                   String?
   ttnNumber              String?
@@ -155,7 +155,8 @@ model Order {
   ttnStatus              String?
   ttnStatusCode          String?
   ttnStatusUpdatedAt     DateTime?
-  PromoCode              PromoCode?    @relation(fields: [promoCodeId], references: [id])
+  trafficSource          TrafficSource?
+  PromoCode              PromoCode?     @relation(fields: [promoCodeId], references: [id])
   items                  OrderItem[]
 }
 
@@ -304,4 +305,11 @@ enum PromoScopeType {
   ALL
   CATEGORY
   PRODUCT
+}
+
+enum TrafficSource {
+  FACEBOOK
+  GOOGLE_SEARCH
+  GOOGLE_FREE_LISTING
+  INSTAGRAM
 }

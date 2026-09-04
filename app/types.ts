@@ -1,4 +1,5 @@
 import type {PromoScope, PromoSelectOption} from "@/app/actions/getPromoCodes";
+import type {TrafficSource} from "@prisma/client";
 
 export type CacheInvalidationResponse = {
     cacheInvalidated: boolean;
@@ -74,6 +75,7 @@ export type FormValuesOrder = {
     warehouseRef: string;
     ttnNumber: string;
     paymentMethod: "MONOBANK" | "CASH_ON_DELIVERY";
+    trafficSource: TrafficSource | null;
     items: OrderItem[];
 };
 

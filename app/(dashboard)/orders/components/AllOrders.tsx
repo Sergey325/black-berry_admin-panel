@@ -77,10 +77,10 @@ const AllOrders = ({orders, onAdd, onEdit}: Props) => {
     return (
         <div className="flex flex-col gap-5">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                <div className="flex w-full items-center gap-3 lg:max-w-xl">
+                <div className="flex w-full items-center gap-3 lg:min-w-fit">
                     <SearchInput
                         searchParam="search"
-                        placeholder="Пошук за ID, прізвищем, телефоном або email..."
+                        placeholder="Пошук за №, прізвищем, телефоном або email..."
                     />
                     <button
                         type="button"

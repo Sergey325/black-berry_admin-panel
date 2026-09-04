@@ -1,7 +1,7 @@
 "use server";
 
 import prisma from "@/app/lib/prisma";
-import {OrderStatus, PaymentMethod, Prisma} from "@prisma/client";
+import {OrderStatus, PaymentMethod, Prisma, type TrafficSource} from "@prisma/client";
 
 export interface IOrderItem {
     id: number;
@@ -43,6 +43,7 @@ export interface IOrder {
     ttnRef: string | null;
     warehouseNumber: number | null;
     fbc: string | null;
+    trafficSource: TrafficSource | null;
     items: IOrderItem[]
 }
 
@@ -86,7 +87,7 @@ export async function getOrders(params?: IOrdersParams) {
             ...(searchTerm
                 ? {
                     OR: [
-                        {invoiceId: {contains: searchTerm, mode: "insensitive"}},
+                        {id: {equals: Number(searchTerm)}},
                         {lastName: {contains: searchTerm, mode: "insensitive"}},
                         {email: {contains: searchTerm, mode: "insensitive"}},
                         {phone: {contains: searchTerm}},
