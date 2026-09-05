@@ -73,6 +73,7 @@ const Navbar = () => {
                                                 ? "bg-white text-slate-800 shadow-sm ring-1 ring-black/5"
                                                 : "text-gray-600 hover:bg-white/70 hover:text-gray-950"
                                         }`}
+                                        prefetch={false}
                                     >
                                         <Icon className="size-5 shrink-0"/>
                                         <span className="hidden lg:inline">{option.label}</span>
@@ -115,6 +116,7 @@ const Navbar = () => {
                                         ? "bg-white text-slate-800 shadow-sm ring-1 ring-gray-200"
                                         : "text-gray-600 hover:bg-white"
                                 }`}
+                                prefetch={false}
                             >
                                 <Icon className="size-5"/>
                                 {option.label}

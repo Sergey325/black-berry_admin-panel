@@ -56,9 +56,13 @@ const OrderCard = ({order, onEdit}: Props) => {
                 <div className="min-w-0">
                     <div className="flex items-center gap-2">
                         <p className="font-semibold text-gray-900">Замовлення {order.id}</p>
-                        <ToolTip label={order.trafficSource || ""}>
-                            <TrafficSourceIcon trafficSource={order.trafficSource}/>
-                        </ToolTip>
+                        {
+                            order.trafficSource &&
+                            <ToolTip label={order.trafficSource}>
+                                <TrafficSourceIcon trafficSource={order.trafficSource}/>
+                            </ToolTip>
+                        }
+
                         <ToolTip label="Редагувати">
                             <button
                                 type="button"

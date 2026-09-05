@@ -16,6 +16,7 @@ const OrderItem = ({orderItem}: Props) => {
                         width={50}
                         height={50}
                         alt={orderItem.name}
+                        loading="lazy"
                         className="aspect-square size-[50px] shrink-0 rounded-lg border border-gray-200 object-cover"
                     />
                 ) : (
