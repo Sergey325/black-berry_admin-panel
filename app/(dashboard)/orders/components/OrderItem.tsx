@@ -34,7 +34,7 @@ const OrderItem = ({orderItem}: Props) => {
             </div>
             <div className="flex items-center justify-between text-base md:contents">
                 <div className="flex items-center gap-2 md:contents">
-                    <span className="text-gray-700 md:text-right">
+                    <span className="text-gray-700 md:text-center">
                         {orderItem.price} грн
                     </span>
 

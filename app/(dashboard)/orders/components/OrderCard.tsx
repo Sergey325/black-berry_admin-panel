@@ -87,7 +87,7 @@ const OrderCard = ({order, onEdit}: Props) => {
                 <div className="min-w-0">
                     <div className="hidden grid-cols-[minmax(0,1fr)_110px_90px_120px] gap-3 border-b border-gray-200 pb-3 text-sm font-medium text-gray-600 md:grid">
                         <span>Товар</span>
-                        <span className="text-right">Ціна</span>
+                        <span className="text-center">Ціна</span>
                         <span className="text-center">Кількість</span>
                         <span className="text-right">Усього</span>
                     </div>

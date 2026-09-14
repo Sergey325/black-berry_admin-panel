@@ -28,6 +28,7 @@ import {MdDragIndicator} from "react-icons/md";
 import {reorderProducts} from "@/app/actions/reorderProducts";
 import toast from "react-hot-toast";
 import {CACHE_INVALIDATION_WARNING} from "@/app/utils/cacheInvalidationWarning";
+import {pluralizeUk} from "@/app/utils/pluralizeUk";
 
 
 type Props = {
@@ -233,7 +234,7 @@ const ProductCategory = ({group, onEdit, canReorder}: ProductCategoryProps) => {
                 <span className="min-w-0">
                     <span className="block truncate font-semibold text-gray-900">{group.categoryName}</span>
                     <span className="text-xs text-gray-500">
-                        {group.products.length} товарів{isSaving ? " · збереження..." : ""}
+                        {group.products.length} {pluralizeUk(group.products.length,["товар", "товари", "товарів"])}{isSaving ? " · збереження..." : ""}
                     </span>
                 </span>
                 <FiChevronDown className={`size-5 shrink-0 text-gray-500 transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`}/>
@@ -332,7 +333,7 @@ const AllProducts = ({products, onAdd, onEdit}: Props) => {
                 <div className="flex items-center justify-between border-b border-gray-200 px-4 py-4 md:px-5">
                     <div>
                         <h2 className="font-semibold text-gray-900">Асортимент</h2>
-                        <p className="mt-0.5 text-xs text-gray-500">{products.length} товарів у вибірці</p>
+                        <p className="mt-0.5 text-xs text-gray-500">{products.length} {pluralizeUk(products.length,["товар", "товари", "товарів"])} у вибірці</p>
                         {!canReorder && products.length > 0 && (
                             <p className="mt-1 text-xs text-amber-600">
                                 Для зміни порядку виберіть «Порядок у категорії» та очистьте пошук

@@ -42,7 +42,7 @@ export default function OrdersClient({orders, order, products}: Props) {
                 title={tab === "AllOrders" ? "Замовлення" : order ? "Редагування замовлення" : "Нове замовлення"}
                 description={tab === "AllOrders"
                     ? "Відстежуйте замовлення, оплату та виконання"
-                    : order ? `Оновіть дані замовлення ${order.invoiceId || order.id}` : "Створіть замовлення вручну для клієнта"}
+                    : order ? `Оновіть дані замовлення ${order.id}` : "Створіть замовлення вручну для клієнта"}
             />
             <div className="mt-7">
             {
