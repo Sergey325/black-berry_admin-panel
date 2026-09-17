@@ -41,7 +41,7 @@ async function processStorefrontAfterpayments() {
         };
 
         try {
-            await fiscalizeStorefrontOrder(order.id, "afterpayment");
+            await fiscalizeStorefrontOrder(order.id, {type: "afterpayment"});
 
             processedOrders += 1;
             console.log("[Storefront fiscalization] Afterpayment receipt completed", context);

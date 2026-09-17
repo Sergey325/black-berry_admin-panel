@@ -1,6 +1,12 @@
 import "server-only";
+import type {InitialPaymentSource} from "@/app/types";
 
-export type StorefrontFiscalizationType = "initial" | "afterpayment";
+export type StorefrontFiscalizationRequest = {
+    type: "initial";
+    paymentSource: InitialPaymentSource;
+} | {
+    type: "afterpayment";
+};
 
 const STOREFRONT_FISCALIZATION_TIMEOUT_MS = 45_000;
 
@@ -27,7 +33,7 @@ async function getErrorMessage(response: Response): Promise<string> {
 
 export async function fiscalizeStorefrontOrder(
     orderId: number,
-    type: StorefrontFiscalizationType,
+    payload: StorefrontFiscalizationRequest,
 ): Promise<void> {
     const storefrontUrl = process.env.STOREFRONT_URL;
     const secret = process.env.STOREFRONT_API_SECRET;
@@ -51,7 +57,7 @@ export async function fiscalizeStorefrontOrder(
                         Authorization: `Bearer ${secret}`,
                         "Content-Type": "application/json",
                     },
-                    body: JSON.stringify({type}),
+                    body: JSON.stringify(payload),
                     cache: "no-store",
                     signal: controller.signal,
                 },

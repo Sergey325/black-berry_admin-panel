@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/app/lib/prisma";
 import {OrderStatus, PaymentMethod} from "@prisma/client";
-import {FormValuesOrder} from "@/app/types";
+import {FormValuesOrder, isInitialPaymentSource} from "@/app/types";
 import {fiscalizeStorefrontOrder} from "@/app/lib/storefrontFiscalization";
 
 interface IParams {
@@ -60,6 +60,10 @@ export async function PATCH(
 
         if (!Array.isArray(body.items) || body.items.length === 0) {
             return NextResponse.json({error: "Order must contain at least one item"}, {status: 400});
+        }
+
+        if (body.createFiscalReceipt && !isInitialPaymentSource(body.paymentSource)) {
+            return NextResponse.json({error: "Invalid initial payment source"}, {status: 400});
         }
 
         const normalizedTtnNumber = body.ttnNumber.trim() || null;
@@ -138,7 +142,10 @@ export async function PATCH(
             const fiscalizationStartedAt = Date.now();
 
             try {
-                await fiscalizeStorefrontOrder(id, "initial");
+                await fiscalizeStorefrontOrder(id, {
+                    type: "initial",
+                    paymentSource: body.paymentSource,
+                });
                 fiscalizationStatus = "done";
             } catch (error: unknown) {
                 fiscalizationStatus = "failed";

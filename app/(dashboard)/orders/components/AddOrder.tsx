@@ -3,7 +3,7 @@ import axios from "axios";
 import {IOrderProduct} from "@/app/actions/getProducts";
 import {useEffect, useMemo, useState} from "react";
 import toast from "react-hot-toast";
-import {City, FormValuesOrder, Warehouse} from "@/app/types";
+import {City, FormValuesOrder, InitialPaymentSource, Warehouse} from "@/app/types";
 import NovaPoshtaSelect from "@/app/(dashboard)/orders/components/NovePoshtaSelect";
 import ContactForm from "@/app/(dashboard)/orders/components/ContactForm";
 import ToolTip from "@/app/components/ToolTip";
@@ -38,6 +38,11 @@ const trafficSourceOptions = [
     {value: "GOOGLE_FREE_LISTING", label: "Google Free Listing"},
 ] satisfies {value: TrafficSource; label: string}[];
 
+const paymentSourceOptions = [
+    {value: "MONOBANK", label: "Monobank"},
+    {value: "CURRENT_ACCOUNT", label: "Переказ на рахунок (IBAN)"},
+] satisfies {value: InitialPaymentSource; label: string}[];
+
 const AddOrder = ({products, order}: Props) => {
     const router = useRouter();
     const [selectedCity, setSelectedCity] = useState<City | null>(() => order?.city ? {
@@ -66,6 +71,7 @@ const AddOrder = ({products, order}: Props) => {
             ttnNumber: order?.ttnNumber ?? "",
             paymentMethod: order?.paymentMethod ?? "MONOBANK",
             createFiscalReceipt: order ? order.checkboxReceiptStatus !== "DONE" : true,
+            paymentSource: "MONOBANK",
             trafficSource: order?.trafficSource ?? null,
             items: order?.items.map((item) => ({
                 productId: item.productId,
@@ -106,9 +112,9 @@ const AddOrder = ({products, order}: Props) => {
         },
     });
 
-    const [paymentMethod, watchedItems] = useWatch({
+    const [paymentMethod, createFiscalReceipt, watchedItems] = useWatch({
         control,
-        name: ["paymentMethod", "items"],
+        name: ["paymentMethod", "createFiscalReceipt", "items"],
     });
     const productOptions = useMemo<SearchSelectOption[]>(() => products.map((product) => ({
         id: product.id,
@@ -286,9 +292,9 @@ const AddOrder = ({products, order}: Props) => {
                     <h2 className="font-semibold text-gray-900">Спосіб оплати</h2>
                     <div className="mt-4 grid gap-3 sm:grid-cols-2">
                         {(totalAmount > 150 ? ["MONOBANK", "CASH_ON_DELIVERY"] : ["MONOBANK"] as const).map((method) => (
-                            <label key={method} className={`flex cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 text-base font-medium transition ${paymentMethod === method ? "border-gray-900 bg-gray-50 text-gray-950" : "border-gray-200 text-gray-700 hover:border-gray-400"}`}>
+                            <label key={method} className={`flex cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 text-base font-medium transition ${paymentMethod === method ? "border-gray-900 bg-gray-50 text-gray-950" : "border-gray-200 text-gray-700 hover:border-gray-400 select-none"}`}>
                                 <input type="radio" value={method} {...register("paymentMethod")} className="accent-black" />
-                                <span>{method === "MONOBANK" ? "Онлайн (Monobank)" : "Накладений платіж"}</span>
+                                <span>{method === "MONOBANK" ? "Повна оплата" : "Накладений платіж"}</span>
                             </label>
                         ))}
                     </div>
@@ -307,6 +313,22 @@ const AddOrder = ({products, order}: Props) => {
                             </span>
                         </span>
                     </label>
+                    {createFiscalReceipt && (
+                        <div className="mt-4 max-w-md">
+                            <Controller
+                                control={control}
+                                name="paymentSource"
+                                render={({field}) => (
+                                    <Dropdown<InitialPaymentSource>
+                                        label="Джерело оплати для чека"
+                                        options={paymentSourceOptions}
+                                        value={field.value}
+                                        onChange={(option) => field.onChange(option.value)}
+                                    />
+                                )}
+                            />
+                        </div>
+                    )}
                 </section>
 
                 <section id="order-items" className="flex flex-col gap-4 rounded-xl border border-gray-200 bg-white p-4 shadow-sm md:p-5">

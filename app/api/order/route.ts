@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import prisma from "@/app/lib/prisma";
 import { PaymentMethod } from "@prisma/client";
 import {createTTN} from "@/app/lib/novaposhta";
-import {FormValuesOrder} from "@/app/types";
+import {FormValuesOrder, isInitialPaymentSource} from "@/app/types";
 import {randomUUID} from "node:crypto";
 import {fiscalizeStorefrontOrder} from "@/app/lib/storefrontFiscalization";
 
@@ -17,6 +17,11 @@ export async function POST(request: Request) {
 
     try {
         const body = await request.json() as ManualOrderRequest;
+
+        if (body.createFiscalReceipt && !isInitialPaymentSource(body.paymentSource)) {
+            return NextResponse.json({error: "Invalid initial payment source"}, {status: 400});
+        }
+
         const { firstName, lastName, phone, email, comment, city, area, cityRef, warehouse, warehouseNumber, warehouseRef, paymentMethod, trafficSource, items } = body;
         const normalizedPhone = phone.replace(/\D/g, "") || null;
 
@@ -107,7 +112,10 @@ export async function POST(request: Request) {
             const startedAt = Date.now();
 
             try {
-                await fiscalizeStorefrontOrder(order.id, "initial");
+                await fiscalizeStorefrontOrder(order.id, {
+                    type: "initial",
+                    paymentSource: body.paymentSource,
+                });
                 fiscalizationStatus = "done";
             } catch (error: unknown) {
                 fiscalizationStatus = "failed";
