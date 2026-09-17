@@ -3,22 +3,30 @@ import prisma from "@/app/lib/prisma";
 import { PaymentMethod } from "@prisma/client";
 import {createTTN} from "@/app/lib/novaposhta";
 import {FormValuesOrder} from "@/app/types";
+import {randomUUID} from "node:crypto";
+import {fiscalizeStorefrontOrder} from "@/app/lib/storefrontFiscalization";
 
 type ManualOrderRequest = FormValuesOrder & {
-    warehouseNumber: number;
+    warehouseNumber: number | null;
 };
 
+export const maxDuration = 60;
+
 export async function POST(request: Request) {
+    const requestStartedAt = Date.now();
+
     try {
         const body = await request.json() as ManualOrderRequest;
         const { firstName, lastName, phone, email, comment, city, area, cityRef, warehouse, warehouseNumber, warehouseRef, paymentMethod, trafficSource, items } = body;
         const normalizedPhone = phone.replace(/\D/g, "") || null;
 
         const totalAmount = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
+        const databaseStartedAt = Date.now();
 
         const order = await prisma.order.create({
             data: {
-                status: "PAID", // ручной заказ сразу считается оплаченным
+                status: "PAID",
+                publicToken: randomUUID(),
                 totalAmount,
                 firstName,
                 lastName,
@@ -53,32 +61,101 @@ export async function POST(request: Request) {
                 items: true,
             },
         });
+        const databaseDurationMs = Date.now() - databaseStartedAt;
+        let ttnDurationMs: number | null = null;
+        let fiscalizationDurationMs: number | null = null;
+        let fiscalizationStatus: "skipped" | "done" | "failed" = "skipped";
+        let fiscalizationError: string | null = null;
 
-        if (order.phone && order.firstName && order.lastName && order.warehouseRef && order.cityRef && order.warehouseNumber) try {
-            const { ttnNumber, ttnRef } = await createTTN({
-                recipientFirstName:order.firstName,
-                recipientLastName: order.lastName,
-                recipientPhone: order.phone,
-                recipientCityRef: order.cityRef,
-                recipientWarehouseRef: order.warehouseRef,
-                recipientWarehouseNumber: order.warehouseNumber.toString(),
-                serviceType: order.warehouse?.includes("Відділення") ? "WarehouseWarehouse" : "WarehousePostomat",
-                cost: order.totalAmount,
-                description: order.items.map(i => i.name).join(", "),
-            });
+        const createOrderTtn = async () => {
+            if (!order.phone || !order.firstName || !order.lastName || !order.warehouseRef || !order.cityRef || !order.warehouseNumber) {
+                return;
+            }
 
-            await prisma.order.update({
-                where: { id: order.id },
-                data: { ttnNumber, ttnRef },
-            });
-        } catch (ttnError) {
-            // Не валим весь webhook, если ТТН не создалась — заказ всё равно оплачен
-            console.error("Failed to create TTN for order", order.id, ttnError);
+            const startedAt = Date.now();
+
+            try {
+                const {ttnNumber, ttnRef} = await createTTN({
+                    recipientFirstName: order.firstName,
+                    recipientLastName: order.lastName,
+                    recipientPhone: order.phone,
+                    recipientCityRef: order.cityRef,
+                    recipientWarehouseRef: order.warehouseRef,
+                    recipientWarehouseNumber: order.warehouseNumber.toString(),
+                    serviceType: order.warehouse?.includes("Відділення") ? "WarehouseWarehouse" : "WarehousePostomat",
+                    cost: order.totalAmount,
+                    description: order.items.map((item) => item.name).join(", "),
+                });
+
+                await prisma.order.update({
+                    where: {id: order.id},
+                    data: {ttnNumber, ttnRef},
+                });
+            } catch (error: unknown) {
+                console.error("Failed to create TTN for order", {
+                    orderId: order.id,
+                    error,
+                });
+            } finally {
+                ttnDurationMs = Date.now() - startedAt;
+            }
+        };
+
+        const createInitialReceipt = async () => {
+            if (!body.createFiscalReceipt) return;
+
+            const startedAt = Date.now();
+
+            try {
+                await fiscalizeStorefrontOrder(order.id, "initial");
+                fiscalizationStatus = "done";
+            } catch (error: unknown) {
+                fiscalizationStatus = "failed";
+                fiscalizationError = error instanceof Error ? error.message : "Fiscalization failed";
+                console.error("[Storefront fiscalization] Initial receipt failed", {
+                    orderId: order.id,
+                    error,
+                });
+            } finally {
+                fiscalizationDurationMs = Date.now() - startedAt;
+            }
+        };
+
+        if (body.createFiscalReceipt && paymentMethod === PaymentMethod.MONOBANK) {
+            await Promise.all([createOrderTtn(), createInitialReceipt()]);
+        } else {
+            await createOrderTtn();
+            await createInitialReceipt();
         }
 
-        return NextResponse.json(null, { status: 200 });
-    } catch (error) {
-        console.error(error);
+        const totalDurationMs = Date.now() - requestStartedAt;
+        console.log("[Order create] Completed", {
+            orderId: order.id,
+            paymentMethod,
+            databaseDurationMs,
+            ttnDurationMs,
+            fiscalizationDurationMs,
+            totalDurationMs,
+        });
+
+        return NextResponse.json({
+            orderId: order.id,
+            fiscalization: {
+                status: fiscalizationStatus,
+                error: fiscalizationError,
+            },
+            timings: {
+                databaseDurationMs,
+                ttnDurationMs,
+                fiscalizationDurationMs,
+                totalDurationMs,
+            },
+        }, { status: 200 });
+    } catch (error: unknown) {
+        console.error("[Order create] Failed", {
+            totalDurationMs: Date.now() - requestStartedAt,
+            error,
+        });
         return NextResponse.json(error, { status: 500 });
     }
 }

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import prisma from "@/app/lib/prisma";
 import {OrderStatus, PaymentMethod} from "@prisma/client";
 import {FormValuesOrder} from "@/app/types";
+import {fiscalizeStorefrontOrder} from "@/app/lib/storefrontFiscalization";
 
 interface IParams {
     orderId: string;
@@ -17,6 +18,8 @@ type OrderPatchRequest = {
 
 const orderStatuses = new Set<string>(Object.values(OrderStatus));
 
+export const maxDuration = 60;
+
 function isRecord(value: unknown): value is Record<string, unknown> {
     return typeof value === "object" && value !== null;
 }
@@ -25,6 +28,8 @@ export async function PATCH(
     request: Request,
     { params }: { params: Promise<IParams> }
 ) {
+    const requestStartedAt = Date.now();
+
     try {
         const {orderId} = await params;
         const id = Number(orderId);
@@ -64,6 +69,7 @@ export async function PATCH(
 
         const normalizedPhone = body.phone.replace(/\D/g, "") || null;
         const itemsSubtotal = body.items.reduce((total, item) => total + item.price * item.quantity, 0);
+        const transactionStartedAt = Date.now();
 
         await prisma.$transaction(async (transaction) => {
             const existingOrder = await transaction.order.findUnique({
@@ -122,10 +128,55 @@ export async function PATCH(
                 },
             });
         });
+        const transactionDurationMs = Date.now() - transactionStartedAt;
 
-        return NextResponse.json(null, {status: 200});
+        let fiscalizationStatus: "skipped" | "done" | "failed" = "skipped";
+        let fiscalizationError: string | null = null;
+        let fiscalizationDurationMs: number | null = null;
+
+        if (body.createFiscalReceipt) {
+            const fiscalizationStartedAt = Date.now();
+
+            try {
+                await fiscalizeStorefrontOrder(id, "initial");
+                fiscalizationStatus = "done";
+            } catch (error: unknown) {
+                fiscalizationStatus = "failed";
+                fiscalizationError = error instanceof Error ? error.message : "Fiscalization failed";
+                console.error("[Storefront fiscalization] Initial receipt failed", {
+                    orderId: id,
+                    error,
+                });
+            } finally {
+                fiscalizationDurationMs = Date.now() - fiscalizationStartedAt;
+            }
+        }
+
+        const totalDurationMs = Date.now() - requestStartedAt;
+        console.log("[Order update] Completed", {
+            orderId: id,
+            transactionDurationMs,
+            fiscalizationDurationMs,
+            totalDurationMs,
+        });
+
+        return NextResponse.json({
+            orderId: id,
+            fiscalization: {
+                status: fiscalizationStatus,
+                error: fiscalizationError,
+            },
+            timings: {
+                transactionDurationMs,
+                fiscalizationDurationMs,
+                totalDurationMs,
+            },
+        }, {status: 200});
     } catch (error: unknown) {
-        console.error(error);
+        console.error("[Order update] Failed", {
+            totalDurationMs: Date.now() - requestStartedAt,
+            error,
+        });
         const message = error instanceof Error ? error.message : "Failed to update order";
         return NextResponse.json({error: message}, {status: message === "Order not found" ? 404 : 500});
     }

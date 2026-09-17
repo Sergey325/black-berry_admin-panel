@@ -131,7 +131,7 @@ export default function NovaPoshtaSelect({ selectedCity, setSelectedCity, select
                             setWarehouseQuery("");
                             setIsWarehousesOpen(false);
                         }}
-                        className="absolute right-3 top-[35px] cursor-pointer text-gray-400 hover:text-gray-600"
+                        className="absolute right-3 top-9.5 cursor-pointer text-gray-400 hover:text-gray-600 transition-colors"
                         type="button"
                     >
                         <FiX size={25} />

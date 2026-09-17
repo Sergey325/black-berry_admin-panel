@@ -44,6 +44,9 @@ export interface IOrder {
     warehouseNumber: number | null;
     fbc: string | null;
     trafficSource: TrafficSource | null;
+    checkboxReceiptStatus: string | null;
+    checkboxReceiptUrl: string | null;
+    checkboxAfterpaymentReceiptUrl: string | null;
     items: IOrderItem[]
 }
 

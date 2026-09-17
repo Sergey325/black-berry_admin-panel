@@ -123,41 +123,53 @@ model NovaPoshtaCity {
 }
 
 model Order {
-  id                     Int            @id @default(autoincrement())
-  invoiceId              String?        @unique
-  status                 OrderStatus    @default(PENDING)
-  totalAmount            Float
-  firstName              String?
-  lastName               String?
-  phone                  String?
-  email                  String?
-  comment                String?
-  city                   String?
-  cityRef                String?
-  warehouse              String?
-  warehouseRef           String?
-  createdAt              DateTime       @default(now())
-  updatedAt              DateTime       @updatedAt
-  paymentMethod          PaymentMethod
-  area                   String?
-  ttnNumber              String?
-  ttnRef                 String?
-  warehouseNumber        Int?
-  clientIp               String?
-  fbc                    String?
-  fbp                    String?
-  userAgent              String?
-  paidAt                 DateTime?
-  discountAmount         Float?
-  discountPercentApplied Float?
-  promoCodeId            Int?
-  promoCodeSnapshot      String?
-  ttnStatus              String?
-  ttnStatusCode          String?
-  ttnStatusUpdatedAt     DateTime?
-  trafficSource          TrafficSource?
-  PromoCode              PromoCode?     @relation(fields: [promoCodeId], references: [id])
-  items                  OrderItem[]
+  id                             Int            @id @default(autoincrement())
+  invoiceId                      String?        @unique
+  status                         OrderStatus    @default(PENDING)
+  totalAmount                    Float
+  firstName                      String?
+  lastName                       String?
+  phone                          String?
+  email                          String?
+  comment                        String?
+  city                           String?
+  cityRef                        String?
+  warehouse                      String?
+  warehouseRef                   String?
+  createdAt                      DateTime       @default(now())
+  updatedAt                      DateTime       @updatedAt
+  paymentMethod                  PaymentMethod
+  area                           String?
+  ttnNumber                      String?
+  ttnRef                         String?
+  warehouseNumber                Int?
+  clientIp                       String?
+  fbc                            String?
+  fbp                            String?
+  userAgent                      String?
+  paidAt                         DateTime?
+  discountAmount                 Float?
+  discountPercentApplied         Float?
+  promoCodeId                    Int?
+  promoCodeSnapshot              String?
+  ttnStatus                      String?
+  ttnStatusCode                  String?
+  ttnStatusUpdatedAt             DateTime?
+  trafficSource                  TrafficSource?
+  checkboxReceiptId              String?        @unique
+  checkboxReceiptFiscalCode      String?
+  checkboxReceiptStatus          String?
+  checkboxReceiptCreatedAt       DateTime?
+  checkboxPrepaymentRelationId   String?        @unique
+  checkboxAfterpaymentReceiptId  String?        @unique
+  checkboxAfterpaymentFiscalCode String?
+  checkboxAfterpaymentStatus     String?
+  checkboxAfterpaymentCreatedAt  DateTime?
+  publicToken                    String         @unique
+  checkboxReceiptUrl             String?
+  checkboxAfterpaymentReceiptUrl String?
+  PromoCode                      PromoCode?     @relation(fields: [promoCodeId], references: [id])
+  items                          OrderItem[]
 }
 
 model OrderItem {

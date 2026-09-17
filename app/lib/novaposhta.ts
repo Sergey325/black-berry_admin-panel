@@ -120,44 +120,17 @@ async function getOrCreateRecipient({
     };
 }
 
-async function getWarehouseRef(cityRef: string, warehouseNumber: string) {
-    console.log(`[getWarehouseRef] cityRef: ${cityRef}, warehouseNumber: "${warehouseNumber}"`);
-
-    const res = await fetch(API_URL, {
-        method: "POST",
-        body: JSON.stringify({
-            apiKey: API_KEY,
-            modelName: "AddressGeneral",
-            calledMethod: "getWarehouses",
-            methodProperties: {
-                CityRef: cityRef,
-                WarehouseId: warehouseNumber,
-            },
-        }),
-    });
-
-    const data = await res.json();
-    console.log(`[getWarehouseRef] found ${data.data?.length ?? 0} warehouses`);
-    if (data.data?.length > 0) {
-        console.log(`[getWarehouseRef] result Ref: ${data.data[0].Ref}, Number: ${data.data[0].Number}, Description: ${data.data[0].Description}`);
-    } else {
-        console.log(`[getWarehouseRef] ❌ no warehouse found for warehouseNumber="${warehouseNumber}"`);
-    }
-
-    return data.data[0]?.Ref;
-}
-
 export async function createTTN({
-                                    recipientFirstName,
-                                    recipientLastName,
-                                    recipientPhone,
-                                    recipientCityRef,
-                                    recipientWarehouseRef,
-                                    recipientWarehouseNumber,
-                                    cost,
-                                    serviceType,
-                                    description,
-                                }: {
+    recipientFirstName,
+    recipientLastName,
+    recipientPhone,
+    recipientCityRef,
+    recipientWarehouseRef,
+    recipientWarehouseNumber,
+    cost,
+    serviceType,
+    description,
+}: {
     recipientFirstName: string;
     recipientLastName: string;
     recipientPhone: string;
@@ -179,17 +152,10 @@ export async function createTTN({
         description,
     });
 
-    const senderWarehouseRef = await getWarehouseRef(
-        process.env.NOVA_POSHTA_SENDER_CITY_REF!,
-        "121"
-    );
-    console.log("[createTTN] senderWarehouseRef:", senderWarehouseRef);
-
-    // const recipientWarehouseRef = await getWarehouseRef(
-    //     recipientCityRef,
-    //     recipientWarehouseNumber
-    // );
-    // console.log("[createTTN] recipientWarehouseRef:", recipientWarehouseRef);
+    const senderWarehouseRef = process.env.NOVA_POSHTA_SENDER_WAREHOUSE_REF;
+    if (!senderWarehouseRef) {
+        throw new Error("NOVA_POSHTA_SENDER_WAREHOUSE_REF is not configured");
+    }
 
     const { recipientRef, contactRecipientRef } = await getOrCreateRecipient({
         firstName: recipientFirstName,

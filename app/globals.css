@@ -53,6 +53,7 @@ html, body {
 
 button {
   cursor: pointer;
+  user-select: none;
 }
 
 img {
@@ -63,6 +64,7 @@ img {
 
 a {
   -webkit-user-drag: none;
+  user-select: none;
 }
 
 input {

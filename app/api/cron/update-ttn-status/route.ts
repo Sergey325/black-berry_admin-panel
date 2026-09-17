@@ -1,8 +1,9 @@
-import {OrderStatus} from "@prisma/client";
+import {OrderStatus, PaymentMethod} from "@prisma/client";
 import {after, NextResponse} from "next/server";
 import prisma from "@/app/lib/prisma";
 import {chunk, getStatusDocuments} from "@/app/lib/novaposhta";
 import {mapNPStatusToOrderStatus} from "@/app/lib/npStatusMapping";
+import {fiscalizeStorefrontOrder} from "@/app/lib/storefrontFiscalization";
 
 const FINAL_ORDER_STATUSES = [
     OrderStatus.DELIVERED,
@@ -10,7 +11,55 @@ const FINAL_ORDER_STATUSES = [
     OrderStatus.REFUNDED,
 ];
 
-export const maxDuration = 60;
+export const maxDuration = 300;
+
+async function processStorefrontAfterpayments() {
+    const orders = await prisma.order.findMany({
+        where: {
+            status: OrderStatus.DELIVERED,
+            paymentMethod: PaymentMethod.CASH_ON_DELIVERY,
+            checkboxReceiptStatus: "DONE",
+            checkboxPrepaymentRelationId: {not: null},
+            checkboxAfterpaymentCreatedAt: null,
+        },
+        select: {
+            id: true,
+            ttnNumber: true,
+            checkboxPrepaymentRelationId: true,
+        },
+        orderBy: {id: "asc"},
+    });
+
+    let processedOrders = 0;
+    let errors = 0;
+
+    for (const order of orders) {
+        const context = {
+            orderId: order.id,
+            ttnNumber: order.ttnNumber,
+            checkboxPrepaymentRelationId: order.checkboxPrepaymentRelationId,
+        };
+
+        try {
+            await fiscalizeStorefrontOrder(order.id, "afterpayment");
+
+            processedOrders += 1;
+            console.log("[Storefront fiscalization] Afterpayment receipt completed", context);
+        } catch (error: unknown) {
+            errors += 1;
+            console.error("[Storefront fiscalization] Afterpayment failed", {
+                ...context,
+                error,
+            });
+        }
+    }
+
+    console.log("[Storefront fiscalization] Afterpayment processing completed", {
+        totalOrders: orders.length,
+        processedOrders,
+        errors,
+    });
+}
 
 export async function processTtnUpdates() {
     let totalOrders = 0;
@@ -98,6 +147,12 @@ export async function processTtnUpdates() {
             processedOrders,
             errors,
         });
+    }
+
+    try {
+        await processStorefrontAfterpayments();
+    } catch (error: unknown) {
+        console.error("[Storefront fiscalization] Afterpayment processing failed", error);
     }
 }
 

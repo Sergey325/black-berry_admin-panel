@@ -17,10 +17,18 @@ import {FiPlus} from "react-icons/fi";
 import Dropdown from "@/app/components/DropDown";
 import type {IOrder} from "@/app/actions/getOrders";
 import type {TrafficSource} from "@prisma/client";
+import Loader from "@/app/components/Loader";
 
 type Props = {
     products: IOrderProduct[];
     order?: IOrder;
+};
+
+type OrderSaveResponse = {
+    fiscalization: {
+        status: "skipped" | "done" | "failed";
+        error: string | null;
+    };
 };
 
 const trafficSourceOptions = [
@@ -43,7 +51,7 @@ const AddOrder = ({products, order}: Props) => {
         description: order.warehouse,
     } : null);
 
-    const { register, control, handleSubmit, setValue, formState: { errors }, setError, clearErrors, reset } = useForm<FormValuesOrder>({
+    const { register, control, handleSubmit, setValue, formState: { errors, isSubmitting }, setError, clearErrors, reset } = useForm<FormValuesOrder>({
         defaultValues: {
             firstName: order?.firstName ?? "",
             lastName: order?.lastName ?? "",
@@ -57,6 +65,7 @@ const AddOrder = ({products, order}: Props) => {
             warehouseRef: order?.warehouseRef ?? "",
             ttnNumber: order?.ttnNumber ?? "",
             paymentMethod: order?.paymentMethod ?? "MONOBANK",
+            createFiscalReceipt: order ? order.checkboxReceiptStatus !== "DONE" : true,
             trafficSource: order?.trafficSource ?? null,
             items: order?.items.map((item) => ({
                 productId: item.productId,
@@ -178,12 +187,16 @@ const AddOrder = ({products, order}: Props) => {
                     ttnNumber: data.ttnNumber.trim(),
                 };
 
-                if (order) {
-                    await axios.patch(`/api/order/${order.id}`, payload);
-                    toast.success("Замовлення оновлено!");
+                const response = order
+                    ? await axios.patch<OrderSaveResponse>(`/api/order/${order.id}`, payload)
+                    : await axios.post<OrderSaveResponse>("/api/order", payload);
+
+                if (response.data.fiscalization.status === "failed") {
+                    toast.error(order
+                        ? "Замовлення оновлено, але чек не створено"
+                        : "Замовлення створено, але чек не створено");
                 } else {
-                    await axios.post("/api/order", payload);
-                    toast.success("Замовлення створено!");
+                    toast.success(order ? "Замовлення оновлено!" : "Замовлення створено!");
                 }
 
                 reset();
@@ -198,7 +211,12 @@ const AddOrder = ({products, order}: Props) => {
     };
 
     return (
-        <div>
+        <div aria-busy={isSubmitting}>
+            {isSubmitting && (
+                <div className="fixed inset-0 z-50 bg-white/80 backdrop-blur-sm" role="status" aria-label="Збереження замовлення">
+                    <Loader />
+                </div>
+            )}
             <button type="button" className="group mb-5 inline-flex items-center gap-1 text-sm font-medium text-gray-600 transition hover:text-gray-950" onClick={() => router.replace("/orders?tab=AllOrders")}>
                 <IoIosArrowBack className="size-5 group" />
                 <span className="select-none">Повернутися до замовлень</span>
@@ -267,13 +285,28 @@ const AddOrder = ({products, order}: Props) => {
                 <section className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm md:p-5">
                     <h2 className="font-semibold text-gray-900">Спосіб оплати</h2>
                     <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                        {(["MONOBANK", "CASH_ON_DELIVERY"] as const).map((method) => (
+                        {(totalAmount > 150 ? ["MONOBANK", "CASH_ON_DELIVERY"] : ["MONOBANK"] as const).map((method) => (
                             <label key={method} className={`flex cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 text-base font-medium transition ${paymentMethod === method ? "border-gray-900 bg-gray-50 text-gray-950" : "border-gray-200 text-gray-700 hover:border-gray-400"}`}>
                                 <input type="radio" value={method} {...register("paymentMethod")} className="accent-black" />
                                 <span>{method === "MONOBANK" ? "Онлайн (Monobank)" : "Накладений платіж"}</span>
                             </label>
                         ))}
                     </div>
+                    <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 transition hover:border-gray-300">
+                        <input
+                            type="checkbox"
+                            {...register("createFiscalReceipt")}
+                            className="mt-1 size-4 shrink-0 accent-black"
+                        />
+                        <span>
+                            <span className="block text-base font-medium text-gray-900">Створити фіскальний чек</span>
+                            <span className="mt-0.5 block text-sm leading-5 text-gray-600">
+                                {paymentMethod === "CASH_ON_DELIVERY"
+                                    ? "Буде створено чек передоплати 150 грн після збереження замовлення"
+                                    : "Буде створено чек повної оплати після збереження замовлення"}
+                            </span>
+                        </span>
+                    </label>
                 </section>
 
                 <section id="order-items" className="flex flex-col gap-4 rounded-xl border border-gray-200 bg-white p-4 shadow-sm md:p-5">
@@ -478,8 +511,8 @@ const AddOrder = ({products, order}: Props) => {
                     )}
                 </section>
 
-                <button type="submit" className="rounded-lg bg-black py-3 text-base font-medium text-white transition hover:bg-gray-800">
-                    {order ? "Оновити замовлення" : "Створити замовлення"}
+                <button type="submit" disabled={isSubmitting} className="rounded-lg bg-black py-3 text-base font-medium text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-60">
+                    {isSubmitting ? "Збереження..." : order ? "Оновити замовлення" : "Створити замовлення"}
                 </button>
 
             </form>

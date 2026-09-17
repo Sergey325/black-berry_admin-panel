@@ -75,6 +75,7 @@ export type FormValuesOrder = {
     warehouseRef: string;
     ttnNumber: string;
     paymentMethod: "MONOBANK" | "CASH_ON_DELIVERY";
+    createFiscalReceipt: boolean;
     trafficSource: TrafficSource | null;
     items: OrderItem[];
 };

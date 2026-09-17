@@ -5,6 +5,7 @@ import {FaFacebook, FaGoogle, FaInstagram} from "react-icons/fa";
 import {MdEdit} from "react-icons/md";
 import ToolTip from "@/app/components/ToolTip";
 import type {TrafficSource} from "@prisma/client";
+import {FiFileText} from "react-icons/fi";
 
 
 type Props = {
@@ -84,7 +85,7 @@ const OrderCard = ({order, onEdit}: Props) => {
                 </div>
             </div>
             <div className="grid gap-5 p-4 md:p-5 xl:grid-cols-[minmax(0,1fr)_320px]">
-                <div className="min-w-0">
+                <div className="flex min-w-0 flex-col">
                     <div className="hidden grid-cols-[minmax(0,1fr)_110px_90px_120px] gap-3 border-b border-gray-200 pb-3 text-sm font-medium text-gray-600 md:grid">
                         <span>Товар</span>
                         <span className="text-center">Ціна</span>
@@ -104,6 +105,33 @@ const OrderCard = ({order, onEdit}: Props) => {
                         <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg bg-purple-50 px-4 py-3 text-base">
                             <div><span className="text-purple-500">Промокод</span><span className="ml-2 font-semibold tracking-wide text-purple-800">{order.promoCodeSnapshot}</span></div>
                             <span className="font-medium text-purple-700">−{order.discountAmount} грн</span>
+                        </div>
+                    )}
+                    {(order.checkboxReceiptUrl || order.checkboxAfterpaymentReceiptUrl) && (
+                        <div className="mt-auto pt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm" aria-label="Фіскальні чеки">
+                            {/*<span className="text-gray-500">Чеки:</span>*/}
+                            {order.checkboxReceiptUrl && (
+                                <a
+                                    href={order.checkboxReceiptUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1.5 text-gray-600 underline decoration-gray-300 underline-offset-4 transition hover:text-gray-950 hover:decoration-gray-500"
+                                >
+                                    <FiFileText className="size-3.5 text-gray-400" aria-hidden="true"/>
+                                    {order.paymentMethod === "CASH_ON_DELIVERY" ? "Чек передоплати" : "Фіскальний чек"}
+                                </a>
+                            )}
+                            {order.checkboxAfterpaymentReceiptUrl && (
+                                <a
+                                    href={order.checkboxAfterpaymentReceiptUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1.5 text-gray-600 underline decoration-gray-300 underline-offset-4 transition hover:text-gray-950 hover:decoration-gray-500"
+                                >
+                                    <FiFileText className="size-3.5 text-gray-400" aria-hidden="true"/>
+                                    Чек післяплати
+                                </a>
+                            )}
                         </div>
                     )}
                 </div>

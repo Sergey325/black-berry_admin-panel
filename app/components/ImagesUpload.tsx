@@ -59,7 +59,7 @@ const ImageCard = ({image, index, onDelete, dragHandle}: ImageCardProps) => (
             alt={`Завантажене зображення ${index + 1}`}
             height={100}
             width={100}
-            className="size-20 object-cover md:size-25"
+            className="size-20 object-contain md:size-25"
             src={image}
         />
         <span className="absolute bottom-1 left-1 rounded bg-black/65 px-1.5 py-0.5 text-[11px] font-medium text-white">
