@@ -1,11 +1,12 @@
 import OrderSummary from "@/app/(dashboard)/orders/components/OrderSummary";
 import OrderItem from "@/app/(dashboard)/orders/components/OrderItem";
 import type {IOrder} from "@/app/actions/getOrders";
-import {FaFacebook, FaGoogle, FaInstagram} from "react-icons/fa";
+import {FaFacebook, FaGoogle, FaInstagram, FaTelegram} from "react-icons/fa";
 import {MdEdit} from "react-icons/md";
 import ToolTip from "@/app/components/ToolTip";
 import type {TrafficSource} from "@prisma/client";
 import {FiFileText} from "react-icons/fi";
+import {CgShapeSquare} from "react-icons/cg";
 
 
 type Props = {
@@ -23,6 +24,16 @@ const trafficSourceIcons = {
         icon: FaInstagram,
         label: "Instagram",
         className: "text-pink-600 size-5",
+    },
+    TELEGRAM: {
+        icon: FaTelegram,
+        label: "Telegram",
+        className: "text-sky-600 size-5",
+    },
+    PROM: {
+        icon: CgShapeSquare,
+        label: "Prom",
+        className: "text-purple-700 size-6",
     },
     GOOGLE_SEARCH: {
         icon: FaGoogle,
@@ -59,7 +70,7 @@ const OrderCard = ({order, onEdit}: Props) => {
                         <p className="font-semibold text-gray-900">Замовлення {order.id}</p>
                         {
                             order.trafficSource &&
-                            <ToolTip label={order.trafficSource}>
+                            <ToolTip label={trafficSourceIcons[order.trafficSource].label}>
                                 <TrafficSourceIcon trafficSource={order.trafficSource}/>
                             </ToolTip>
                         }

@@ -18,6 +18,7 @@ import Dropdown from "@/app/components/DropDown";
 import type {IOrder} from "@/app/actions/getOrders";
 import type {TrafficSource} from "@prisma/client";
 import Loader from "@/app/components/Loader";
+import {showConfirmationToast} from "@/app/components/ConfirmationToast";
 
 type Props = {
     products: IOrderProduct[];
@@ -34,6 +35,8 @@ type OrderSaveResponse = {
 const trafficSourceOptions = [
     {value: "FACEBOOK", label: "Facebook"},
     {value: "INSTAGRAM", label: "Instagram"},
+    {value: "TELEGRAM", label: "Telegram"},
+    {value: "PROM", label: "Prom"},
     {value: "GOOGLE_SEARCH", label: "Google Search"},
     {value: "GOOGLE_FREE_LISTING", label: "Google Free Listing"},
 ] satisfies {value: TrafficSource; label: string}[];
@@ -165,55 +168,64 @@ const AddOrder = ({products, order}: Props) => {
 
     const totalAmount = watchedItems?.reduce((acc, item) => acc + (item?.price ?? 0) * (item?.quantity ?? 0), 0) ?? 0;
 
-    const onSubmit = async (data: FormValuesOrder) => {
+    const saveOrder = async (data: FormValuesOrder) => {
         try {
-            // if (!selectedCity || !selectedWarehouse) {
-            //     toast.error("Введіть місто та виберіть відділення")
-            //     document.getElementById("order-delivery")?.scrollIntoView({
-            //         behavior: "smooth",
-            //         block: "center",
-            //     });
-            //
-            //     return;
-            // }
-            if (!data.items.length) {
-                toast.error("Додайте товар замовлення")
-                document.getElementById("order-items")?.scrollIntoView({
-                    behavior: "smooth",
-                    block: "center",
-                });
+            const payload = {
+                ...data,
+                warehouseNumber: selectedWarehouse?.number ? Number(selectedWarehouse.number) : null,
+                phone: data.phone.replace(/\D/g, ""),
+                ttnNumber: data.ttnNumber.trim(),
+            };
 
-                return;
+            const response = order
+                ? await axios.patch<OrderSaveResponse>(`/api/order/${order.id}`, payload)
+                : await axios.post<OrderSaveResponse>("/api/order", payload);
+
+            if (response.data.fiscalization.status === "failed") {
+                toast.error(order
+                    ? "Замовлення оновлено, але чек не створено"
+                    : "Замовлення створено, але чек не створено");
+            } else {
+                toast.success(order ? "Замовлення оновлено!" : "Замовлення створено!");
             }
-            else {
-                const payload = {
-                    ...data,
-                    warehouseNumber: selectedWarehouse?.number ? Number(selectedWarehouse.number) : null,
-                    phone: data.phone.replace(/\D/g, ""),
-                    ttnNumber: data.ttnNumber.trim(),
-                };
 
-                const response = order
-                    ? await axios.patch<OrderSaveResponse>(`/api/order/${order.id}`, payload)
-                    : await axios.post<OrderSaveResponse>("/api/order", payload);
-
-                if (response.data.fiscalization.status === "failed") {
-                    toast.error(order
-                        ? "Замовлення оновлено, але чек не створено"
-                        : "Замовлення створено, але чек не створено");
-                } else {
-                    toast.success(order ? "Замовлення оновлено!" : "Замовлення створено!");
-                }
-
-                reset();
-                setSelectedCity(null);
-                setSelectedWarehouse(null);
-                router.replace("/orders");
-            }
+            reset();
+            setSelectedCity(null);
+            setSelectedWarehouse(null);
+            router.replace("/orders");
+            return true;
         } catch(error: unknown) {
             console.error(error);
             toast.error(order ? "Помилка оновлення замовлення" : "Помилка створення замовлення");
+            return false;
         }
+    };
+
+    const onSubmit = async (data: FormValuesOrder) => {
+        if (!data.items.length) {
+            toast.error("Додайте товар замовлення")
+            document.getElementById("order-items")?.scrollIntoView({
+                behavior: "smooth",
+                block: "center",
+            });
+
+            return;
+        }
+
+        showConfirmationToast({
+            toastId: `save-order-receipt-${order?.id ?? "new"}`,
+            message: `Створити фіскальний чек для цього замовлення? ${order?.checkboxReceiptStatus === "DONE" && "У цього замовлення вже э чек"}`,
+            confirmLabel: "Створити чек",
+            cancelLabel: "Без чека",
+            pendingLabel: order ? "Збереження…" : "Створення…",
+            variant: "primary",
+            onConfirmAction: async () => {
+                if (!await saveOrder({...data, createFiscalReceipt: true})) throw new Error();
+            },
+            onCancelAction: async () => {
+                if (!await saveOrder({...data, createFiscalReceipt: false})) throw new Error();
+            },
+        });
     };
 
     return (
