@@ -212,20 +212,22 @@ const AddOrder = ({products, order}: Props) => {
             return;
         }
 
-        showConfirmationToast({
-            toastId: `save-order-receipt-${order?.id ?? "new"}`,
-            message: `Створити фіскальний чек для цього замовлення? ${order?.checkboxReceiptStatus === "DONE" && "У цього замовлення вже э чек"}`,
-            confirmLabel: "Створити чек",
-            cancelLabel: "Без чека",
-            pendingLabel: order ? "Збереження…" : "Створення…",
-            variant: "primary",
-            onConfirmAction: async () => {
-                if (!await saveOrder({...data, createFiscalReceipt: true})) throw new Error();
-            },
-            onCancelAction: async () => {
-                if (!await saveOrder({...data, createFiscalReceipt: false})) throw new Error();
-            },
-        });
+        if (data.createFiscalReceipt) {
+            showConfirmationToast({
+                toastId: `save-order-receipt-${order?.id ?? "new"}`,
+                message: `Створити фіскальний чек для цього замовлення? ${order?.checkboxReceiptStatus === "DONE" ? "У цього замовлення вже э чек" : ""}`,
+                confirmLabel: "Створити чек",
+                cancelLabel: "Без чека",
+                pendingLabel: order ? "Збереження…" : "Створення…",
+                variant: "primary",
+                onConfirmAction: async () => {
+                    if (!await saveOrder({...data, createFiscalReceipt: true})) throw new Error();
+                },
+                onCancelAction: async () => {
+                    if (!await saveOrder({...data, createFiscalReceipt: false})) throw new Error();
+                },
+            });
+        }
     };
 
     return (
