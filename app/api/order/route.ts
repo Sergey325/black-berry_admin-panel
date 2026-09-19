@@ -5,6 +5,7 @@ import {createTTN} from "@/app/lib/novaposhta";
 import {FormValuesOrder, isInitialPaymentSource} from "@/app/types";
 import {randomUUID} from "node:crypto";
 import {fiscalizeStorefrontOrder} from "@/app/lib/storefrontFiscalization";
+import {notifyStorefrontOrderTelegram} from "@/app/lib/storefrontOrderTelegram";
 
 type ManualOrderRequest = FormValuesOrder & {
     warehouseNumber: number | null;
@@ -67,6 +68,7 @@ export async function POST(request: Request) {
             },
         });
         const databaseDurationMs = Date.now() - databaseStartedAt;
+
         let ttnDurationMs: number | null = null;
         let fiscalizationDurationMs: number | null = null;
         let fiscalizationStatus: "skipped" | "done" | "failed" = "skipped";
@@ -134,6 +136,15 @@ export async function POST(request: Request) {
         } else {
             await createOrderTtn();
             await createInitialReceipt();
+        }
+
+        try {
+            await notifyStorefrontOrderTelegram(order.id);
+        } catch (error: unknown) {
+            console.error("[Storefront Telegram] Order notification failed", {
+                orderId: order.id,
+                error,
+            });
         }
 
         const totalDurationMs = Date.now() - requestStartedAt;
