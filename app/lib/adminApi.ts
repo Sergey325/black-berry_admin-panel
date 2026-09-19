@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyToken } from "@/app/lib/auth";
 import { cookies } from "next/headers";
 
-export async function isAdminRequest(request?: Request) {
-    const cookieStore = request ? new NextRequest(request).cookies : await cookies();
+export async function isAdminRequest(request?: NextRequest) {
+    const cookieStore = request ? request.cookies : await cookies();
     const token = cookieStore.get("admin_session")?.value;
     return token ? Boolean(await verifyToken(token)) : false;
 }
