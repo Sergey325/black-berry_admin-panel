@@ -4,6 +4,7 @@ import prisma from "@/app/lib/prisma";
 import {chunk, getStatusDocuments} from "@/app/lib/novaposhta";
 import {mapNPStatusToOrderStatus} from "@/app/lib/npStatusMapping";
 import {fiscalizeStorefrontOrder} from "@/app/lib/storefrontFiscalization";
+import {getOrderStatusUpdate} from "@/app/lib/orderStatus";
 
 const FINAL_ORDER_STATUSES = [
     OrderStatus.DELIVERED,
@@ -75,6 +76,8 @@ export async function processTtnUpdates() {
             select: {
                 id: true,
                 status: true,
+                paidAt: true,
+                paymentMethod: true,
                 ttnNumber: true,
             },
         });
@@ -113,15 +116,16 @@ export async function processTtnUpdates() {
 
                 const status = mapNPStatusToOrderStatus(statusDocument.StatusCode, order.status);
 
-                await prisma.order.update({
-                    where: {id: order.id},
+                const result = await prisma.order.updateMany({
+                    where: {id: order.id, status: order.status, paidAt: order.paidAt, paymentMethod: order.paymentMethod, ttnNumber: order.ttnNumber},
                     data: {
                         ttnStatus: statusDocument.Status,
                         ttnStatusCode: String(statusDocument.StatusCode),
                         ttnStatusUpdatedAt: updatedAt,
-                        ...(status === null ? {} : {status}),
+                        ...(status === null ? {} : getOrderStatusUpdate(order, status, updatedAt)),
                     },
                 });
+                if (result.count !== 1) throw new Error("Order changed during TTN update");
             }));
 
             for (const [resultIndex, result] of updateResults.entries()) {

@@ -7,6 +7,7 @@ import {formatDateAndTime} from "@/app/utils/formatDate";
 import axios from "axios";
 import Dropdown from "@/app/components/DropDown";
 import {FiCopy} from "react-icons/fi";
+import {canChangeOrderStatus} from "@/app/lib/orderStatus";
 
 type Props = {
     order: IOrder
@@ -55,7 +56,8 @@ export const orderStatuses: StatusOption[] = [
 const OrderSummary = ({order}: Props) => {
     const router = useRouter()
 
-    const statusOptions = orderStatuses.map((option) => ({
+    const statusOptions = orderStatuses.filter(({value}) => canChangeOrderStatus(order.status, value)
+        && (value !== OrderStatus.REFUNDED || order.paidAt !== null)).map((option) => ({
         ...option,
         onClick: () => onChangeStatus(option.value),
     }));

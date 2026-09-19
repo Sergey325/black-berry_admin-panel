@@ -1,4 +1,5 @@
 "use server";
+import {requireAdmin} from "@/app/lib/adminApi";
 
 import prisma from "@/app/lib/prisma";
 
@@ -8,6 +9,7 @@ export interface IMaterial {
 }
 
 export async function getMaterials() {
+    await requireAdmin();
     try {
         const materials = await prisma.material.findMany();
 

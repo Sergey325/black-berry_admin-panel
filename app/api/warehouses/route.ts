@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
+import {isAdminRequest, unauthorizedResponse} from "@/app/lib/adminApi";
 
 export async function POST(request: Request) {
+    if (!await isAdminRequest()) return unauthorizedResponse();
     try {
         const body = await request.json();
         console.log("sending warehouse request:", body);

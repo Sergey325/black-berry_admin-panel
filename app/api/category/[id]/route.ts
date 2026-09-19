@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
+import {isAdminRequest, unauthorizedResponse} from "@/app/lib/adminApi";
 import prisma from "@/app/lib/prisma";
 import {tryInvalidateStorefrontCache} from "@/app/lib/storefrontCache";
 
 export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
+    if (!await isAdminRequest()) return unauthorizedResponse();
     try {
         const { id } = await params;
         const categoryId = Number(id);

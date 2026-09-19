@@ -1,4 +1,5 @@
 "use server";
+import {requireAdmin} from "@/app/lib/adminApi";
 
 import prisma from "@/app/lib/prisma";
 import {Season} from "@prisma/client";
@@ -32,6 +33,7 @@ export interface ICategoriesParams {
 }
 
 export async function getCategories(params?: ICategoriesParams): Promise<ICategory[]> {
+    await requireAdmin();
     try {
         const { title} = params ?? {};
 

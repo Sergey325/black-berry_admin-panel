@@ -12,8 +12,8 @@ export async function signToken() {
 
 export async function verifyToken(token: string) {
     try {
-        const { payload } = await jwtVerify(token, secret);
-        return payload;
+        const { payload } = await jwtVerify(token, secret, {algorithms: ["HS256"]});
+        return payload.role === "admin" && typeof payload.exp === "number" ? payload : null;
     } catch {
         return null;
     }

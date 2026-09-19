@@ -1,4 +1,5 @@
 "use server";
+import {requireAdmin} from "@/app/lib/adminApi";
 
 import prisma from "@/app/lib/prisma";
 import {DEFAULT_CATALOG_COLORS} from "@/app/lib/defaultCatalogColors";
@@ -12,6 +13,7 @@ export interface ICatalogColor {
 }
 
 export async function getCatalogColors(): Promise<ICatalogColor[]> {
+    await requireAdmin();
     const colorCount = await prisma.catalogColor.count();
 
     if (colorCount === 0) {

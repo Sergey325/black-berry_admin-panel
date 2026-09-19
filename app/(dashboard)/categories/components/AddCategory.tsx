@@ -35,7 +35,7 @@ const getDefaultValues = (category?: ICategory): FormValuesCategory => ({
     isOnMainPage: category?.isOnMainPage ?? false,
     isDecoration: category?.isDecoration ?? false,
     defaultSizes: category?.defaultSizes ?? [],
-    specifications: category?.specifications.map(({ name, value }) => ({ name, value })) ?? [],
+    specifications: category?.specifications.map(({ id, name, value }) => ({ specificationId: id, name, value })) ?? [],
 });
 
 const AddCategory = ({ category, resetSelectedCategory}: Props) => {

@@ -1,4 +1,5 @@
 "use server";
+import {requireAdmin} from "@/app/lib/adminApi";
 
 import prisma from "@/app/lib/prisma";
 import {Prisma} from "@prisma/client";
@@ -159,6 +160,7 @@ const getProductOrderBy = (
 );
 
 export async function getProductList(params?: IProductsParams): Promise<IProductListItem[]> {
+    await requireAdmin();
     try {
         const {title, sort} = params ?? {};
         const products = await prisma.product.findMany({
@@ -190,6 +192,7 @@ export async function getProductList(params?: IProductsParams): Promise<IProduct
 }
 
 export async function getProductById(productId: number): Promise<IProduct | null> {
+    await requireAdmin();
     try {
         const product = await prisma.product.findUnique({
             where: {id: productId},
@@ -211,6 +214,7 @@ export async function getProductById(productId: number): Promise<IProduct | null
 }
 
 export async function getOrderProducts(): Promise<IOrderProduct[]> {
+    await requireAdmin();
     try {
         return await prisma.product.findMany({
             select: orderProductSelect,

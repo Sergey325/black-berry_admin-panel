@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
+import {isAdminRequest, unauthorizedResponse} from "@/app/lib/adminApi";
 import prisma from "@/app/lib/prisma";
 import {OrderStatus, PaymentMethod} from "@prisma/client";
 import {FormValuesOrder, isInitialPaymentSource} from "@/app/types";
 import {fiscalizeStorefrontOrder} from "@/app/lib/storefrontFiscalization";
+import {OrderItemError, reconcileOrderItems} from "@/app/lib/orderItems";
+import {getOrderStatusUpdate, OrderStatusError} from "@/app/lib/orderStatus";
 
 interface IParams {
     orderId: string;
@@ -28,6 +31,7 @@ export async function PATCH(
     request: Request,
     { params }: { params: Promise<IParams> }
 ) {
+    if (!await isAdminRequest()) return unauthorizedResponse();
     const requestStartedAt = Date.now();
 
     try {
@@ -50,9 +54,17 @@ export async function PATCH(
                 return NextResponse.json({error: "Invalid order status"}, {status: 400});
             }
 
-            await prisma.order.update({
-                where: {id},
-                data: {status: body.status},
+            await prisma.$transaction(async (transaction) => {
+                const order = await transaction.order.findUnique({
+                    where: {id},
+                    select: {status: true, paidAt: true, paymentMethod: true},
+                });
+                if (!order) throw new Error("Order not found");
+                const result = await transaction.order.updateMany({
+                    where: {id, status: order.status, paidAt: order.paidAt, paymentMethod: order.paymentMethod},
+                    data: getOrderStatusUpdate(order, body.status),
+                });
+                if (result.count !== 1) throw new OrderStatusError("Замовлення змінилося. Оновіть сторінку");
             });
 
             return NextResponse.json(null, {status: 200});
@@ -114,23 +126,9 @@ export async function PATCH(
                         ttnStatusCode: null,
                         ttnStatusUpdatedAt: null,
                     } : {}),
-                    items: {
-                        deleteMany: {},
-                        create: body.items.map((item) => ({
-                            productId: item.isCustom ? null : item.productId,
-                            name: item.name.trim(),
-                            price: item.price,
-                            quantity: item.quantity,
-                            color: item.color.trim() || null,
-                            colorCode: item.colorCode.trim() || null,
-                            colorName: item.colorName.trim() || null,
-                            size: item.size.trim() || null,
-                            imageUrl: item.imageUrl.trim() || null,
-                            isCustom: item.isCustom,
-                        })),
-                    },
                 },
             });
+            await reconcileOrderItems(transaction, id, body.items);
         });
         const transactionDurationMs = Date.now() - transactionStartedAt;
 
@@ -180,6 +178,8 @@ export async function PATCH(
             },
         }, {status: 200});
     } catch (error: unknown) {
+        if (error instanceof OrderStatusError) return NextResponse.json({error: error.message}, {status: 409});
+        if (error instanceof OrderItemError) return NextResponse.json({error: error.message}, {status: 400});
         console.error("[Order update] Failed", {
             totalDurationMs: Date.now() - requestStartedAt,
             error,

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import {isAdminRequest, unauthorizedResponse} from "@/app/lib/adminApi";
 import prisma from "@/app/lib/prisma";
 import {tryInvalidateStorefrontCache} from "@/app/lib/storefrontCache";
 
@@ -10,6 +11,7 @@ export async function DELETE(
     request: Request,
     { params }: { params: Promise<IParams> }
 ) {
+    if (!await isAdminRequest()) return unauthorizedResponse();
     try {
         const { productId } = await params;
 

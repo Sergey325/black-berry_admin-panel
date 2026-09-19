@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import {isAdminRequest, unauthorizedResponse} from "@/app/lib/adminApi";
 import { deleteCloudinaryImageByUrl } from "@/app/lib/cloudinary";
 
 type DeleteCloudinaryRequest = {
@@ -6,6 +7,7 @@ type DeleteCloudinaryRequest = {
 };
 
 export async function DELETE(req: Request) {
+    if (!await isAdminRequest()) return unauthorizedResponse();
     try {
         const body: DeleteCloudinaryRequest = await req.json();
 

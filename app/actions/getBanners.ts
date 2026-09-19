@@ -1,4 +1,5 @@
 "use server";
+import {requireAdmin} from "@/app/lib/adminApi";
 
 import prisma from "@/app/lib/prisma";
 
@@ -19,6 +20,7 @@ export interface IBannersParams {
 }
 
 export async function getBanners(params?: IBannersParams): Promise<IBanner[]> {
+    await requireAdmin();
     try{
         const title = params?.title?.trim();
 

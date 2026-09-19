@@ -1,4 +1,5 @@
 import {NextResponse} from "next/server";
+import {isAdminRequest, unauthorizedResponse} from "@/app/lib/adminApi";
 import prisma from "@/app/lib/prisma";
 import {persistProduct} from "@/app/api/product/persist-product";
 import {
@@ -10,6 +11,7 @@ import {
 import {tryInvalidateStorefrontCache} from "@/app/lib/storefrontCache";
 
 export async function POST(request: Request) {
+    if (!await isAdminRequest()) return unauthorizedResponse();
     try {
         const rawBody: unknown = await request.json();
         const body = parseProductRequest(rawBody);

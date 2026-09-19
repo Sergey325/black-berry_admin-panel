@@ -7,6 +7,10 @@ export async function proxy(request: NextRequest) {
     const payload = token ? await verifyToken(token) : null;
 
     const pathname = request.nextUrl.pathname;
+    if (pathname.startsWith("/api/")) {
+        if (pathname === "/api/login" || pathname === "/api/cron/update-ttn-status") return NextResponse.next();
+        return payload ? NextResponse.next() : NextResponse.json({error: "Необхідна авторизація"}, {status: 401});
+    }
     const isLoginPage = pathname === "/login";
     const isRootPage = pathname === "/";
 
@@ -33,6 +37,6 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
     matcher: [
-        "/((?!api|_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml).*)",
+        "/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml).*)",
     ],
 };

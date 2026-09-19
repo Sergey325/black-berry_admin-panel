@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import {isAdminRequest, unauthorizedResponse} from "@/app/lib/adminApi";
 import prisma from "@/app/lib/prisma";
 import {Prisma} from "@prisma/client";
 import {tryInvalidateStorefrontCache} from "@/app/lib/storefrontCache";
@@ -8,6 +9,7 @@ export async function PUT(
     req: Request,
     { params }: { params: Promise<{ id: string }> }
 ) {
+    if (!await isAdminRequest()) return unauthorizedResponse();
     const { id } = await params;
     const { name } = await req.json();
 
@@ -39,6 +41,7 @@ export async function DELETE(
     _req: Request,
     { params }: { params: Promise<{ id: string }> }
 ) {
+    if (!await isAdminRequest()) return unauthorizedResponse();
     const { id } = await params;
     const materialId = Number(id);
 

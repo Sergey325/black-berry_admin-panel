@@ -52,6 +52,7 @@ export type FormValuesCategory = {
     isDecoration: boolean;
     defaultSizes: string[];
     specifications: {
+        specificationId?: number;
         name: string;
         value: string;
     }[];
@@ -88,6 +89,7 @@ export type FormValuesOrder = {
 };
 
 export type OrderItem = {
+    orderItemId?: number;
     productId: number | null;
     productColorId: number | null;
     name: string;

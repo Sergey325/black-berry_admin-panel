@@ -1,4 +1,5 @@
 import {Prisma, PromoScopeType} from "@prisma/client";
+import {isAdminRequest, unauthorizedResponse} from "@/app/lib/adminApi";
 import {NextResponse} from "next/server";
 import prisma from "@/app/lib/prisma";
 import {parsePromoCodeInput} from "@/app/lib/promoCodeValidation";
@@ -16,6 +17,7 @@ const duplicateCodeResponse = () => NextResponse.json(
 );
 
 export async function GET(_request: Request, context: PromoCodeRouteContext) {
+    if (!await isAdminRequest()) return unauthorizedResponse();
     const id = await getId(context);
     if (!id) return NextResponse.json({error: "Invalid promo code ID"}, {status: 400});
 
@@ -52,6 +54,7 @@ export async function GET(_request: Request, context: PromoCodeRouteContext) {
 }
 
 export async function PATCH(request: Request, context: PromoCodeRouteContext) {
+    if (!await isAdminRequest()) return unauthorizedResponse();
     const id = await getId(context);
     if (!id) return NextResponse.json({error: "Invalid promo code ID"}, {status: 400});
 
@@ -107,6 +110,7 @@ export async function PATCH(request: Request, context: PromoCodeRouteContext) {
 }
 
 export async function DELETE(_request: Request, context: PromoCodeRouteContext) {
+    if (!await isAdminRequest()) return unauthorizedResponse();
     const id = await getId(context);
     if (!id) return NextResponse.json({error: "Invalid promo code ID"}, {status: 400});
 

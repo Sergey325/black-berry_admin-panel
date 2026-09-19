@@ -1,4 +1,5 @@
 import {Prisma, PromoScopeType} from "@prisma/client";
+import {isAdminRequest, unauthorizedResponse} from "@/app/lib/adminApi";
 import {NextResponse} from "next/server";
 import prisma from "@/app/lib/prisma";
 import {getPromoCodes} from "@/app/actions/getPromoCodes";
@@ -10,6 +11,7 @@ const duplicateCodeResponse = () => NextResponse.json(
 );
 
 export async function GET(request: Request) {
+    if (!await isAdminRequest()) return unauthorizedResponse();
     const {searchParams} = new URL(request.url);
     const title = searchParams.get("title") ?? searchParams.get("search") ?? undefined;
     const promoCodes = await getPromoCodes({title});
@@ -18,6 +20,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+    if (!await isAdminRequest()) return unauthorizedResponse();
     try {
         const parsed = parsePromoCodeInput(await request.json());
         if (!parsed.success) return NextResponse.json({error: parsed.error}, {status: 400});

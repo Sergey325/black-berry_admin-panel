@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
+import {isAdminRequest, unauthorizedResponse} from "@/app/lib/adminApi";
 import prisma from "@/app/lib/prisma";
 import {Prisma} from "@prisma/client";
 import {tryInvalidateStorefrontCache} from "@/app/lib/storefrontCache";
 
 export async function POST(req: Request) {
+    if (!await isAdminRequest()) return unauthorizedResponse();
     const { name } = await req.json();
 
     if (!name?.trim()) {

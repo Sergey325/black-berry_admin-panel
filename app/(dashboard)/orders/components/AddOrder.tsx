@@ -48,6 +48,7 @@ const paymentSourceOptions = [
 
 const AddOrder = ({products, order}: Props) => {
     const router = useRouter();
+    const [isSaving, setIsSaving] = useState(false);
     const [selectedCity, setSelectedCity] = useState<City | null>(() => order?.city ? {
         ref: order.cityRef ?? "",
         name: order.city,
@@ -77,8 +78,11 @@ const AddOrder = ({products, order}: Props) => {
             paymentSource: "MONOBANK",
             trafficSource: order?.trafficSource ?? null,
             items: order?.items.map((item) => ({
+                orderItemId: item.id,
                 productId: item.productId,
-                productColorId: null,
+                productColorId: products.find(({id}) => id === item.productId)?.colors.find((color) => (
+                    item.colorCode ? color.colorCode === item.colorCode : color.colorName === item.colorName && color.color === item.color
+                ))?.id ?? null,
                 name: item.name,
                 color: item.color ?? "",
                 colorName: item.colorName ?? "",
@@ -169,6 +173,7 @@ const AddOrder = ({products, order}: Props) => {
     const totalAmount = watchedItems?.reduce((acc, item) => acc + (item?.price ?? 0) * (item?.quantity ?? 0), 0) ?? 0;
 
     const saveOrder = async (data: FormValuesOrder) => {
+        setIsSaving(true);
         try {
             const payload = {
                 ...data,
@@ -198,6 +203,8 @@ const AddOrder = ({products, order}: Props) => {
             console.error(error);
             toast.error(order ? "Помилка оновлення замовлення" : "Помилка створення замовлення");
             return false;
+        } finally {
+            setIsSaving(false);
         }
     };
 
@@ -227,12 +234,14 @@ const AddOrder = ({products, order}: Props) => {
                     if (!await saveOrder({...data, createFiscalReceipt: false})) throw new Error();
                 },
             });
+        } else {
+            await saveOrder(data);
         }
     };
 
     return (
-        <div aria-busy={isSubmitting}>
-            {isSubmitting && (
+        <div aria-busy={isSubmitting || isSaving}>
+            {(isSubmitting || isSaving) && (
                 <div className="fixed inset-0 z-50 bg-white/80 backdrop-blur-sm" role="status" aria-label="Збереження замовлення">
                     <Loader />
                 </div>
@@ -389,6 +398,7 @@ const AddOrder = ({products, order}: Props) => {
                                     label: color.colorName,
                                     onClick: () => {
                                         setValue(`items.${index}.productColorId`, color.id);
+                                        setValue(`items.${index}.color`, color.color);
                                         setValue(`items.${index}.colorName`, color.colorName);
                                         setValue(`items.${index}.colorCode`, color.colorCode ?? "");
                                         setValue(`items.${index}.size`, color.sizes[0]?.size ?? "");
@@ -547,8 +557,8 @@ const AddOrder = ({products, order}: Props) => {
                     )}
                 </section>
 
-                <button type="submit" disabled={isSubmitting} className="rounded-lg bg-black py-3 text-base font-medium text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-60">
-                    {isSubmitting ? "Збереження..." : order ? "Оновити замовлення" : "Створити замовлення"}
+                <button type="submit" disabled={isSubmitting || isSaving} className="rounded-lg bg-black py-3 text-base font-medium text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-60">
+                    {isSubmitting || isSaving ? "Збереження..." : order ? "Оновити замовлення" : "Створити замовлення"}
                 </button>
 
             </form>

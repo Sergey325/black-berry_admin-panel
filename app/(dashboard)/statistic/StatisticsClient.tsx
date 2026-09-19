@@ -11,8 +11,8 @@ import StatusBreakdown from "@/app/(dashboard)/statistic/components/StatusBreakd
 import SummaryCard from "@/app/(dashboard)/statistic/components/SummaryCard";
 import { formatCurrency, getOrdersChange } from "@/app/(dashboard)/statistic/utils";
 import {MonthlyExpense, MonthlyStats} from "@/app/types";
-import { formatMonthPeriod, getMonthDistance, parseMonthPeriod } from "@/app/lib/adminApi";
-import type { MonthRange } from "@/app/lib/adminApi";
+import { formatMonthPeriod, getMonthDistance, parseMonthPeriod } from "@/app/lib/monthPeriods";
+import type { MonthRange } from "@/app/lib/monthPeriods";
 
 interface Props {
     range: MonthRange;

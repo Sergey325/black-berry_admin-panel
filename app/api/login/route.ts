@@ -4,9 +4,6 @@ import { signToken } from "@/app/lib/auth";
 
 export async function POST(request: Request) {
     const { password } = await request.json();
-    console.log("HASH:", process.env.ADMIN_PASSWORD_HASH);
-    console.log(process.env.NODE_ENV);
-    console.log(Object.keys(process.env));
     const isValid = await bcrypt.compare(password, process.env.ADMIN_PASSWORD_HASH!);
 
     if (!isValid) {

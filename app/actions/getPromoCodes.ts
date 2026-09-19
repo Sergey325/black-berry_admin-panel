@@ -1,4 +1,5 @@
 "use server";
+import {requireAdmin} from "@/app/lib/adminApi";
 
 import prisma from "@/app/lib/prisma";
 
@@ -28,6 +29,7 @@ export interface PromoCodesParams {
 }
 
 export async function getPromoCodes(params?: PromoCodesParams): Promise<PromoCodeListItem[]> {
+    await requireAdmin();
     const search = params?.title?.trim();
 
     return prisma.promoCode.findMany({
@@ -55,6 +57,7 @@ export async function getPromoCodeOptions(): Promise<{
     categories: PromoSelectOption[];
     products: PromoSelectOption[];
 }> {
+    await requireAdmin();
     const [categories, products] = await Promise.all([
         prisma.category.findMany({
             select: {id: true, name: true, coverImage: true},

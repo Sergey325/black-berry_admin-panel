@@ -1,7 +1,9 @@
 "use server";
+import {requireAdmin} from "@/app/lib/adminApi";
 
 import prisma from "@/app/lib/prisma";
 import {OrderStatus, PaymentMethod, Prisma, type TrafficSource} from "@prisma/client";
+import {getOrderSearchId} from "@/app/lib/orderSearch";
 
 export interface IOrderItem {
     id: number;
@@ -59,6 +61,7 @@ export interface IOrdersParams {
 }
 
 export async function getOrderById(orderId: number): Promise<IOrder | null> {
+    await requireAdmin();
     try {
         return await prisma.order.findUnique({
             where: {id: orderId},
@@ -70,10 +73,12 @@ export async function getOrderById(orderId: number): Promise<IOrder | null> {
 }
 
 export async function getOrders(params?: IOrdersParams) {
+    await requireAdmin();
     try {
         const { status, sort, search } = params ?? {};
         const searchTerm = search?.trim();
         const phoneSearch = searchTerm?.replace(/\D/g, "");
+        const searchId = searchTerm ? getOrderSearchId(searchTerm) : undefined;
 
         const orderBy: Prisma.OrderOrderByWithRelationInput =
             sort === "price_asc" ? { totalAmount: "asc" } :
@@ -90,7 +95,7 @@ export async function getOrders(params?: IOrdersParams) {
             ...(searchTerm
                 ? {
                     OR: [
-                        {id: {equals: Number(searchTerm)}},
+                        ...(searchId === undefined ? [] : [{id: {equals: searchId}}]),
                         {lastName: {contains: searchTerm, mode: "insensitive"}},
                         {email: {contains: searchTerm, mode: "insensitive"}},
                         {phone: {contains: searchTerm}},

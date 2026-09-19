@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import {isAdminRequest, unauthorizedResponse} from "@/app/lib/adminApi";
 import prisma from "@/app/lib/prisma";
 import { PaymentMethod } from "@prisma/client";
 import {createTTN} from "@/app/lib/novaposhta";
@@ -14,6 +15,7 @@ type ManualOrderRequest = FormValuesOrder & {
 export const maxDuration = 60;
 
 export async function POST(request: Request) {
+    if (!await isAdminRequest()) return unauthorizedResponse();
     const requestStartedAt = Date.now();
 
     try {

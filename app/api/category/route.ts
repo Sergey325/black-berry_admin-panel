@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server";
+import {isAdminRequest, unauthorizedResponse} from "@/app/lib/adminApi";
 import { Season } from "@prisma/client";
 import prisma from "@/app/lib/prisma";
 import {tryInvalidateStorefrontCache} from "@/app/lib/storefrontCache";
 
-type Specification = { name: string; value: string };
+import {CategorySpecificationError, reconcileCategorySpecifications, type CategorySpecificationInput} from "@/app/lib/categorySpecifications";
+
+type Specification = CategorySpecificationInput;
 
 const normalizeDefaultSizes = (value: unknown): string[] => {
     if (!Array.isArray(value)) {
@@ -16,10 +19,12 @@ const normalizeDefaultSizes = (value: unknown): string[] => {
 };
 
 export async function POST(request: Request) {
+    if (!await isAdminRequest()) return unauthorizedResponse();
     try {
         const body = await request.json();
         const id = Number(body.id);
         const specifications: Specification[] = (body.specifications ?? []).map((specification: Specification) => ({
+            specificationId: specification.specificationId,
             name: specification.name.trim(),
             value: specification.value.trim(),
         }));
@@ -63,24 +68,16 @@ export async function POST(request: Request) {
         };
 
         if (id) {
-            await prisma.$transaction([
-                prisma.categorySpecification.deleteMany({ where: { categoryId: id } }),
-                prisma.category.update({
-                    where: { id },
-                    data: {
-                        ...data,
-                        specifications: {
-                            create: specifications.map((specification, order) => ({ ...specification, order })),
-                        },
-                    },
-                }),
-            ]);
+            await prisma.$transaction(async (transaction) => {
+                await transaction.category.update({where: {id}, data});
+                await reconcileCategorySpecifications(transaction, id, specifications);
+            });
         } else {
             await prisma.category.create({
                 data: {
                     ...data,
                     specifications: {
-                        create: specifications.map((specification, order) => ({ ...specification, order })),
+                        create: specifications.map(({name, value}, order) => ({name, value, order})),
                     },
                 },
             });
@@ -89,6 +86,9 @@ export async function POST(request: Request) {
 
         return NextResponse.json({cacheInvalidated}, { status: 200 });
     } catch (error: unknown) {
+        if (error instanceof CategorySpecificationError) {
+            return NextResponse.json({error: error.message}, {status: 400});
+        }
         console.error(error);
         if ((error as { code?: string }).code === "P2002") {
             return NextResponse.json({ error: "Категорія з такою назвою вже існує" }, { status: 409 });

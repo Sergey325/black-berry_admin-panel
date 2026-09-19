@@ -1,10 +1,12 @@
 "use server";
+import {requireAdmin} from "@/app/lib/adminApi";
 
 import {getCatalogColors} from "@/app/actions/getCatalogColors";
 import {getMaterials} from "@/app/actions/getMaterials";
 import prisma from "@/app/lib/prisma";
 
 export async function getProductFormReferences() {
+    await requireAdmin();
     const [materials, categories, catalogColors] = await Promise.all([
         getMaterials(),
         prisma.category.findMany({

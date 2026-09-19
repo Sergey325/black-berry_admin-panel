@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import {isAdminRequest, unauthorizedResponse} from "@/app/lib/adminApi";
 import prisma from "@/app/lib/prisma";
 import {tryInvalidateStorefrontCache} from "@/app/lib/storefrontCache";
 
@@ -17,6 +18,7 @@ const stringValue = (value?: string) => value?.trim() ?? "";
 const nullableStringValue = (value?: string) => stringValue(value) || null;
 
 export async function POST(request: Request) {
+    if (!await isAdminRequest()) return unauthorizedResponse();
     try {
         const body: BannerRequest = await request.json();
         const id = body.id;
