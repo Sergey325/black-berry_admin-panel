@@ -380,12 +380,12 @@ const AddOrder = ({products, order}: Props) => {
                     {itemFields.map((field, index) => {
                         const currentItem = watchedItems?.[index];
                         const product = products.find(p => p.id === currentItem?.productId);
-                        const selectedColor = product?.colors.find(c => c.color === currentItem?.color);
+                        const selectedColor = product?.colors.find(c => c.id === currentItem?.productColorId);
                         const isCustom = currentItem?.isCustom ?? field.isCustom;
                         const colorsOptions =
                             product?.colors.map(color => {
                                 return {
-                                    value: color.color,
+                                    value: color.id,
                                     label: color.colorName,
                                     onClick: () => {
                                         setValue(`items.${index}.productColorId`, color.id);
@@ -461,7 +461,7 @@ const AddOrder = ({products, order}: Props) => {
                                             />
                                         ) : (
                                             <Dropdown
-                                                value={currentItem?.color}
+                                                value={currentItem?.productColorId}
                                                 options={colorsOptions}
                                                 className="min-w-0"
                                                 buttonClassName={"rounded-lg! px-2! sm:px-4!"}
