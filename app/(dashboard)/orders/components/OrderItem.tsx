@@ -1,12 +1,19 @@
 import {IOrderItem} from "@/app/actions/getOrders";
 import Image from "next/image";
 import {FiImage} from "react-icons/fi";
+import Link from "next/link";
 
 type Props = {
     orderItem: IOrderItem;
 };
 
 const OrderItem = ({orderItem}: Props) => {
+    const {product} = orderItem;
+    const shopUrl = process.env.NEXT_PUBLIC_SHOP_URL?.replace(/\/+$/, "");
+    const productUrl = !orderItem.isCustom && shopUrl && product?.slug && product.category?.slug
+        ? `${shopUrl}/catalog/${product.category.slug}/${product.id}-${product.slug}`
+        : null;
+
     return (
         <div className="grid gap-3 py-3 md:grid-cols-[minmax(0,1fr)_110px_90px_120px] md:items-center">
             <div className="flex min-w-0 items-center gap-3">
@@ -25,7 +32,19 @@ const OrderItem = ({orderItem}: Props) => {
                     </span>
                 )}
                 <p className="min-w-0 inline-flex gap-2 text-base font-medium text-gray-900 flex-wrap">
-                    <span className="break-words">{orderItem.name}</span>
+                    {productUrl ? (
+                        <Link
+                            href={productUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            prefetch={false}
+                            className="wrap-break-word font-medium text-gray-900 hover:text-primary transition-colors"
+                        >
+                            {orderItem.name}
+                        </Link>
+                    ) : (
+                        <span className="break-words">{orderItem.name}</span>
+                    )}
                     {orderItem.isCustom && <span className="rounded bg-amber-100 px-1.5 py-1 text-xs text-center font-medium text-amber-800 text-nowrap">Додано власноруч</span>}
                     {orderItem.colorName && <span className="rounded bg-gray-100 px-1.5 py-0.5 text-sm text-gray-700 text-nowrap">{orderItem.colorName}</span>}
                     {orderItem.size && <span className="rounded bg-gray-100 px-1.5 py-0.5 text-sm text-gray-700 text-nowrap">{orderItem.size}</span>}

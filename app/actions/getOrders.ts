@@ -9,6 +9,11 @@ export interface IOrderItem {
     id: number;
     orderId: number;
     productId: number | null;
+    product: {
+        id: number;
+        slug: string;
+        category: {slug: string} | null;
+    } | null;
     name: string;
     price: number;
     quantity: number;
@@ -60,13 +65,40 @@ export interface IOrdersParams {
     orderId?: string;
 }
 
+async function getOrderProducts(items: {productId: number | null; isCustom: boolean}[]) {
+    const productIds = [...new Set(items.flatMap(item =>
+        !item.isCustom && item.productId !== null ? [item.productId] : []
+    ))];
+    const products = productIds.length ? await prisma.product.findMany({
+        where: {id: {in: productIds}},
+        select: {
+            id: true,
+            slug: true,
+            category: {select: {slug: true}},
+        },
+    }) : [];
+
+    return new Map(products.map(product => [product.id, product]));
+}
+
 export async function getOrderById(orderId: number): Promise<IOrder | null> {
     await requireAdmin();
     try {
-        return await prisma.order.findUnique({
+        const order = await prisma.order.findUnique({
             where: {id: orderId},
             include: {items: true},
         });
+        if (!order) return null;
+
+        const products = await getOrderProducts(order.items);
+
+        return {
+            ...order,
+            items: order.items.map(item => ({
+                ...item,
+                product: !item.isCustom && item.productId !== null ? products.get(item.productId) ?? null : null,
+            })),
+        };
     } catch (error: unknown) {
         throw error instanceof Error ? error : new Error("Failed to get order")
     }
@@ -115,7 +147,15 @@ export async function getOrders(params?: IOrdersParams) {
             },
         });
 
-        return orders;
+        const products = await getOrderProducts(orders.flatMap(order => order.items));
+
+        return orders.map(order => ({
+            ...order,
+            items: order.items.map(item => ({
+                ...item,
+                product: !item.isCustom && item.productId !== null ? products.get(item.productId) ?? null : null,
+            })),
+        }));
     }
     catch (error: unknown) {
         throw error instanceof Error ? error : new Error("Failed to get orders")
