@@ -9,6 +9,7 @@ export interface IOrderItem {
     id: number;
     orderId: number;
     productId: number | null;
+    productColorId: number | null;
     product: {
         id: number;
         slug: string;
@@ -75,10 +76,30 @@ async function getOrderProducts(items: {productId: number | null; isCustom: bool
             id: true,
             slug: true,
             category: {select: {slug: true}},
+            colors: {select: {id: true, color: true, colorName: true, colorCode: true}},
         },
     }) : [];
 
     return new Map(products.map(product => [product.id, product]));
+}
+
+function enrichOrderItems<T extends {productId: number | null; isCustom: boolean; color: string | null; colorName: string | null; colorCode: string | null}>(
+    items: T[],
+    products: Awaited<ReturnType<typeof getOrderProducts>>,
+) {
+    return items.map(item => {
+        const product = !item.isCustom && item.productId !== null ? products.get(item.productId) : undefined;
+        const productColor = product?.colors.find(color => item.colorCode
+            ? color.colorCode === item.colorCode
+            : item.colorName !== null && item.color !== null && color.colorName === item.colorName && color.color === item.color
+        );
+
+        return {
+            ...item,
+            product: product ? {id: product.id, slug: product.slug, category: product.category} : null,
+            productColorId: productColor?.id ?? null,
+        };
+    });
 }
 
 export async function getOrderById(orderId: number): Promise<IOrder | null> {
@@ -94,10 +115,7 @@ export async function getOrderById(orderId: number): Promise<IOrder | null> {
 
         return {
             ...order,
-            items: order.items.map(item => ({
-                ...item,
-                product: !item.isCustom && item.productId !== null ? products.get(item.productId) ?? null : null,
-            })),
+            items: enrichOrderItems(order.items, products),
         };
     } catch (error: unknown) {
         throw error instanceof Error ? error : new Error("Failed to get order")
@@ -151,10 +169,7 @@ export async function getOrders(params?: IOrdersParams) {
 
         return orders.map(order => ({
             ...order,
-            items: order.items.map(item => ({
-                ...item,
-                product: !item.isCustom && item.productId !== null ? products.get(item.productId) ?? null : null,
-            })),
+            items: enrichOrderItems(order.items, products),
         }));
     }
     catch (error: unknown) {

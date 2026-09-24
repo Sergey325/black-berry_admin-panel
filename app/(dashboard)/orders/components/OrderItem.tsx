@@ -11,7 +11,7 @@ const OrderItem = ({orderItem}: Props) => {
     const {product} = orderItem;
     const shopUrl = process.env.NEXT_PUBLIC_SHOP_URL?.replace(/\/+$/, "");
     const productUrl = !orderItem.isCustom && shopUrl && product?.slug && product.category?.slug
-        ? `${shopUrl}/catalog/${product.category.slug}/${product.id}-${product.slug}`
+        ? `${shopUrl}/catalog/${product.category.slug}/${product.id}-${product.slug}${orderItem.productColorId !== null ? `?colorId=${orderItem.productColorId}` : ""}`
         : null;
 
     return (
