@@ -6,6 +6,7 @@ import {FormValuesOrder, isInitialPaymentSource} from "@/app/types";
 import {fiscalizeStorefrontOrder} from "@/app/lib/storefrontFiscalization";
 import {OrderItemError, reconcileOrderItems} from "@/app/lib/orderItems";
 import {getOrderStatusUpdate, OrderStatusError} from "@/app/lib/orderStatus";
+import {CASH_ON_DELIVERY_PREPAYMENT_AMOUNT, getOrderFullAmount} from "@/app/lib/orderTotal";
 
 interface IParams {
     orderId: string;
@@ -57,12 +58,24 @@ export async function PATCH(
             await prisma.$transaction(async (transaction) => {
                 const order = await transaction.order.findUnique({
                     where: {id},
-                    select: {status: true, paidAt: true, paymentMethod: true},
+                    select: {
+                        status: true,
+                        paidAt: true,
+                        paymentMethod: true,
+                        totalAmount: true,
+                        updatedAt: true,
+                        items: {select: {price: true, quantity: true}},
+                    },
                 });
                 if (!order) throw new Error("Order not found");
                 const result = await transaction.order.updateMany({
-                    where: {id, status: order.status, paidAt: order.paidAt, paymentMethod: order.paymentMethod},
-                    data: getOrderStatusUpdate(order, body.status),
+                    where: {id, status: order.status, paidAt: order.paidAt, paymentMethod: order.paymentMethod, totalAmount: order.totalAmount, updatedAt: order.updatedAt},
+                    data: {
+                        ...getOrderStatusUpdate(order, body.status),
+                        ...(body.status === OrderStatus.DELIVERED && order.paymentMethod === PaymentMethod.CASH_ON_DELIVERY
+                            ? {totalAmount: getOrderFullAmount(order)}
+                            : {}),
+                    },
                 });
                 if (result.count !== 1) throw new OrderStatusError("Замовлення змінилося. Оновіть сторінку");
             });
@@ -92,7 +105,7 @@ export async function PATCH(
                 where: {id},
                 select: {
                     ttnNumber: true,
-                    discountAmount: true,
+                    status: true,
                 },
             });
 
@@ -105,7 +118,9 @@ export async function PATCH(
             await transaction.order.update({
                 where: {id},
                 data: {
-                    totalAmount: Math.max(0, itemsSubtotal - (existingOrder.discountAmount ?? 0)),
+                    totalAmount: body.paymentMethod === PaymentMethod.CASH_ON_DELIVERY && existingOrder.status !== OrderStatus.DELIVERED
+                        ? CASH_ON_DELIVERY_PREPAYMENT_AMOUNT
+                        : Math.max(0, itemsSubtotal),
                     firstName: body.firstName,
                     lastName: body.lastName,
                     phone: normalizedPhone,

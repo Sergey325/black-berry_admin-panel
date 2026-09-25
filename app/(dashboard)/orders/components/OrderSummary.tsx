@@ -8,6 +8,7 @@ import axios from "axios";
 import Dropdown from "@/app/components/DropDown";
 import {FiCopy} from "react-icons/fi";
 import {canChangeOrderStatus} from "@/app/lib/orderStatus";
+import {getOrderFullAmount} from "@/app/lib/orderTotal";
 
 type Props = {
     order: IOrder
@@ -55,6 +56,7 @@ export const orderStatuses: StatusOption[] = [
 
 const OrderSummary = ({order}: Props) => {
     const router = useRouter()
+    const isDeliveredCashOnDelivery = order.paymentMethod === "CASH_ON_DELIVERY" && order.status === OrderStatus.DELIVERED;
 
     const statusOptions = orderStatuses.filter(({value}) => canChangeOrderStatus(order.status, value)
         && (value !== OrderStatus.REFUNDED || order.paidAt !== null)).map((option) => ({
@@ -117,10 +119,17 @@ const OrderSummary = ({order}: Props) => {
                         </div>
                     )
                 }
-                <div className="flex items-end justify-between gap-4 border-t border-gray-200 pt-4">
+                {order.paymentMethod === "CASH_ON_DELIVERY" && !isDeliveredCashOnDelivery && (
+                    <div className="flex items-end justify-between gap-4 border-t border-gray-300 pt-4">
+                        <div className="font-medium text-gray-700">Сума замовлення</div>
+                        <span className="text-lg font-semibold text-gray-950">{getOrderFullAmount(order).toLocaleString("uk-UA")} грн</span>
+                    </div>
+                )}
+                <div className="flex items-end justify-between gap-4 ">
                     <div className="font-medium text-gray-700">Усього оплачено</div>
-                    <span className="text-lg font-semibold text-gray-950">{order.totalAmount.toLocaleString("uk-UA")} грн</span>
+                    <span className="text-lg font-semibold text-gray-950">{(isDeliveredCashOnDelivery ? getOrderFullAmount(order) : order.totalAmount).toLocaleString("uk-UA")} грн</span>
                 </div>
+
             </div>
         </aside>
     );

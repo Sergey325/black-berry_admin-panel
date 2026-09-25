@@ -7,6 +7,7 @@ import {FormValuesOrder, isInitialPaymentSource} from "@/app/types";
 import {randomUUID} from "node:crypto";
 import {fiscalizeStorefrontOrder} from "@/app/lib/storefrontFiscalization";
 import {notifyStorefrontOrderTelegram} from "@/app/lib/storefrontOrderTelegram";
+import {CASH_ON_DELIVERY_PREPAYMENT_AMOUNT} from "@/app/lib/orderTotal";
 
 type ManualOrderRequest = FormValuesOrder & {
     warehouseNumber: number | null;
@@ -29,13 +30,14 @@ export async function POST(request: Request) {
         const normalizedPhone = phone.replace(/\D/g, "") || null;
 
         const totalAmount = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
+        const paidAmount = paymentMethod === PaymentMethod.CASH_ON_DELIVERY ? CASH_ON_DELIVERY_PREPAYMENT_AMOUNT : totalAmount;
         const databaseStartedAt = Date.now();
 
         const order = await prisma.order.create({
             data: {
                 status: "PAID",
                 publicToken: randomUUID(),
-                totalAmount,
+                totalAmount: paidAmount,
                 firstName,
                 lastName,
                 phone: normalizedPhone,
@@ -92,7 +94,7 @@ export async function POST(request: Request) {
                     recipientWarehouseRef: order.warehouseRef,
                     recipientWarehouseNumber: order.warehouseNumber.toString(),
                     serviceType: order.warehouse?.includes("Відділення") ? "WarehouseWarehouse" : "WarehousePostomat",
-                    cost: order.totalAmount,
+                    cost: totalAmount,
                     description: order.items.map((item) => item.name).join(", "),
                 });
 

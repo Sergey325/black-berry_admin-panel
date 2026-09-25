@@ -2,10 +2,22 @@ import { Prisma } from "@prisma/client";
 import prisma from "@/app/lib/prisma";
 import { getMonthDistance, getMonthPeriods } from "@/app/lib/adminApi";
 import type { MonthPeriod, MonthRange } from "@/app/lib/adminApi";
+import {CASH_ON_DELIVERY_PREPAYMENT_AMOUNT} from "@/app/lib/orderTotal";
 
 export const BUSINESS_TIME_ZONE = "Europe/Kyiv";
 
 const REVENUE_STATUSES = ["PAID", "PROCESSING", "SHIPPED", "ARRIVED", "DELIVERED"] as const;
+const cashOnDeliveryFullAmount = Prisma.sql`GREATEST(COALESCE("itemsAmount", "totalAmount"), 0)`;
+const cashOnDeliveryPrepayment = Prisma.sql`LEAST("totalAmount", ${CASH_ON_DELIVERY_PREPAYMENT_AMOUNT})`;
+const orderRevenueAmount = Prisma.sql`
+    CASE
+        WHEN "paymentMethod"::text = 'CASH_ON_DELIVERY' AND "status"::text = 'DELIVERED'
+            THEN ${cashOnDeliveryFullAmount}
+        WHEN "paymentMethod"::text = 'CASH_ON_DELIVERY'
+            THEN ${cashOnDeliveryPrepayment}
+        ELSE "totalAmount"
+    END
+`;
 
 interface SummaryRow {
     revenue: number;
@@ -170,18 +182,12 @@ async function getRevenueSummary(start: Date, end: Date) {
             GROUP BY o."id", o."status", o."paymentMethod", o."totalAmount"
         )
         SELECT
-            COALESCE(SUM(
-                CASE
-                    WHEN "paymentMethod"::text = 'CASH_ON_DELIVERY' AND "status"::text = 'DELIVERED'
-                        THEN COALESCE("itemsAmount", "totalAmount")
-                    ELSE "totalAmount"
-                END
-            ), 0)::double precision AS revenue,
+            COALESCE(SUM(${orderRevenueAmount}), 0)::double precision AS revenue,
             COUNT(*)::bigint AS "ordersCount",
             COALESCE(SUM(
                 CASE
                     WHEN "paymentMethod"::text = 'CASH_ON_DELIVERY' AND "status"::text <> 'DELIVERED'
-                        THEN GREATEST(COALESCE("itemsAmount", "totalAmount") - "totalAmount", 0)
+                        THEN GREATEST(${cashOnDeliveryFullAmount} - ${cashOnDeliveryPrepayment}, 0)
                     ELSE 0
                 END
             ), 0)::double precision AS "pendingCashOnDeliveryAmount"
@@ -260,13 +266,7 @@ export async function getStats(period: MonthRange): Promise<MonthlyStats> {
             )
             SELECT
                 TO_CHAR("paidAt" AT TIME ZONE ${BUSINESS_TIME_ZONE}, 'YYYY-MM-DD') AS date,
-                COALESCE(SUM(
-                    CASE
-                        WHEN "paymentMethod"::text = 'CASH_ON_DELIVERY' AND "status"::text = 'DELIVERED'
-                            THEN COALESCE("itemsAmount", "totalAmount")
-                        ELSE "totalAmount"
-                    END
-                ), 0)::double precision AS revenue,
+                COALESCE(SUM(${orderRevenueAmount}), 0)::double precision AS revenue,
                 COUNT(*)::bigint AS "ordersCount"
             FROM eligible_orders
             GROUP BY date

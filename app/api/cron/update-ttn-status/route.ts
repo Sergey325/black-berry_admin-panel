@@ -5,6 +5,7 @@ import {chunk, getStatusDocuments} from "@/app/lib/novaposhta";
 import {mapNPStatusToOrderStatus} from "@/app/lib/npStatusMapping";
 import {fiscalizeStorefrontOrder} from "@/app/lib/storefrontFiscalization";
 import {getOrderStatusUpdate} from "@/app/lib/orderStatus";
+import {getOrderFullAmount} from "@/app/lib/orderTotal";
 
 const FINAL_ORDER_STATUSES = [
     OrderStatus.DELIVERED,
@@ -78,6 +79,8 @@ export async function processTtnUpdates() {
                 status: true,
                 paidAt: true,
                 paymentMethod: true,
+                totalAmount: true,
+                updatedAt: true,
                 ttnNumber: true,
             },
         });
@@ -115,14 +118,18 @@ export async function processTtnUpdates() {
                 }
 
                 const status = mapNPStatusToOrderStatus(statusDocument.StatusCode, order.status);
+                const items = status === OrderStatus.DELIVERED && order.paymentMethod === PaymentMethod.CASH_ON_DELIVERY
+                    ? await prisma.orderItem.findMany({where: {orderId: order.id}, select: {price: true, quantity: true}})
+                    : null;
 
                 const result = await prisma.order.updateMany({
-                    where: {id: order.id, status: order.status, paidAt: order.paidAt, paymentMethod: order.paymentMethod, ttnNumber: order.ttnNumber},
+                    where: {id: order.id, status: order.status, paidAt: order.paidAt, paymentMethod: order.paymentMethod, totalAmount: order.totalAmount, updatedAt: order.updatedAt, ttnNumber: order.ttnNumber},
                     data: {
                         ttnStatus: statusDocument.Status,
                         ttnStatusCode: String(statusDocument.StatusCode),
                         ttnStatusUpdatedAt: updatedAt,
                         ...(status === null ? {} : getOrderStatusUpdate(order, status, updatedAt)),
+                        ...(items === null ? {} : {totalAmount: getOrderFullAmount({...order, items})}),
                     },
                 });
                 if (result.count !== 1) throw new Error("Order changed during TTN update");

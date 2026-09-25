@@ -9,6 +9,7 @@ import OrderCard from "@/app/(dashboard)/orders/components/OrderCard";
 import Dropdown from "@/app/components/DropDown";
 import {pluralizeUk} from "@/app/utils/pluralizeUk";
 import SearchInput from "@/app/components/SearchInput";
+import {getOrderFullAmount} from "@/app/lib/orderTotal";
 
 type Props = {
     orders: IOrder[],
@@ -122,7 +123,7 @@ const AllOrders = ({orders, onAdd, onEdit}: Props) => {
             {groupedOrders.map(([date, orders]) => {
                 const totalProfit = orders
                     .filter(order => profitStatuses.includes(order.status))
-                    .reduce((sum, order) => sum + order.totalAmount, 0);
+                    .reduce((sum, order) => sum + getOrderFullAmount(order), 0);
 
                 return (
                     <section key={date} className="space-y-3">

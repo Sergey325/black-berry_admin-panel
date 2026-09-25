@@ -19,6 +19,7 @@ import type {IOrder} from "@/app/actions/getOrders";
 import type {TrafficSource} from "@prisma/client";
 import Loader from "@/app/components/Loader";
 import {showConfirmationToast} from "@/app/components/ConfirmationToast";
+import {CASH_ON_DELIVERY_PREPAYMENT_AMOUNT} from "@/app/lib/orderTotal";
 
 type Props = {
     products: IOrderProduct[];
@@ -314,7 +315,7 @@ const AddOrder = ({products, order}: Props) => {
                 <section className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm md:p-5">
                     <h2 className="font-semibold text-gray-900">Спосіб оплати</h2>
                     <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                        {(totalAmount > 150 ? ["MONOBANK", "CASH_ON_DELIVERY"] : ["MONOBANK"] as const).map((method) => (
+                        {(totalAmount > CASH_ON_DELIVERY_PREPAYMENT_AMOUNT ? ["MONOBANK", "CASH_ON_DELIVERY"] : ["MONOBANK"] as const).map((method) => (
                             <label key={method} className={`flex cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 text-base font-medium transition ${paymentMethod === method ? "border-gray-900 bg-gray-50 text-gray-950" : "border-gray-200 text-gray-700 hover:border-gray-400 select-none"}`}>
                                 <input type="radio" value={method} {...register("paymentMethod")} className="accent-black" />
                                 <span>{method === "MONOBANK" ? "Повна оплата" : "Накладений платіж"}</span>
@@ -331,7 +332,7 @@ const AddOrder = ({products, order}: Props) => {
                             <span className="block text-base font-medium text-gray-900">Створити фіскальний чек</span>
                             <span className="mt-0.5 block text-sm leading-5 text-gray-600">
                                 {paymentMethod === "CASH_ON_DELIVERY"
-                                    ? "Буде створено чек передоплати 150 грн після збереження замовлення"
+                                    ? `Буде створено чек передоплати ${CASH_ON_DELIVERY_PREPAYMENT_AMOUNT} грн після збереження замовлення`
                                     : "Буде створено чек повної оплати після збереження замовлення"}
                             </span>
                         </span>
@@ -552,7 +553,7 @@ const AddOrder = ({products, order}: Props) => {
                     {itemFields.length > 0 && (
                         <div className="flex items-center justify-between rounded-lg bg-gray-900 px-4 py-3 text-white">
                             <span className="text-base text-gray-100">Сума замовлення</span>
-                            <span className="font-semibold">{paymentMethod === "CASH_ON_DELIVERY" ? "150" : totalAmount.toLocaleString("uk-UA")} грн</span>
+                            <span className="font-semibold">{(paymentMethod === "CASH_ON_DELIVERY" ? CASH_ON_DELIVERY_PREPAYMENT_AMOUNT : totalAmount).toLocaleString("uk-UA")} грн</span>
                         </div>
                     )}
                 </section>
