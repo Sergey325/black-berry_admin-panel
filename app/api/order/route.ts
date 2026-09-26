@@ -95,6 +95,7 @@ export async function POST(request: Request) {
                     recipientWarehouseNumber: order.warehouseNumber.toString(),
                     serviceType: order.warehouse?.includes("Відділення") ? "WarehouseWarehouse" : "WarehousePostomat",
                     cost: totalAmount,
+                    codAmount: paymentMethod === PaymentMethod.CASH_ON_DELIVERY ? Math.max(0, totalAmount - paidAmount) : 0,
                     description: order.items.map((item) => item.name).join(", "),
                 });
 

@@ -128,6 +128,7 @@ export async function createTTN({
     recipientWarehouseRef,
     recipientWarehouseNumber,
     cost,
+    codAmount,
     serviceType,
     description,
 }: {
@@ -138,6 +139,7 @@ export async function createTTN({
     recipientWarehouseRef: string;
     recipientWarehouseNumber: string;
     cost: number;
+    codAmount: number;
     serviceType: string;
     description: string;
 }) {
@@ -148,6 +150,7 @@ export async function createTTN({
         recipientCityRef,
         recipientWarehouseNumber,
         cost,
+        codAmount,
         serviceType,
         description,
     });
@@ -199,6 +202,7 @@ export async function createTTN({
             ],
             Description: `Одяг: ${description}`,
             Cost: cost,
+            AfterpaymentOnGoodsCost: codAmount > 0 ? String(codAmount) : undefined,
         },
     };
     console.log("[createTTN] InternetDocument payload methodProperties:", JSON.stringify(payload.methodProperties, null, 2));
