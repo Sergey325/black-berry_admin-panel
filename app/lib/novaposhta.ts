@@ -1,5 +1,6 @@
 const API_URL = "https://api.novaposhta.ua/v2.0/json/";
 const API_KEY = process.env.NOVA_POSHTA_API_KEY!;
+const MAX_DESCRIPTION_LENGTH = 100;
 
 export interface NovaPoshtaDocument {
     Number: string;
@@ -168,6 +169,11 @@ export async function createTTN({
     });
     console.log("[createTTN] recipientRef:", recipientRef, "contactRecipientRef:", contactRecipientRef);
 
+    const fullDescription = Array.from(`Одяг: ${description}`);
+    const shipmentDescription = fullDescription.length <= MAX_DESCRIPTION_LENGTH
+        ? fullDescription.join("")
+        : `${fullDescription.slice(0, MAX_DESCRIPTION_LENGTH - 1).join("").trimEnd().replace(/,$/, "")}…`;
+
     const payload = {
         apiKey: API_KEY,
         modelName: "InternetDocument",
@@ -200,7 +206,7 @@ export async function createTTN({
                     volumetricVolume: 0.002
                 }
             ],
-            Description: `Одяг: ${description}`,
+            Description: shipmentDescription,
             Cost: cost,
             AfterpaymentOnGoodsCost: codAmount > 0 ? String(codAmount) : undefined,
         },
