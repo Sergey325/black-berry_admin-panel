@@ -13,14 +13,14 @@ const Orders = async ({searchParams}: Props) => {
     const isFormOpen = params.tab === "AddOrder";
     const orderId = Number(params.orderId);
     const hasOrderId = Number.isInteger(orderId) && orderId > 0;
-    const [orders, order, products] = await Promise.all([
-        isFormOpen ? Promise.resolve([]) : getOrders(params),
+    const [ordersPage, order, products] = await Promise.all([
+        isFormOpen ? Promise.resolve(null) : getOrders(params),
         isFormOpen && hasOrderId ? getOrderById(orderId) : null,
         isFormOpen ? getOrderProducts() : Promise.resolve([]),
     ]);
 
     return (
-        <OrdersClient orders={orders} order={order} products={products}/>
+        <OrdersClient ordersPage={ordersPage} ordersParams={params} ordersVersion={crypto.randomUUID()} order={order} products={products}/>
     );
 };
 

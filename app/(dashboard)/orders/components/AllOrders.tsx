@@ -1,33 +1,84 @@
-import {IOrder} from "@/app/actions/getOrders";
+import {getOrders, type IOrder, type IOrdersPage, type IOrdersParams} from "@/app/actions/getOrders";
 import {orderStatuses} from "@/app/(dashboard)/orders/components/OrderSummary";
-import {useCallback, useMemo} from "react";
+import {useCallback, useEffect, useMemo, useRef, useState} from "react";
 import {useRouter, useSearchParams} from "next/navigation";
 import qs from "query-string";
 import {FiPlus} from "react-icons/fi";
-import {formatDate} from "@/app/utils/formatDate";
+import {AiOutlineLoading} from "react-icons/ai";
+import {formatDate, getOrderDateKey} from "@/app/utils/formatDate";
 import OrderCard from "@/app/(dashboard)/orders/components/OrderCard";
 import Dropdown from "@/app/components/DropDown";
 import {pluralizeUk} from "@/app/utils/pluralizeUk";
 import SearchInput from "@/app/components/SearchInput";
-import {getOrderFullAmount} from "@/app/lib/orderTotal";
 
 type Props = {
-    orders: IOrder[],
+    initialPage: IOrdersPage;
+    filters: IOrdersParams;
     onAdd: () => void;
     onEdit: (order: IOrder) => void;
 };
 
-const profitStatuses = [
-    "PAID",
-    "PROCESSING",
-    "SHIPPED",
-    "ARRIVED",
-    "DELIVERED",
-];
-
-const AllOrders = ({orders, onAdd, onEdit}: Props) => {
+const AllOrders = ({initialPage, filters, onAdd, onEdit}: Props) => {
     const params = useSearchParams()
     const router = useRouter()
+    const [page, setPage] = useState(initialPage);
+    const [isLoading, setIsLoading] = useState(false);
+    const [loadError, setLoadError] = useState<string | null>(null);
+    const loadTrigger = useRef<HTMLDivElement>(null);
+    const requestInFlight = useRef(false);
+    const isMounted = useRef(false);
+    const {orders, nextCursor, dailySummaries} = page;
+
+    useEffect(() => {
+        isMounted.current = true;
+        return () => {
+            isMounted.current = false;
+        };
+    }, []);
+
+    const loadMore = useCallback(async () => {
+        if (!isMounted.current || !nextCursor || requestInFlight.current) return;
+
+        requestInFlight.current = true;
+        setIsLoading(true);
+        setLoadError(null);
+
+        try {
+            const nextPage = await getOrders(filters, nextCursor);
+            if (!isMounted.current) return;
+
+            setPage(currentPage => {
+                const loadedIds = new Set(currentPage.orders.map(order => order.id));
+                const summaries = new Map(currentPage.dailySummaries.map(summary => [summary.date, summary]));
+                nextPage.dailySummaries.forEach(summary => summaries.set(summary.date, summary));
+
+                return {
+                    orders: [...currentPage.orders, ...nextPage.orders.filter(order => !loadedIds.has(order.id))],
+                    nextCursor: nextPage.nextCursor,
+                    dailySummaries: [...summaries.values()],
+                };
+            });
+        } catch {
+            if (isMounted.current) {
+                setLoadError("Не вдалося завантажити замовлення. Спробуйте ще раз.");
+            }
+        } finally {
+            requestInFlight.current = false;
+            if (isMounted.current) setIsLoading(false);
+        }
+    }, [filters, nextCursor]);
+
+    useEffect(() => {
+        const trigger = loadTrigger.current;
+        if (!trigger || !nextCursor || isLoading || loadError || typeof IntersectionObserver === "undefined") return;
+
+        const observer = new IntersectionObserver(entries => {
+            if (entries.some(entry => entry.isIntersecting)) void loadMore();
+        }, {rootMargin: "300px"});
+        observer.observe(trigger);
+
+        return () => observer.disconnect();
+    }, [isLoading, loadError, loadMore, nextCursor]);
 
     const status = useMemo(() => {
         return params?.get("status") || "All";
@@ -63,7 +114,7 @@ const AllOrders = ({orders, onAdd, onEdit}: Props) => {
 
     const groupedOrders = Object.entries(
         orders.reduce((acc, order) => {
-            const date = formatDate(order.createdAt);
+            const date = getOrderDateKey(order.createdAt);
 
             if (!acc[date]) {
                 acc[date] = [];
@@ -121,9 +172,7 @@ const AllOrders = ({orders, onAdd, onEdit}: Props) => {
                 </div>
             )}
             {groupedOrders.map(([date, orders]) => {
-                const totalProfit = orders
-                    .filter(order => profitStatuses.includes(order.status))
-                    .reduce((sum, order) => sum + getOrderFullAmount(order), 0);
+                const summary = dailySummaries.find(summary => summary.date === date);
 
                 return (
                     <section key={date} className="space-y-3">
@@ -131,10 +180,10 @@ const AllOrders = ({orders, onAdd, onEdit}: Props) => {
                             <div className="h-px flex-1 bg-gray-200" />
                             <div className="whitespace-nowrap rounded-full border border-gray-200 bg-white px-4 py-2 text-center shadow-sm">
                                 <div className="text-base font-semibold text-gray-900">
-                                    {date}
+                                    {formatDate(orders[0].createdAt)}
                                 </div>
                                 <div className="mt-0.5 text-sm text-gray-600">
-                                    {orders.length} {pluralizeUk(orders.length, ["замовлення", "замовлення", "замовлень"])} · {totalProfit.toLocaleString("uk-UA")} грн
+                                    {summary?.ordersCount ?? orders.length} {pluralizeUk(summary?.ordersCount ?? orders.length, ["замовлення", "замовлення", "замовлень"])} · {(summary?.totalAmount ?? 0).toLocaleString("uk-UA")} грн
                                 </div>
                             </div>
                             <div className="h-px flex-1 bg-gray-200" />
@@ -145,6 +194,27 @@ const AllOrders = ({orders, onAdd, onEdit}: Props) => {
                     </section>
                 );
             })}
+            {nextCursor && (
+                <div ref={loadTrigger} className="flex min-h-20 flex-col items-center justify-center gap-3" aria-live="polite" aria-busy={isLoading}>
+                    {isLoading ? (
+                        <div role="status" className="flex items-center gap-2 text-sm text-gray-600">
+                            <AiOutlineLoading className="size-5 animate-spin" aria-hidden="true"/>
+                            Завантаження замовлень...
+                        </div>
+                    ) : (
+                        <>
+                            {loadError && <p role="alert" className="text-center text-sm text-red-600">{loadError}</p>}
+                            <button
+                                type="button"
+                                onClick={() => void loadMore()}
+                                className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+                            >
+                                {loadError ? "Спробувати ще раз" : "Завантажити ще"}
+                            </button>
+                        </>
+                    )}
+                </div>
+            )}
         </div>
     );
 };

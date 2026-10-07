@@ -2,8 +2,9 @@
 import {requireAdmin} from "@/app/lib/adminApi";
 
 import prisma from "@/app/lib/prisma";
-import {OrderStatus, PaymentMethod, Prisma, type TrafficSource} from "@prisma/client";
-import {getOrderSearchId} from "@/app/lib/orderSearch";
+import {OrderStatus, PaymentMethod, type TrafficSource} from "@prisma/client";
+import {getDailyOrderSummaryQuery, getOrderFilters, getOrderPageQuery, ORDERS_PAGE_SIZE} from "@/app/lib/orderPagination";
+import {getOrderDateKey} from "@/app/utils/formatDate";
 
 export interface IOrderItem {
     id: number;
@@ -66,6 +67,24 @@ export interface IOrdersParams {
     orderId?: string;
 }
 
+export interface IOrdersCursor {
+    id: number;
+    createdAt: string;
+    totalAmount: number;
+}
+
+export interface IOrderDailySummary {
+    date: string;
+    ordersCount: number;
+    totalAmount: number;
+}
+
+export interface IOrdersPage {
+    orders: IOrder[];
+    nextCursor: IOrdersCursor | null;
+    dailySummaries: IOrderDailySummary[];
+}
+
 async function getOrderProducts(items: {productId: number | null; isCustom: boolean}[]) {
     const productIds = [...new Set(items.flatMap(item =>
         !item.isCustom && item.productId !== null ? [item.productId] : []
@@ -122,55 +141,42 @@ export async function getOrderById(orderId: number): Promise<IOrder | null> {
     }
 }
 
-export async function getOrders(params?: IOrdersParams) {
+export async function getOrders(params?: IOrdersParams, cursor?: IOrdersCursor): Promise<IOrdersPage> {
     await requireAdmin();
     try {
-        const { status, sort, search } = params ?? {};
-        const searchTerm = search?.trim();
-        const phoneSearch = searchTerm?.replace(/\D/g, "");
-        const searchId = searchTerm ? getOrderSearchId(searchTerm) : undefined;
-
-        const orderBy: Prisma.OrderOrderByWithRelationInput =
-            sort === "price_asc" ? { totalAmount: "asc" } :
-                sort === "price_desc" ? { totalAmount: "desc" } :
-                    sort === "oldest" ? { createdAt: "asc" } :
-                        { createdAt: "desc" } // newest по умолчанию
-
-        const where: Prisma.OrderWhereInput = {
-            ...(status === "All"
-                ? {}
-                : status
-                    ? {status: status as OrderStatus}
-                    : {status: {not: OrderStatus.PENDING}}),
-            ...(searchTerm
-                ? {
-                    OR: [
-                        ...(searchId === undefined ? [] : [{id: {equals: searchId}}]),
-                        {lastName: {contains: searchTerm, mode: "insensitive"}},
-                        {email: {contains: searchTerm, mode: "insensitive"}},
-                        {phone: {contains: searchTerm}},
-                        ...(phoneSearch && phoneSearch !== searchTerm
-                            ? [{phone: {contains: phoneSearch}}]
-                            : []),
-                    ],
-                }
-                : {}),
-        };
-
-        const orders = await prisma.order.findMany({
-            where,
-            orderBy,
+        const filters = getOrderFilters(params);
+        const pageQuery = getOrderPageQuery(params, cursor);
+        const result = await prisma.order.findMany({
+            where: {AND: [filters.where, pageQuery.where]},
+            orderBy: pageQuery.orderBy,
+            take: ORDERS_PAGE_SIZE + 1,
             include: {
                 items: true,
             },
         });
 
-        const products = await getOrderProducts(orders.flatMap(order => order.items));
+        const orders = result.slice(0, ORDERS_PAGE_SIZE);
+        const dates = [...new Set(orders.map(order => getOrderDateKey(order.createdAt)))];
+        const [products, dailySummaries] = await Promise.all([
+            getOrderProducts(orders.flatMap(order => order.items)),
+            dates.length
+                ? prisma.$queryRaw<IOrderDailySummary[]>(getDailyOrderSummaryQuery(dates, filters.sql))
+                : Promise.resolve([]),
+        ]);
+        const lastOrder = orders[orders.length - 1];
 
-        return orders.map(order => ({
-            ...order,
-            items: enrichOrderItems(order.items, products),
-        }));
+        return {
+            orders: orders.map(order => ({
+                ...order,
+                items: enrichOrderItems(order.items, products),
+            })),
+            nextCursor: result.length > ORDERS_PAGE_SIZE && lastOrder ? {
+                id: lastOrder.id,
+                createdAt: lastOrder.createdAt.toISOString(),
+                totalAmount: lastOrder.totalAmount,
+            } : null,
+            dailySummaries,
+        };
     }
     catch (error: unknown) {
         throw error instanceof Error ? error : new Error("Failed to get orders")

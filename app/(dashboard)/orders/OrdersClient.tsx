@@ -2,19 +2,21 @@
 
 import {useCallback, useMemo} from "react";
 import {useRouter, useSearchParams} from "next/navigation";
-import {IOrder} from "@/app/actions/getOrders";
+import type {IOrder, IOrdersPage, IOrdersParams} from "@/app/actions/getOrders";
 import AddOrder from "@/app/(dashboard)/orders/components/AddOrder";
 import AllOrders from "@/app/(dashboard)/orders/components/AllOrders";
 import {IOrderProduct} from "@/app/actions/getProducts";
 import DashboardPageHeader from "@/app/(dashboard)/components/DashboardPageHeader";
 
 type Props = {
-    orders: IOrder[];
+    ordersPage: IOrdersPage | null;
+    ordersParams: IOrdersParams;
+    ordersVersion: string;
     order: IOrder | null;
     products: IOrderProduct[];
 };
 
-export default function OrdersClient({orders, order, products}: Props) {
+export default function OrdersClient({ordersPage, ordersParams, ordersVersion, order, products}: Props) {
     const params = useSearchParams()
     const router = useRouter()
 
@@ -47,7 +49,7 @@ export default function OrdersClient({orders, order, products}: Props) {
             <div className="mt-7">
             {
                 tab === "AllOrders"
-                    ? <AllOrders orders={orders} onAdd={() => navigateToForm()} onEdit={(selectedOrder) => navigateToForm(selectedOrder.id)}/>
+                    ? ordersPage && <AllOrders key={ordersVersion} initialPage={ordersPage} filters={ordersParams} onAdd={() => navigateToForm()} onEdit={(selectedOrder) => navigateToForm(selectedOrder.id)}/>
                     : <AddOrder key={order?.id ?? "new"} products={products} order={order || undefined}/>
             }
             </div>
