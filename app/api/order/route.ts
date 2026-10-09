@@ -16,11 +16,17 @@ type ManualOrderRequest = FormValuesOrder & {
 export const maxDuration = 60;
 
 export async function POST(request: Request) {
+    console.log("process.env.NODE_ENV: ", process.env.NODE_ENV);
+
     if (!await isAdminRequest()) return unauthorizedResponse();
     const requestStartedAt = Date.now();
 
     try {
         const body = await request.json() as ManualOrderRequest;
+
+        if (body.isWholesale !== undefined && typeof body.isWholesale !== "boolean") {
+            return NextResponse.json({error: "Invalid wholesale flag"}, {status: 400});
+        }
 
         if (body.createFiscalReceipt && !isInitialPaymentSource(body.paymentSource)) {
             return NextResponse.json({error: "Invalid initial payment source"}, {status: 400});
@@ -51,6 +57,7 @@ export async function POST(request: Request) {
                 warehouseRef: warehouseRef,
                 paymentMethod: paymentMethod as PaymentMethod,
                 trafficSource,
+                isWholesale: body.isWholesale ?? false,
                 paidAt: new Date(),
                 items: {
                     create: items.map((item) => ({
@@ -143,13 +150,15 @@ export async function POST(request: Request) {
             await createInitialReceipt();
         }
 
-        try {
-            await notifyStorefrontOrderTelegram(order.id);
-        } catch (error: unknown) {
-            console.error("[Storefront Telegram] Order notification failed", {
-                orderId: order.id,
-                error,
-            });
+        if (process.env.NODE_ENV === "production") {
+            try {
+                await notifyStorefrontOrderTelegram(order.id);
+            } catch (error: unknown) {
+                console.error("[Storefront Telegram] Order notification failed", {
+                    orderId: order.id,
+                    error,
+                });
+            }
         }
 
         const totalDurationMs = Date.now() - requestStartedAt;

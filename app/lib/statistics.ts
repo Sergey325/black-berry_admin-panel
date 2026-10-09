@@ -22,6 +22,7 @@ const orderRevenueAmount = Prisma.sql`
 interface SummaryRow {
     revenue: number;
     ordersCount: bigint;
+    averageOrderValue: number;
     pendingCashOnDeliveryAmount: number;
 }
 
@@ -173,17 +174,19 @@ async function getRevenueSummary(start: Date, end: Date) {
                 o."status",
                 o."paymentMethod",
                 o."totalAmount",
+                o."isWholesale",
                 SUM(oi."price" * oi."quantity") AS "itemsAmount"
             FROM "Order" o
             LEFT JOIN "OrderItem" oi ON oi."orderId" = o."id"
             WHERE o."paidAt" >= ${start}
               AND o."paidAt" < ${end}
               AND o."status"::text IN (${Prisma.join(REVENUE_STATUSES)})
-            GROUP BY o."id", o."status", o."paymentMethod", o."totalAmount"
+            GROUP BY o."id", o."status", o."paymentMethod", o."totalAmount", o."isWholesale"
         )
         SELECT
             COALESCE(SUM(${orderRevenueAmount}), 0)::double precision AS revenue,
             COUNT(*)::bigint AS "ordersCount",
+            COALESCE(AVG(${orderRevenueAmount}) FILTER (WHERE "isWholesale" = false), 0)::double precision AS "averageOrderValue",
             COALESCE(SUM(
                 CASE
                     WHEN "paymentMethod"::text = 'CASH_ON_DELIVERY' AND "status"::text <> 'DELIVERED'
@@ -197,6 +200,7 @@ async function getRevenueSummary(start: Date, end: Date) {
     return {
         revenue: Number(rows[0]?.revenue ?? 0),
         ordersCount: Number(rows[0]?.ordersCount ?? 0),
+        averageOrderValue: Number(rows[0]?.averageOrderValue ?? 0),
         pendingCashOnDeliveryAmount: Number(rows[0]?.pendingCashOnDeliveryAmount ?? 0),
     };
 }
@@ -296,6 +300,7 @@ export async function getStats(period: MonthRange): Promise<MonthlyStats> {
             WHERE o."paidAt" >= ${range.start}
               AND o."paidAt" < ${range.end}
               AND o."status"::text IN (${Prisma.join(REVENUE_STATUSES)})
+              AND o."isWholesale" = false
             GROUP BY oi."productId", CASE WHEN oi."productId" IS NULL THEN oi."name" ELSE NULL END
             ORDER BY "totalSold" DESC, revenue DESC
             LIMIT 10
@@ -325,6 +330,7 @@ export async function getStats(period: MonthRange): Promise<MonthlyStats> {
             WHERE o."paidAt" >= ${range.start}
               AND o."paidAt" < ${range.end}
               AND o."status"::text IN (${Prisma.join(REVENUE_STATUSES)})
+              AND o."isWholesale" = false
             GROUP BY c."id", c."name"
             ORDER BY "totalSold" DESC, revenue DESC
             LIMIT 10
@@ -340,6 +346,7 @@ export async function getStats(period: MonthRange): Promise<MonthlyStats> {
             WHERE o."paidAt" >= ${range.start}
               AND o."paidAt" < ${range.end}
               AND o."status"::text IN (${Prisma.join(REVENUE_STATUSES)})
+              AND o."isWholesale" = false
               AND oi."color" IS NOT NULL
             GROUP BY oi."color"
             ORDER BY "totalSold" DESC, color ASC
@@ -366,7 +373,7 @@ export async function getStats(period: MonthRange): Promise<MonthlyStats> {
         expenses: round(expenses),
         netProfit,
         ordersCount: summary.ordersCount,
-        averageOrderValue: summary.ordersCount === 0 ? 0 : round(summary.revenue / summary.ordersCount),
+        averageOrderValue: round(summary.averageOrderValue),
         pendingCashOnDeliveryAmount: round(summary.pendingCashOnDeliveryAmount),
         refundedAmount: round(Number(refundRows[0]?.refundedAmount ?? 0)),
         refundedOrdersCount: Number(refundRows[0]?.refundedOrdersCount ?? 0),

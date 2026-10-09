@@ -75,6 +75,7 @@ const AddOrder = ({products, order}: Props) => {
             warehouseRef: order?.warehouseRef ?? "",
             ttnNumber: order?.ttnNumber ?? "",
             paymentMethod: order?.paymentMethod ?? "MONOBANK",
+            isWholesale: order?.isWholesale ?? false,
             createFiscalReceipt: order ? order.checkboxReceiptStatus !== "DONE" : true,
             paymentSource: "MONOBANK",
             trafficSource: order?.trafficSource ?? null,
@@ -314,6 +315,14 @@ const AddOrder = ({products, order}: Props) => {
 
                 <section className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm md:p-5">
                     <h2 className="font-semibold text-gray-900">Спосіб оплати</h2>
+                    <label className="mt-4 flex cursor-pointer items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 transition hover:border-gray-300">
+                        <input
+                            type="checkbox"
+                            {...register("isWholesale")}
+                            className="size-4 shrink-0 accent-black"
+                        />
+                        <span className="text-base font-medium text-gray-900">Оптове замовлення</span>
+                    </label>
                     <div className="mt-4 grid gap-3 sm:grid-cols-2">
                         {(totalAmount > CASH_ON_DELIVERY_PREPAYMENT_AMOUNT ? ["MONOBANK", "CASH_ON_DELIVERY"] : ["MONOBANK"] as const).map((method) => (
                             <label key={method} className={`flex cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 text-base font-medium transition ${paymentMethod === method ? "border-gray-900 bg-gray-50 text-gray-950" : "border-gray-200 text-gray-700 hover:border-gray-400 select-none"}`}>

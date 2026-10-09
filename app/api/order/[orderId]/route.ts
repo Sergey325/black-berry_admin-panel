@@ -87,6 +87,10 @@ export async function PATCH(
             return NextResponse.json({error: "Order must contain at least one item"}, {status: 400});
         }
 
+        if (body.isWholesale !== undefined && typeof body.isWholesale !== "boolean") {
+            return NextResponse.json({error: "Invalid wholesale flag"}, {status: 400});
+        }
+
         if (body.createFiscalReceipt && !isInitialPaymentSource(body.paymentSource)) {
             return NextResponse.json({error: "Invalid initial payment source"}, {status: 400});
         }
@@ -134,6 +138,7 @@ export async function PATCH(
                     warehouseRef: body.warehouseRef,
                     paymentMethod: body.paymentMethod as PaymentMethod,
                     trafficSource: body.trafficSource,
+                    ...(body.isWholesale !== undefined ? {isWholesale: body.isWholesale} : {}),
                     ttnNumber: normalizedTtnNumber,
                     ...(ttnChanged ? {
                         ttnRef: null,

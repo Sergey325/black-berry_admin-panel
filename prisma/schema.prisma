@@ -168,6 +168,7 @@ model Order {
   publicToken                    String         @unique
   checkboxReceiptUrl             String?
   checkboxAfterpaymentReceiptUrl String?
+  isWholesale                    Boolean        @default(false)
   PromoCode                      PromoCode?     @relation(fields: [promoCodeId], references: [id])
   items                          OrderItem[]
 }

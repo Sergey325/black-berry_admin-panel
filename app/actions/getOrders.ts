@@ -56,6 +56,7 @@ export interface IOrder {
     checkboxReceiptStatus: string | null;
     checkboxReceiptUrl: string | null;
     checkboxAfterpaymentReceiptUrl: string | null;
+    isWholesale: boolean;
     items: IOrderItem[]
 }
 

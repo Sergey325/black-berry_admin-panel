@@ -7,6 +7,7 @@ import ToolTip from "@/app/components/ToolTip";
 import type {TrafficSource} from "@prisma/client";
 import {FiFileText} from "react-icons/fi";
 import {CgShapeSquare} from "react-icons/cg";
+import {BsBoxes} from "react-icons/bs";
 
 
 type Props = {
@@ -68,6 +69,12 @@ const OrderCard = ({order, onEdit}: Props) => {
                 <div className="min-w-0">
                     <div className="flex items-center gap-2">
                         <p className="font-semibold text-gray-900">Замовлення {order.id}</p>
+                        {
+                            order.isWholesale &&
+                            <ToolTip label={"Оптове замовлення"}>
+                                <BsBoxes className={"size-4 text-slate-900"}/>
+                            </ToolTip>
+                        }
                         {
                             order.trafficSource &&
                             <ToolTip label={trafficSourceIcons[order.trafficSource].label}>
