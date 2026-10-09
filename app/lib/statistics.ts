@@ -186,7 +186,12 @@ async function getRevenueSummary(start: Date, end: Date) {
         SELECT
             COALESCE(SUM(${orderRevenueAmount}), 0)::double precision AS revenue,
             COUNT(*)::bigint AS "ordersCount",
-            COALESCE(AVG(${orderRevenueAmount}) FILTER (WHERE "isWholesale" = false), 0)::double precision AS "averageOrderValue",
+            COALESCE(AVG(
+                CASE
+                    WHEN "paymentMethod"::text = 'CASH_ON_DELIVERY' THEN ${cashOnDeliveryFullAmount}
+                    ELSE "totalAmount"
+                END
+            ) FILTER (WHERE "isWholesale" = false), 0)::double precision AS "averageOrderValue",
             COALESCE(SUM(
                 CASE
                     WHEN "paymentMethod"::text = 'CASH_ON_DELIVERY' AND "status"::text <> 'DELIVERED'
