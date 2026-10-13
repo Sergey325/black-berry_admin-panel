@@ -8,6 +8,7 @@ import {randomUUID} from "node:crypto";
 import {fiscalizeStorefrontOrder} from "@/app/lib/storefrontFiscalization";
 import {notifyStorefrontOrderTelegram} from "@/app/lib/storefrontOrderTelegram";
 import {CASH_ON_DELIVERY_PREPAYMENT_AMOUNT} from "@/app/lib/orderTotal";
+import {OrderItemError} from "@/app/lib/orderItems";
 
 type ManualOrderRequest = FormValuesOrder & {
     warehouseNumber: number | null;
@@ -35,48 +36,115 @@ export async function POST(request: Request) {
         const { firstName, lastName, phone, email, comment, city, area, cityRef, warehouse, warehouseNumber, warehouseRef, paymentMethod, trafficSource, items } = body;
         const normalizedPhone = phone.replace(/\D/g, "") || null;
 
+        if (!items.length || items.some((item) => !Number.isSafeInteger(item.quantity) || item.quantity <= 0)) {
+            return NextResponse.json({error: "Кількість товару має бути додатним цілим числом"}, {status: 400});
+        }
+
         const totalAmount = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
         const paidAmount = paymentMethod === PaymentMethod.CASH_ON_DELIVERY ? CASH_ON_DELIVERY_PREPAYMENT_AMOUNT : totalAmount;
         const databaseStartedAt = Date.now();
 
-        const order = await prisma.order.create({
-            data: {
-                status: "PAID",
-                publicToken: randomUUID(),
-                totalAmount: paidAmount,
-                firstName,
-                lastName,
-                phone: normalizedPhone,
-                email,
-                comment,
-                city,
-                area: area,
-                cityRef: cityRef,
-                warehouse: warehouse,
-                warehouseNumber: warehouseNumber,
-                warehouseRef: warehouseRef,
-                paymentMethod: paymentMethod as PaymentMethod,
-                trafficSource,
-                isWholesale: body.isWholesale ?? false,
-                paidAt: new Date(),
-                items: {
-                    create: items.map((item) => ({
-                        productId: item.isCustom ? null : item.productId,
-                        name: item.name.trim(),
-                        price: item.price,
-                        quantity: item.quantity,
-                        color: item.color.trim() || null,
-                        colorCode: item.colorCode.trim() || null,
-                        colorName: item.colorName.trim() || null,
-                        size: item.size.trim() || null,
-                        imageUrl: item.imageUrl.trim() || null,
-                        isCustom: item.isCustom,
-                    })),
+        const order = await prisma.$transaction(async (tx) => {
+            const requestedByProductSizeId = new Map<number, number>();
+            const orderItems = [];
+
+            for (const item of items) {
+                let productSizeId: number | null = null;
+
+                if (!item.isCustom) {
+                    if (item.productId == null || item.productColorId == null) {
+                        throw new OrderItemError("Оберіть товар та колір з каталогу");
+                    }
+
+                    const matches = await tx.productSize.findMany({
+                        where: {
+                            size: item.size.trim(),
+                            productColorId: item.productColorId,
+                            productColor: {productId: item.productId},
+                        },
+                        select: {id: true},
+                        take: 2,
+                    });
+
+                    if (matches.length !== 1) {
+                        throw new OrderItemError(`Розмір товару «${item.name.trim()}» змінився. Оновіть сторінку`);
+                    }
+
+                    productSizeId = matches[0].id;
+                    requestedByProductSizeId.set(
+                        productSizeId,
+                        (requestedByProductSizeId.get(productSizeId) ?? 0) + item.quantity,
+                    );
+                }
+
+                orderItems.push({
+                    productId: item.isCustom ? null : item.productId,
+                    productSizeId,
+                    name: item.name.trim(),
+                    price: item.price,
+                    quantity: item.quantity,
+                    color: item.color.trim() || null,
+                    colorCode: item.colorCode.trim() || null,
+                    colorName: item.colorName.trim() || null,
+                    size: item.size.trim() || null,
+                    imageUrl: item.imageUrl.trim() || null,
+                    isCustom: item.isCustom,
+                });
+            }
+
+            for (const [productSizeId, requestedQuantity] of [...requestedByProductSizeId].sort(([a], [b]) => a - b)) {
+                const updatedCount = await tx.$executeRaw`
+                    UPDATE "ProductSize"
+                    SET
+                        "quantity" = CASE
+                            WHEN "quantity" IS NULL THEN NULL
+                            ELSE "quantity" - ${requestedQuantity}
+                        END,
+                        "available" = CASE
+                            WHEN "quantity" IS NULL THEN "available"
+                            WHEN "quantity" - ${requestedQuantity} <= 0 THEN FALSE
+                            ELSE "available"
+                        END
+                    WHERE
+                        "id" = ${productSizeId}
+                        AND "available" = TRUE
+                        AND ("quantity" IS NULL OR "quantity" >= ${requestedQuantity})
+                `;
+
+                if (updatedCount !== 1) {
+                    const item = orderItems.find((item) => item.productSizeId === productSizeId);
+                    throw new OrderItemError(`Недостатньо товару «${item?.name ?? productSizeId}» у наявності`);
+                }
+            }
+
+            return tx.order.create({
+                data: {
+                    status: "PAID",
+                    publicToken: randomUUID(),
+                    totalAmount: paidAmount,
+                    firstName,
+                    lastName,
+                    phone: normalizedPhone,
+                    email,
+                    comment,
+                    city,
+                    area: area,
+                    cityRef: cityRef,
+                    warehouse: warehouse,
+                    warehouseNumber: warehouseNumber,
+                    warehouseRef: warehouseRef,
+                    paymentMethod: paymentMethod as PaymentMethod,
+                    trafficSource,
+                    isWholesale: body.isWholesale ?? false,
+                    paidAt: new Date(),
+                    items: {
+                        create: orderItems,
+                    },
                 },
-            },
-            include: {
-                items: true,
-            },
+                include: {
+                    items: true,
+                },
+            });
         });
         const databaseDurationMs = Date.now() - databaseStartedAt;
 
@@ -150,7 +218,7 @@ export async function POST(request: Request) {
             await createInitialReceipt();
         }
 
-        if (process.env.NODE_ENV === "production") {
+        if (process.env.VERCEL_ENV === "production") {
             try {
                 await notifyStorefrontOrderTelegram(order.id);
             } catch (error: unknown) {
@@ -185,6 +253,10 @@ export async function POST(request: Request) {
             },
         }, { status: 200 });
     } catch (error: unknown) {
+        if (error instanceof OrderItemError) {
+            return NextResponse.json({error: error.message}, {status: 409});
+        }
+
         console.error("[Order create] Failed", {
             totalDurationMs: Date.now() - requestStartedAt,
             error,

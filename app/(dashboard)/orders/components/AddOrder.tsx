@@ -203,7 +203,8 @@ const AddOrder = ({products, order}: Props) => {
             return true;
         } catch(error: unknown) {
             console.error(error);
-            toast.error(order ? "Помилка оновлення замовлення" : "Помилка створення замовлення");
+            const message = axios.isAxiosError<{error?: string}>(error) ? error.response?.data?.error : undefined;
+            toast.error(typeof message === "string" ? message : order ? "Помилка оновлення замовлення" : "Помилка створення замовлення");
             return false;
         } finally {
             setIsSaving(false);
