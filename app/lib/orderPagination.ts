@@ -104,7 +104,7 @@ export function getDailyOrderSummaryQuery(dates: string[], filters: Prisma.Sql) 
         )
         SELECT
             date,
-            COUNT(*)::integer AS "ordersCount",
+            COUNT(*) FILTER (WHERE "status"::text NOT IN (${OrderStatus.CANCELLED}, ${OrderStatus.REFUNDED}))::integer AS "ordersCount",
             COALESCE(SUM(CASE
                 WHEN "status"::text NOT IN ('PAID', 'PROCESSING', 'SHIPPED', 'ARRIVED', 'DELIVERED') THEN 0
                 WHEN "paymentMethod"::text = 'CASH_ON_DELIVERY' AND "itemsAmount" IS NOT NULL
