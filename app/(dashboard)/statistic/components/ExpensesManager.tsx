@@ -5,7 +5,7 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import {FiCheck, FiPlus, FiTrash2, FiX} from "react-icons/fi";
 import {formatCurrency} from "@/app/(dashboard)/statistic/utils";
-import {MonthlyExpense} from "@/app/types";
+import {MonthlyExpense, MonthlyStats} from "@/app/types";
 import {formatMonthPeriod, parseMonthPeriod} from "@/app/lib/monthPeriods";
 import type {MonthRange} from "@/app/lib/monthPeriods";
 import ToolTip from "@/app/components/ToolTip";
@@ -14,6 +14,7 @@ import {showConfirmationToast} from "@/app/components/ConfirmationToast";
 
 interface Props {
     expenses: MonthlyExpense[];
+    paymentFees: Pick<MonthlyStats, "monobankFees" | "novapayFees">;
     range: MonthRange;
     onChanged: () => Promise<void>;
 }
@@ -35,7 +36,7 @@ function formatExpenseDate(expense: MonthlyExpense) {
     return `${day}.${month}.${year}`;
 }
 
-export default function ExpensesManager({expenses, range, onChanged}: Props) {
+export default function ExpensesManager({expenses, paymentFees, range, onChanged}: Props) {
     const [expenseMonth, setExpenseMonth] = useState(formatMonthPeriod(range.to));
     const [expenseDate, setExpenseDate] = useState("");
     const [amount, setAmount] = useState("");
@@ -48,6 +49,10 @@ export default function ExpensesManager({expenses, range, onChanged}: Props) {
     const selectedPeriod = parseMonthPeriod(expenseMonth) ?? range.to;
     const minimumDate = formatDateInput(selectedPeriod.year, selectedPeriod.month, 1);
     const maximumDate = formatDateInput(selectedPeriod.year, selectedPeriod.month, new Date(selectedPeriod.year, selectedPeriod.month, 0).getDate());
+    const automaticExpenses = [
+        {id: "monobank", description: "Комісія Monobank (1,3%)", amount: paymentFees.monobankFees},
+        {id: "novapay", description: "Комісія NovaPay (0,5%)", amount: paymentFees.novapayFees},
+    ].filter((expense) => expense.amount > 0);
 
     const addExpense = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -131,6 +136,9 @@ export default function ExpensesManager({expenses, range, onChanged}: Props) {
     return (
         <section className="rounded-xl border border-gray-300 bg-white p-4 md:p-5">
             <h2 className="text-lg font-semibold">Витрати за період</h2>
+            {automaticExpenses.length > 0 && (
+                <p className="mt-1 text-sm text-gray-500">Комісії платежів уже враховані в доході та чистому прибутку.</p>
+            )}
             <form onSubmit={addExpense} className="mt-4 grid gap-3 md:grid-cols-[170px_160px_160px_minmax(0,1fr)_auto]">
                 <input
                     type="month"
@@ -186,9 +194,19 @@ export default function ExpensesManager({expenses, range, onChanged}: Props) {
                     <span className="text-right">Сума</span>
                     <span className="text-center">Дії</span>
                 </div>
-                {expenses.length === 0 ? (
+                {automaticExpenses.map((expense) => (
+                    <div key={expense.id}
+                         className="grid gap-3 border-b border-gray-200 px-4 py-3 last:border-b-0 md:grid-cols-[130px_minmax(0,1fr)_180px_110px] md:items-center">
+                        <span className="text-gray-400">За період</span>
+                        <span className="wrap-break-word text-gray-700">{expense.description}</span>
+                        <span className="font-medium md:text-right">{formatCurrency(expense.amount)}</span>
+                        <span className="text-sm text-gray-400 md:text-center">Автоматично</span>
+                    </div>
+                ))}
+                {expenses.length === 0 && automaticExpenses.length === 0 && (
                     <p className="py-8 text-center text-gray-400">Витрат за цей період немає</p>
-                ) : expenses.map((expense) => (
+                )}
+                {expenses.map((expense) => (
                     <div key={expense.id}
                          className="grid gap-3 border-b border-gray-200 px-4 py-3 last:border-b-0 md:grid-cols-[130px_minmax(0,1fr)_180px_110px] md:items-center">
                         {editingId === expense.id ? (

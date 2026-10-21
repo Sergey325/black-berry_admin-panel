@@ -153,6 +153,9 @@ export type ContactData = {
 export interface MonthlyStats {
     period: { from: { year: number; month: number }; to: { year: number; month: number } };
     revenue: number;
+    paymentFees: number;
+    monobankFees: number;
+    novapayFees: number;
     expenses: number;
     netProfit: number;
     ordersCount: number;

@@ -9,7 +9,7 @@ export const BUSINESS_TIME_ZONE = "Europe/Kyiv";
 const REVENUE_STATUSES = ["PAID", "PROCESSING", "SHIPPED", "ARRIVED", "DELIVERED"] as const;
 const cashOnDeliveryFullAmount = Prisma.sql`GREATEST(COALESCE("itemsAmount", "totalAmount"), 0)`;
 const cashOnDeliveryPrepayment = Prisma.sql`LEAST("totalAmount", ${CASH_ON_DELIVERY_PREPAYMENT_AMOUNT})`;
-const orderRevenueAmount = Prisma.sql`
+const grossOrderRevenueAmount = Prisma.sql`
     CASE
         WHEN "paymentMethod"::text = 'CASH_ON_DELIVERY' AND "status"::text = 'DELIVERED'
             THEN ${cashOnDeliveryFullAmount}
@@ -18,9 +18,25 @@ const orderRevenueAmount = Prisma.sql`
         ELSE "totalAmount"
     END
 `;
+const monobankFeeAmount = Prisma.sql`
+    ROUND((CASE
+        WHEN "paymentMethod"::text = 'CASH_ON_DELIVERY' THEN ${cashOnDeliveryPrepayment}
+        ELSE "totalAmount"
+    END)::numeric * 0.013, 2)
+`;
+const novapayFeeAmount = Prisma.sql`
+    CASE
+        WHEN "paymentMethod"::text = 'CASH_ON_DELIVERY' AND "status"::text = 'DELIVERED'
+            THEN ROUND(GREATEST(${cashOnDeliveryFullAmount} - ${cashOnDeliveryPrepayment}, 0)::numeric * 0.005, 2)
+        ELSE 0
+    END
+`;
+const orderRevenueAmount = Prisma.sql`(${grossOrderRevenueAmount}) - (${monobankFeeAmount}) - (${novapayFeeAmount})`;
 
 interface SummaryRow {
     revenue: number;
+    monobankFees: number;
+    novapayFees: number;
     ordersCount: bigint;
     averageOrderValue: number;
     pendingCashOnDeliveryAmount: number;
@@ -68,6 +84,9 @@ interface TopColorRow {
 export interface MonthlyStats {
     period: MonthRange;
     revenue: number;
+    paymentFees: number;
+    monobankFees: number;
+    novapayFees: number;
     expenses: number;
     netProfit: number;
     ordersCount: number;
@@ -185,6 +204,8 @@ async function getRevenueSummary(start: Date, end: Date) {
         )
         SELECT
             COALESCE(SUM(${orderRevenueAmount}), 0)::double precision AS revenue,
+            COALESCE(SUM(${monobankFeeAmount}), 0)::double precision AS "monobankFees",
+            COALESCE(SUM(${novapayFeeAmount}), 0)::double precision AS "novapayFees",
             COUNT(*)::bigint AS "ordersCount",
             COALESCE(AVG(
                 CASE
@@ -204,6 +225,8 @@ async function getRevenueSummary(start: Date, end: Date) {
 
     return {
         revenue: Number(rows[0]?.revenue ?? 0),
+        monobankFees: Number(rows[0]?.monobankFees ?? 0),
+        novapayFees: Number(rows[0]?.novapayFees ?? 0),
         ordersCount: Number(rows[0]?.ordersCount ?? 0),
         averageOrderValue: Number(rows[0]?.averageOrderValue ?? 0),
         pendingCashOnDeliveryAmount: Number(rows[0]?.pendingCashOnDeliveryAmount ?? 0),
@@ -375,6 +398,9 @@ export async function getStats(period: MonthRange): Promise<MonthlyStats> {
     return {
         period,
         revenue: round(summary.revenue),
+        paymentFees: round(summary.monobankFees + summary.novapayFees),
+        monobankFees: round(summary.monobankFees),
+        novapayFees: round(summary.novapayFees),
         expenses: round(expenses),
         netProfit,
         ordersCount: summary.ordersCount,

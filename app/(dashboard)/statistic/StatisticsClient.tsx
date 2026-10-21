@@ -240,7 +240,7 @@ export default function StatisticsClient({ range, normalizeUrl }: Props) {
                         </div>
                     </section>
 
-                    <ExpensesManager key={`${from}-${to}`} expenses={expenses} range={range} onChanged={() => loadData(false)} />
+                    <ExpensesManager key={`${from}-${to}`} expenses={expenses} paymentFees={stats} range={range} onChanged={() => loadData(false)} />
                 </div>
             )}
         </main>
