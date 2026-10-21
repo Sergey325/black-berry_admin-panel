@@ -169,6 +169,7 @@ model Order {
   checkboxReceiptUrl             String?
   checkboxAfterpaymentReceiptUrl String?
   isWholesale                    Boolean        @default(false)
+  paymentSource                  PaymentSource
   PromoCode                      PromoCode?     @relation(fields: [promoCodeId], references: [id])
   items                          OrderItem[]
 }
@@ -327,4 +328,9 @@ enum TrafficSource {
   INSTAGRAM
   TELEGRAM
   PROM
+}
+
+enum PaymentSource {
+  MONOBANK
+  CURRENT_ACCOUNT
 }

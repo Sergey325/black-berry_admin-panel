@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import {isAdminRequest, unauthorizedResponse} from "@/app/lib/adminApi";
 import prisma from "@/app/lib/prisma";
 import {OrderStatus, PaymentMethod} from "@prisma/client";
-import {FormValuesOrder, isInitialPaymentSource} from "@/app/types";
+import {FormValuesOrder, isPaymentSource} from "@/app/types";
 import {fiscalizeStorefrontOrder} from "@/app/lib/storefrontFiscalization";
 import {OrderItemError, reconcileOrderItems} from "@/app/lib/orderItems";
 import {getOrderStatusUpdate, OrderStatusError} from "@/app/lib/orderStatus";
@@ -91,8 +91,8 @@ export async function PATCH(
             return NextResponse.json({error: "Invalid wholesale flag"}, {status: 400});
         }
 
-        if (body.createFiscalReceipt && !isInitialPaymentSource(body.paymentSource)) {
-            return NextResponse.json({error: "Invalid initial payment source"}, {status: 400});
+        if (!isPaymentSource(body.paymentSource)) {
+            return NextResponse.json({error: "Invalid payment source"}, {status: 400});
         }
 
         const normalizedTtnNumber = body.ttnNumber.trim() || null;
@@ -104,7 +104,7 @@ export async function PATCH(
         const itemsSubtotal = body.items.reduce((total, item) => total + item.price * item.quantity, 0);
         const transactionStartedAt = Date.now();
 
-        await prisma.$transaction(async (transaction) => {
+        const order = await prisma.$transaction(async (transaction) => {
             const existingOrder = await transaction.order.findUnique({
                 where: {id},
                 select: {
@@ -119,7 +119,7 @@ export async function PATCH(
 
             const ttnChanged = existingOrder.ttnNumber !== normalizedTtnNumber;
 
-            await transaction.order.update({
+            const updatedOrder = await transaction.order.update({
                 where: {id},
                 data: {
                     totalAmount: body.paymentMethod === PaymentMethod.CASH_ON_DELIVERY && existingOrder.status !== OrderStatus.DELIVERED
@@ -137,6 +137,7 @@ export async function PATCH(
                     warehouseNumber: body.warehouseNumber,
                     warehouseRef: body.warehouseRef,
                     paymentMethod: body.paymentMethod as PaymentMethod,
+                    paymentSource: body.paymentSource,
                     trafficSource: body.trafficSource,
                     ...(body.isWholesale !== undefined ? {isWholesale: body.isWholesale} : {}),
                     ttnNumber: normalizedTtnNumber,
@@ -149,6 +150,7 @@ export async function PATCH(
                 },
             });
             await reconcileOrderItems(transaction, id, body.items);
+            return updatedOrder;
         });
         const transactionDurationMs = Date.now() - transactionStartedAt;
 
@@ -162,7 +164,7 @@ export async function PATCH(
             try {
                 await fiscalizeStorefrontOrder(id, {
                     type: "initial",
-                    paymentSource: body.paymentSource,
+                    paymentSource: order.paymentSource,
                 });
                 fiscalizationStatus = "done";
             } catch (error: unknown) {

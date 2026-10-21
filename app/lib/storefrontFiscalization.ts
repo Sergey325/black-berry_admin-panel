@@ -1,9 +1,9 @@
 import "server-only";
-import type {InitialPaymentSource} from "@/app/types";
+import type {PaymentSource} from "@prisma/client";
 
 export type StorefrontFiscalizationRequest = {
     type: "initial";
-    paymentSource: InitialPaymentSource;
+    paymentSource: PaymentSource;
 } | {
     type: "afterpayment";
 };

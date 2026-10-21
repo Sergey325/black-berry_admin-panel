@@ -3,7 +3,7 @@ import {isAdminRequest, unauthorizedResponse} from "@/app/lib/adminApi";
 import prisma from "@/app/lib/prisma";
 import { PaymentMethod } from "@prisma/client";
 import {createTTN} from "@/app/lib/novaposhta";
-import {FormValuesOrder, isInitialPaymentSource} from "@/app/types";
+import {FormValuesOrder, isPaymentSource} from "@/app/types";
 import {randomUUID} from "node:crypto";
 import {fiscalizeStorefrontOrder} from "@/app/lib/storefrontFiscalization";
 import {notifyStorefrontOrderTelegram} from "@/app/lib/storefrontOrderTelegram";
@@ -29,8 +29,8 @@ export async function POST(request: Request) {
             return NextResponse.json({error: "Invalid wholesale flag"}, {status: 400});
         }
 
-        if (body.createFiscalReceipt && !isInitialPaymentSource(body.paymentSource)) {
-            return NextResponse.json({error: "Invalid initial payment source"}, {status: 400});
+        if (!isPaymentSource(body.paymentSource)) {
+            return NextResponse.json({error: "Invalid payment source"}, {status: 400});
         }
 
         const { firstName, lastName, phone, email, comment, city, area, cityRef, warehouse, warehouseNumber, warehouseRef, paymentMethod, trafficSource, items } = body;
@@ -134,6 +134,7 @@ export async function POST(request: Request) {
                     warehouseNumber: warehouseNumber,
                     warehouseRef: warehouseRef,
                     paymentMethod: paymentMethod as PaymentMethod,
+                    paymentSource: body.paymentSource,
                     trafficSource,
                     isWholesale: body.isWholesale ?? false,
                     paidAt: new Date(),
@@ -196,7 +197,7 @@ export async function POST(request: Request) {
             try {
                 await fiscalizeStorefrontOrder(order.id, {
                     type: "initial",
-                    paymentSource: body.paymentSource,
+                    paymentSource: order.paymentSource,
                 });
                 fiscalizationStatus = "done";
             } catch (error: unknown) {

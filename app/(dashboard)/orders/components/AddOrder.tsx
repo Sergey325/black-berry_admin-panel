@@ -3,7 +3,7 @@ import axios from "axios";
 import {IOrderProduct} from "@/app/actions/getProducts";
 import {useEffect, useMemo, useState} from "react";
 import toast from "react-hot-toast";
-import {City, FormValuesOrder, InitialPaymentSource, Warehouse} from "@/app/types";
+import {City, FormValuesOrder, Warehouse} from "@/app/types";
 import NovaPoshtaSelect from "@/app/(dashboard)/orders/components/NovePoshtaSelect";
 import ContactForm from "@/app/(dashboard)/orders/components/ContactForm";
 import ToolTip from "@/app/components/ToolTip";
@@ -16,7 +16,7 @@ import ImagesUpload from "@/app/components/ImagesUpload";
 import {FiPlus} from "react-icons/fi";
 import Dropdown from "@/app/components/DropDown";
 import type {IOrder} from "@/app/actions/getOrders";
-import type {TrafficSource} from "@prisma/client";
+import type {PaymentSource, TrafficSource} from "@prisma/client";
 import Loader from "@/app/components/Loader";
 import {showConfirmationToast} from "@/app/components/ConfirmationToast";
 import {CASH_ON_DELIVERY_PREPAYMENT_AMOUNT} from "@/app/lib/orderTotal";
@@ -45,7 +45,7 @@ const trafficSourceOptions = [
 const paymentSourceOptions = [
     {value: "MONOBANK", label: "Monobank"},
     {value: "CURRENT_ACCOUNT", label: "Переказ на рахунок (IBAN)"},
-] satisfies {value: InitialPaymentSource; label: string}[];
+] satisfies {value: PaymentSource; label: string}[];
 
 const AddOrder = ({products, order}: Props) => {
     const router = useRouter();
@@ -77,7 +77,7 @@ const AddOrder = ({products, order}: Props) => {
             paymentMethod: order?.paymentMethod ?? "MONOBANK",
             isWholesale: order?.isWholesale ?? false,
             createFiscalReceipt: order ? order.checkboxReceiptStatus !== "DONE" : true,
-            paymentSource: "MONOBANK",
+            paymentSource: order?.paymentSource ?? "MONOBANK",
             trafficSource: order?.trafficSource ?? null,
             items: order?.items.map((item) => ({
                 orderItemId: item.id,
@@ -121,9 +121,9 @@ const AddOrder = ({products, order}: Props) => {
         },
     });
 
-    const [paymentMethod, createFiscalReceipt, watchedItems] = useWatch({
+    const [paymentMethod, watchedItems] = useWatch({
         control,
-        name: ["paymentMethod", "createFiscalReceipt", "items"],
+        name: ["paymentMethod", "items"],
     });
     const productOptions = useMemo<SearchSelectOption[]>(() => products.map((product) => ({
         id: product.id,
@@ -332,6 +332,20 @@ const AddOrder = ({products, order}: Props) => {
                             </label>
                         ))}
                     </div>
+                    <div className="mt-4 max-w-md">
+                        <Controller
+                            control={control}
+                            name="paymentSource"
+                            render={({field}) => (
+                                <Dropdown<PaymentSource>
+                                    label={paymentMethod === "CASH_ON_DELIVERY" ? "Джерело передоплати" : "Джерело оплати"}
+                                    options={paymentSourceOptions}
+                                    value={field.value}
+                                    onChange={(option) => field.onChange(option.value)}
+                                />
+                            )}
+                        />
+                    </div>
                     <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 transition hover:border-gray-300">
                         <input
                             type="checkbox"
@@ -347,22 +361,6 @@ const AddOrder = ({products, order}: Props) => {
                             </span>
                         </span>
                     </label>
-                    {createFiscalReceipt && (
-                        <div className="mt-4 max-w-md">
-                            <Controller
-                                control={control}
-                                name="paymentSource"
-                                render={({field}) => (
-                                    <Dropdown<InitialPaymentSource>
-                                        label="Джерело оплати для чека"
-                                        options={paymentSourceOptions}
-                                        value={field.value}
-                                        onChange={(option) => field.onChange(option.value)}
-                                    />
-                                )}
-                            />
-                        </div>
-                    )}
                 </section>
 
                 <section id="order-items" className="flex flex-col gap-4 rounded-xl border border-gray-200 bg-white p-4 shadow-sm md:p-5">

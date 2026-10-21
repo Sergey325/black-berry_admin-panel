@@ -2,7 +2,7 @@
 import {requireAdmin} from "@/app/lib/adminApi";
 
 import prisma from "@/app/lib/prisma";
-import {OrderStatus, PaymentMethod, type TrafficSource} from "@prisma/client";
+import {OrderStatus, PaymentMethod, type PaymentSource, type TrafficSource} from "@prisma/client";
 import {getDailyOrderSummaryQuery, getOrderFilters, getOrderPageQuery, ORDERS_PAGE_SIZE} from "@/app/lib/orderPagination";
 import {getOrderDateKey} from "@/app/utils/formatDate";
 
@@ -47,6 +47,7 @@ export interface IOrder {
     discountAmount: number | null;
     promoCodeSnapshot: string | null;
     paymentMethod: PaymentMethod;
+    paymentSource: PaymentSource;
     area: string | null;
     ttnNumber: string | null;
     ttnRef: string | null;

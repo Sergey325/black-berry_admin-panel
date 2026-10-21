@@ -19,10 +19,14 @@ const grossOrderRevenueAmount = Prisma.sql`
     END
 `;
 const monobankFeeAmount = Prisma.sql`
-    ROUND((CASE
-        WHEN "paymentMethod"::text = 'CASH_ON_DELIVERY' THEN ${cashOnDeliveryPrepayment}
-        ELSE "totalAmount"
-    END)::numeric * 0.013, 2)
+    CASE
+        WHEN "paymentSource"::text = 'MONOBANK' THEN
+            ROUND((CASE
+                WHEN "paymentMethod"::text = 'CASH_ON_DELIVERY' THEN ${cashOnDeliveryPrepayment}
+                ELSE "totalAmount"
+            END)::numeric * 0.013, 2)
+        ELSE 0
+    END
 `;
 const novapayFeeAmount = Prisma.sql`
     CASE
@@ -192,6 +196,7 @@ async function getRevenueSummary(start: Date, end: Date) {
                 o."id",
                 o."status",
                 o."paymentMethod",
+                o."paymentSource",
                 o."totalAmount",
                 o."isWholesale",
                 SUM(oi."price" * oi."quantity") AS "itemsAmount"
@@ -200,7 +205,7 @@ async function getRevenueSummary(start: Date, end: Date) {
             WHERE o."paidAt" >= ${start}
               AND o."paidAt" < ${end}
               AND o."status"::text IN (${Prisma.join(REVENUE_STATUSES)})
-            GROUP BY o."id", o."status", o."paymentMethod", o."totalAmount", o."isWholesale"
+            GROUP BY o."id", o."status", o."paymentMethod", o."paymentSource", o."totalAmount", o."isWholesale"
         )
         SELECT
             COALESCE(SUM(${orderRevenueAmount}), 0)::double precision AS revenue,
@@ -287,6 +292,7 @@ export async function getStats(period: MonthRange): Promise<MonthlyStats> {
                     o."paidAt",
                     o."status",
                     o."paymentMethod",
+                    o."paymentSource",
                     o."totalAmount",
                     SUM(oi."price" * oi."quantity") AS "itemsAmount"
                 FROM "Order" o
@@ -294,7 +300,7 @@ export async function getStats(period: MonthRange): Promise<MonthlyStats> {
                 WHERE o."paidAt" >= ${range.start}
                   AND o."paidAt" < ${range.end}
                   AND o."status"::text IN (${Prisma.join(REVENUE_STATUSES)})
-                GROUP BY o."id", o."paidAt", o."status", o."paymentMethod", o."totalAmount"
+                GROUP BY o."id", o."paidAt", o."status", o."paymentMethod", o."paymentSource", o."totalAmount"
             )
             SELECT
                 TO_CHAR("paidAt" AT TIME ZONE ${BUSINESS_TIME_ZONE}, 'YYYY-MM-DD') AS date,

@@ -1,9 +1,7 @@
 import type {PromoScope, PromoSelectOption} from "@/app/actions/getPromoCodes";
-import type {TrafficSource} from "@prisma/client";
+import type {PaymentSource, TrafficSource} from "@prisma/client";
 
-export type InitialPaymentSource = "MONOBANK" | "CURRENT_ACCOUNT";
-
-export function isInitialPaymentSource(value: unknown): value is InitialPaymentSource {
+export function isPaymentSource(value: unknown): value is PaymentSource {
     return value === "MONOBANK" || value === "CURRENT_ACCOUNT";
 }
 
@@ -84,7 +82,7 @@ export type FormValuesOrder = {
     paymentMethod: "MONOBANK" | "CASH_ON_DELIVERY";
     isWholesale: boolean;
     createFiscalReceipt: boolean;
-    paymentSource: InitialPaymentSource;
+    paymentSource: PaymentSource;
     trafficSource: TrafficSource | null;
     items: OrderItem[];
 };

@@ -98,7 +98,11 @@ const OrderSummary = ({order}: Props) => {
                 </div>
                 <div className="flex items-start justify-between gap-4">
                     <span className="text-gray-600">Спосіб оплати</span>
-                    <span className="max-w-[60%] text-right font-medium text-gray-800">{order.paymentMethod === "CASH_ON_DELIVERY" ? "Післяплата" : "Повна оплата картою"}</span>
+                    <span className="max-w-[60%] text-right font-medium text-gray-800">{order.paymentMethod === "CASH_ON_DELIVERY" ? "Післяплата" : "Повна оплата"}</span>
+                </div>
+                <div className="flex items-start justify-between gap-4">
+                    <span className="text-gray-600">{order.paymentMethod === "CASH_ON_DELIVERY" ? "Джерело передоплати" : "Джерело оплати"}</span>
+                    <span className="max-w-[60%] text-right font-medium text-gray-800">{order.paymentSource === "CURRENT_ACCOUNT" ? "Переказ на рахунок (IBAN)" : "Monobank"}</span>
                 </div>
                 {
                     order.ttnNumber && (
