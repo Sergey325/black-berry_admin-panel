@@ -27,6 +27,10 @@ type Props = {
 };
 
 type OrderSaveResponse = {
+    ttn?: {
+        status: "skipped" | "done" | "failed";
+        error: string | null;
+    };
     fiscalization: {
         status: "skipped" | "done" | "failed";
         error: string | null;
@@ -192,7 +196,11 @@ const AddOrder = ({products, order}: Props) => {
                 toast.error(order
                     ? "Замовлення оновлено, але чек не створено"
                     : "Замовлення створено, але чек не створено");
-            } else {
+            }
+            if (response.data.ttn?.status === "failed") {
+                toast.error("Замовлення оновлено, але ТТН не створено");
+            }
+            if (response.data.fiscalization.status !== "failed" && response.data.ttn?.status !== "failed") {
                 toast.success(order ? "Замовлення оновлено!" : "Замовлення створено!");
             }
 

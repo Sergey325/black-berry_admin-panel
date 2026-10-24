@@ -7,6 +7,7 @@ import {fiscalizeStorefrontOrder} from "@/app/lib/storefrontFiscalization";
 import {OrderItemError, reconcileOrderItems} from "@/app/lib/orderItems";
 import {getOrderStatusUpdate, OrderStatusError} from "@/app/lib/orderStatus";
 import {CASH_ON_DELIVERY_PREPAYMENT_AMOUNT, getOrderFullAmount} from "@/app/lib/orderTotal";
+import {createTTN} from "@/app/lib/novaposhta";
 
 interface IParams {
     orderId: string;
@@ -154,6 +155,43 @@ export async function PATCH(
         });
         const transactionDurationMs = Date.now() - transactionStartedAt;
 
+        let ttnStatus: "skipped" | "done" | "failed" = "skipped";
+        let ttnError: string | null = null;
+        let ttnDurationMs: number | null = null;
+
+        if (!order.ttnNumber && order.phone && order.firstName && order.lastName && order.cityRef && order.warehouseRef && order.warehouseNumber) {
+            const ttnStartedAt = Date.now();
+
+            try {
+                const {ttnNumber, ttnRef} = await createTTN({
+                    recipientFirstName: order.firstName,
+                    recipientLastName: order.lastName,
+                    recipientPhone: order.phone,
+                    recipientCityRef: order.cityRef,
+                    recipientWarehouseRef: order.warehouseRef,
+                    recipientWarehouseNumber: order.warehouseNumber.toString(),
+                    serviceType: order.warehouse?.includes("Відділення") ? "WarehouseWarehouse" : "WarehousePostomat",
+                    cost: Math.max(0, itemsSubtotal),
+                    codAmount: order.paymentMethod === PaymentMethod.CASH_ON_DELIVERY
+                        ? Math.max(0, itemsSubtotal - order.totalAmount)
+                        : 0,
+                    description: body.items.map((item) => item.name.trim()).join(", "),
+                });
+
+                await prisma.order.update({
+                    where: {id},
+                    data: {ttnNumber, ttnRef},
+                });
+                ttnStatus = "done";
+            } catch (error: unknown) {
+                ttnStatus = "failed";
+                ttnError = error instanceof Error ? error.message : "TTN creation failed";
+                console.error("Failed to create TTN for updated order", {orderId: id, error});
+            } finally {
+                ttnDurationMs = Date.now() - ttnStartedAt;
+            }
+        }
+
         let fiscalizationStatus: "skipped" | "done" | "failed" = "skipped";
         let fiscalizationError: string | null = null;
         let fiscalizationDurationMs: number | null = null;
@@ -183,18 +221,24 @@ export async function PATCH(
         console.log("[Order update] Completed", {
             orderId: id,
             transactionDurationMs,
+            ttnDurationMs,
             fiscalizationDurationMs,
             totalDurationMs,
         });
 
         return NextResponse.json({
             orderId: id,
+            ttn: {
+                status: ttnStatus,
+                error: ttnError,
+            },
             fiscalization: {
                 status: fiscalizationStatus,
                 error: fiscalizationError,
             },
             timings: {
                 transactionDurationMs,
+                ttnDurationMs,
                 fiscalizationDurationMs,
                 totalDurationMs,
             },

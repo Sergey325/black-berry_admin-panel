@@ -172,7 +172,7 @@ export async function createTTN({
     const fullDescription = Array.from(`Одяг: ${description}`);
     const shipmentDescription = fullDescription.length <= MAX_DESCRIPTION_LENGTH
         ? fullDescription.join("")
-        : `${fullDescription.slice(0, MAX_DESCRIPTION_LENGTH - 1).join("").trimEnd().replace(/,$/, "")}…`;
+        : `${fullDescription.slice(0, MAX_DESCRIPTION_LENGTH - 3).join("").trimEnd().replace(/,$/, "")}...`;
 
     const payload = {
         apiKey: API_KEY,

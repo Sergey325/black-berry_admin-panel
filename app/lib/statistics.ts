@@ -303,7 +303,7 @@ export async function getStats(period: MonthRange): Promise<MonthlyStats> {
                 GROUP BY o."id", o."paidAt", o."status", o."paymentMethod", o."paymentSource", o."totalAmount"
             )
             SELECT
-                TO_CHAR("paidAt" AT TIME ZONE ${BUSINESS_TIME_ZONE}, 'YYYY-MM-DD') AS date,
+                TO_CHAR("paidAt" AT TIME ZONE 'UTC' AT TIME ZONE ${BUSINESS_TIME_ZONE}, 'YYYY-MM-DD') AS date,
                 COALESCE(SUM(${orderRevenueAmount}), 0)::double precision AS revenue,
                 COUNT(*)::bigint AS "ordersCount"
             FROM eligible_orders
