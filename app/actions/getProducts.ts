@@ -57,6 +57,7 @@ const productDetailsSelect = {
                 },
             },
             sizes: {
+                orderBy: {id: "asc"},
                 select: {
                     id: true,
                     size: true,
@@ -122,6 +123,7 @@ const orderProductSelect = {
                 },
             },
             sizes: {
+                orderBy: {id: "asc"},
                 select: {
                     id: true,
                     size: true,
