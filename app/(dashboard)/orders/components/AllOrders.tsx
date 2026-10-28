@@ -13,14 +13,88 @@ import SearchInput from "@/app/components/SearchInput";
 
 type Props = {
     initialPage: IOrdersPage;
+    version: string;
     filters: IOrdersParams;
     onAdd: () => void;
     onEdit: (order: IOrder) => void;
 };
 
-const AllOrders = ({initialPage, filters, onAdd, onEdit}: Props) => {
-    const params = useSearchParams()
-    const router = useRouter()
+const AllOrders = ({initialPage, version, filters, onAdd, onEdit}: Props) => {
+    const params = useSearchParams();
+    const router = useRouter();
+    const status = useMemo(() => {
+        return params?.get("status") || "All";
+    }, [params])
+
+    const statusOptions = orderStatuses.map((option) => ({
+        ...option,
+        onClick: () => handleChangeStatusFilter(option.value),
+    }));
+
+    const handleChangeStatusFilter = useCallback((statusValue: string) => {
+        let currentQuery = {}
+
+        if (status === statusValue) return null
+
+        if(params){
+            currentQuery = qs.parse(params.toString())
+        }
+
+        const updatedQuery = {
+            ...currentQuery,
+            status: statusValue
+        }
+
+        const url = qs.stringifyUrl({
+            url: '/orders',
+            query: updatedQuery
+        }, {skipNull: true})
+
+        router.push(url)
+    }, [params, router, status])
+
+    return (
+        <div className="flex flex-col gap-5">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                <div className="flex w-full items-center gap-3 lg:min-w-fit">
+                    <SearchInput
+                        searchParam="search"
+                        placeholder="Пошук за №, прізвищем, телефоном або email..."
+                    />
+                    <button
+                        type="button"
+                        className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-lg bg-black px-3 text-sm font-medium text-white transition hover:bg-gray-800 sm:px-4"
+                        onClick={onAdd}
+                    >
+                        <FiPlus className="size-5"/>
+                        <span className="hidden sm:inline">Додати замовлення</span>
+                    </button>
+                </div>
+                <div className="w-full lg:w-fit">
+                    <Dropdown
+                        options={[
+                            {
+                                value: "All",
+                                label: "Усі",
+                                onClick:function() {handleChangeStatusFilter("All")}
+                            },
+                            ...statusOptions,
+                        ]}
+                        defaultValue={status}
+                        buttonClassName="lg:min-w-[220px]"
+                    />
+                </div>
+            </div>
+            <OrderResults key={version} initialPage={initialPage} filters={filters} onEdit={onEdit}/>
+        </div>
+    );
+};
+
+const OrderResults = ({initialPage, filters, onEdit}: Pick<Props, "initialPage" | "filters" | "onEdit">) => {
+    const params = useSearchParams();
+    const router = useRouter();
+    const status = params.get("status") || "All";
+    const hasSearch = Boolean(params.get("search")?.trim());
     const [page, setPage] = useState(initialPage);
     const [isLoading, setIsLoading] = useState(false);
     const [loadError, setLoadError] = useState<string | null>(null);
@@ -80,38 +154,6 @@ const AllOrders = ({initialPage, filters, onAdd, onEdit}: Props) => {
         return () => observer.disconnect();
     }, [isLoading, loadError, loadMore, nextCursor]);
 
-    const status = useMemo(() => {
-        return params?.get("status") || "All";
-    }, [params])
-    const hasSearch = Boolean(params.get("search")?.trim());
-
-    const statusOptions = orderStatuses.map((option) => ({
-        ...option,
-        onClick: () => handleChangeStatusFilter(option.value),
-    }));
-
-    const handleChangeStatusFilter = useCallback((statusValue: string) => {
-        let currentQuery = {}
-
-        if (status === statusValue) return null
-
-        if(params){
-            currentQuery = qs.parse(params.toString())
-        }
-
-        const updatedQuery = {
-            ...currentQuery,
-            status: statusValue
-        }
-
-        const url = qs.stringifyUrl({
-            url: '/orders',
-            query: updatedQuery
-        }, {skipNull: true})
-
-        router.push(url)
-    }, [params, router, status])
-
     const groupedOrders = Object.entries(
         orders.reduce((acc, order) => {
             const date = getOrderDateKey(order.createdAt);
@@ -128,36 +170,6 @@ const AllOrders = ({initialPage, filters, onAdd, onEdit}: Props) => {
 
     return (
         <div className="flex flex-col gap-5">
-            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                <div className="flex w-full items-center gap-3 lg:min-w-fit">
-                    <SearchInput
-                        searchParam="search"
-                        placeholder="Пошук за №, прізвищем, телефоном або email..."
-                    />
-                    <button
-                        type="button"
-                        className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-lg bg-black px-3 text-sm font-medium text-white transition hover:bg-gray-800 sm:px-4"
-                        onClick={onAdd}
-                    >
-                        <FiPlus className="size-5"/>
-                        <span className="hidden sm:inline">Додати замовлення</span>
-                    </button>
-                </div>
-                <div className="w-full lg:w-fit">
-                    <Dropdown
-                        options={[
-                            {
-                                value: "All",
-                                label: "Усі",
-                                onClick:function() {handleChangeStatusFilter("All")}
-                            },
-                            ...statusOptions,
-                        ]}
-                        defaultValue={status}
-                        buttonClassName="lg:min-w-[220px]"
-                    />
-                </div>
-            </div>
             {orders.length === 0 && (
                 <div className="flex min-h-64 flex-col items-center justify-center rounded-xl border border-gray-200 bg-white px-4 text-center shadow-sm">
                     <p className="font-medium text-gray-700">

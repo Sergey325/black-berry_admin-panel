@@ -293,6 +293,27 @@ model ProductSpecificationOverride {
   @@index([categorySpecificationId])
 }
 
+model NovaPoshtaWarehouse {
+  ref         String   @id @db.Uuid
+  cityRef     String   @db.Uuid
+  number      Int
+  description String
+  typeRef     String   @db.Uuid
+  available   Boolean
+  updatedAt   DateTime
+
+  @@index([cityRef, number])
+}
+
+model NovaPoshtaWarehouseSync {
+  id          String    @id
+  lockToken   String?   @db.Uuid
+  lockedUntil DateTime?
+  startedAt   DateTime?
+  completedAt DateTime?
+  total       Int       @default(0)
+}
+
 enum Season {
   SUMMER
   WINTER

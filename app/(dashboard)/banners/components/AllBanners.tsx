@@ -78,7 +78,20 @@ const SortableBanner = ({banner, onEdit, disabled}: SortableBannerProps) => {
     );
 };
 
-const AllBanners = ({banners, handleChangeTab, onEdit}: Props) => {
+const AllBanners = ({banners, handleChangeTab, onEdit}: Props) => (
+    <div className="flex flex-col gap-4">
+        <div className="flex items-center gap-3 lg:max-w-xl">
+            <SearchInput />
+            <button type="button" className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-lg bg-black px-3 text-sm font-medium text-white transition hover:bg-gray-800 sm:px-4" onClick={() => handleChangeTab("AddBanner")}>
+                <FiPlus className="size-5"/>
+                <span className="hidden sm:inline">Додати банер</span>
+            </button>
+        </div>
+        <BannerList key={banners.map(({id, order}) => `${id}:${order}`).join("-")} banners={banners} onEdit={onEdit}/>
+    </div>
+);
+
+const BannerList = ({banners, onEdit}: Pick<Props, "banners" | "onEdit">) => {
     const params = useSearchParams();
     const [orderedBanners, setOrderedBanners] = useState(banners);
     const [isSaving, setIsSaving] = useState(false);
@@ -118,54 +131,45 @@ const AllBanners = ({banners, handleChangeTab, onEdit}: Props) => {
     };
 
     return (
-        <div className="flex flex-col gap-4">
-            <div className="flex items-center gap-3 lg:max-w-xl">
-                <SearchInput />
-                <button type="button" className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-lg bg-black px-3 text-sm font-medium text-white transition hover:bg-gray-800 sm:px-4" onClick={() => handleChangeTab("AddBanner")}>
-                    <FiPlus className="size-5"/>
-                    <span className="hidden sm:inline">Додати банер</span>
-                </button>
-            </div>
-            <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-                <div className="border-b border-gray-200 px-4 py-4 md:px-5">
-                    <h2 className="font-semibold text-gray-900">Банери на сайті</h2>
-                    <p className="mt-0.5 text-xs text-gray-500">
-                        {banners.length} банерів у вибірці{isSaving ? " · збереження..." : ""}
+        <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+            <div className="border-b border-gray-200 px-4 py-4 md:px-5">
+                <h2 className="font-semibold text-gray-900">Банери на сайті</h2>
+                <p className="mt-0.5 text-xs text-gray-500">
+                    {banners.length} банерів у вибірці{isSaving ? " · збереження..." : ""}
+                </p>
+                {hasSearch && banners.length > 0 && (
+                    <p className="mt-1 text-xs text-amber-600">
+                        Для зміни порядку очистьте пошук
                     </p>
-                    {hasSearch && banners.length > 0 && (
-                        <p className="mt-1 text-xs text-amber-600">
-                            Для зміни порядку очистьте пошук
-                        </p>
-                    )}
-                </div>
-                <div className="hidden grid-cols-[36px_140px_minmax(0,1fr)_120px] items-center gap-4 border-b border-gray-200 bg-gray-50 px-4 py-3 text-sm font-medium text-gray-600 sm:grid">
-                    <span></span>
-                    <span>Зображення</span>
-                    <span>Заголовок</span>
-                    <span className="text-center">Дії</span>
-                </div>
-                {orderedBanners.length === 0 ? (
-                    <div className="px-4 py-12 text-center">
-                        <p className="font-medium text-gray-700">Банерів не знайдено</p>
-                        <p className="mt-1 text-sm text-gray-400">Змініть запит або додайте перший банер</p>
-                    </div>
-                ) : (
-                    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                        <SortableContext items={orderedBanners.map(({id}) => id)} strategy={verticalListSortingStrategy}>
-                            <div>
-                                {orderedBanners.map((banner) => (
-                                    <SortableBanner
-                                        key={banner.id}
-                                        banner={banner}
-                                        onEdit={onEdit}
-                                        disabled={!canReorder || isSaving}
-                                    />
-                                ))}
-                            </div>
-                        </SortableContext>
-                    </DndContext>
                 )}
             </div>
+            <div className="hidden grid-cols-[36px_140px_minmax(0,1fr)_120px] items-center gap-4 border-b border-gray-200 bg-gray-50 px-4 py-3 text-sm font-medium text-gray-600 sm:grid">
+                <span></span>
+                <span>Зображення</span>
+                <span>Заголовок</span>
+                <span className="text-center">Дії</span>
+            </div>
+            {orderedBanners.length === 0 ? (
+                <div className="px-4 py-12 text-center">
+                    <p className="font-medium text-gray-700">Банерів не знайдено</p>
+                    <p className="mt-1 text-sm text-gray-400">Змініть запит або додайте перший банер</p>
+                </div>
+            ) : (
+                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                    <SortableContext items={orderedBanners.map(({id}) => id)} strategy={verticalListSortingStrategy}>
+                        <div>
+                            {orderedBanners.map((banner) => (
+                                <SortableBanner
+                                    key={banner.id}
+                                    banner={banner}
+                                    onEdit={onEdit}
+                                    disabled={!canReorder || isSaving}
+                                />
+                            ))}
+                        </div>
+                    </SortableContext>
+                </DndContext>
+            )}
         </div>
     );
 };

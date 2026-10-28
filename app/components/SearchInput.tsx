@@ -35,9 +35,9 @@ export default function SearchInput({placeholder = "Пошук за назвою
             if (qs.toString() === query) return;
 
             startTransition(() => {
-                router.push(`?${qs.toString()}`);
+                router.replace(`?${qs.toString()}`, {scroll: false});
             });
-        }, 400);
+        }, 600);
 
         return () => clearTimeout(timeout);
     }, [query, router, searchParam, value]);
@@ -53,13 +53,13 @@ export default function SearchInput({placeholder = "Пошук за назвою
                 ? <AiOutlineLoading className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 animate-spin text-primary-dark"/>
                 : <FiSearch className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gray-400"/>
             }
-        <input
-            type="text"
-            value={value}
-            onChange={handleChange}
-            placeholder={placeholder}
-            aria-label={placeholder}
-            aria-busy={isSearching}
+            <input
+                type="text"
+                value={value}
+                onChange={handleChange}
+                placeholder={placeholder}
+                aria-label={placeholder}
+                aria-busy={isSearching}
                 className="h-10 w-full rounded-lg border border-gray-300 bg-white py-2 pl-9 pr-3 text-sm outline-none transition placeholder:text-gray-400 focus:border-gray-500 focus:ring-2 focus:ring-gray-200"
             />
         </div>

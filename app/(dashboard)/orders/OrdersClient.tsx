@@ -49,7 +49,7 @@ export default function OrdersClient({ordersPage, ordersParams, ordersVersion, o
             <div className="mt-7">
             {
                 tab === "AllOrders"
-                    ? ordersPage && <AllOrders key={ordersVersion} initialPage={ordersPage} filters={ordersParams} onAdd={() => navigateToForm()} onEdit={(selectedOrder) => navigateToForm(selectedOrder.id)}/>
+                    ? ordersPage && <AllOrders version={ordersVersion} initialPage={ordersPage} filters={ordersParams} onAdd={() => navigateToForm()} onEdit={(selectedOrder) => navigateToForm(selectedOrder.id)}/>
                     : <AddOrder key={order?.id ?? "new"} products={products} order={order || undefined}/>
             }
             </div>
