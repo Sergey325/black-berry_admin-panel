@@ -2,13 +2,18 @@ import { Prisma } from "@prisma/client";
 import prisma from "@/app/lib/prisma";
 import { getMonthDistance, getMonthPeriods } from "@/app/lib/adminApi";
 import type { MonthPeriod, MonthRange } from "@/app/lib/adminApi";
-import {CASH_ON_DELIVERY_PREPAYMENT_AMOUNT} from "@/app/lib/orderTotal";
+import {MIN_COD_PREPAYMENT} from "@/app/lib/orderTotal";
 
 export const BUSINESS_TIME_ZONE = "Europe/Kyiv";
 
 const REVENUE_STATUSES = ["PAID", "PROCESSING", "SHIPPED", "ARRIVED", "DELIVERED"] as const;
 const cashOnDeliveryFullAmount = Prisma.sql`GREATEST(COALESCE("itemsAmount", "totalAmount"), 0)`;
-const cashOnDeliveryPrepayment = Prisma.sql`LEAST("totalAmount", ${CASH_ON_DELIVERY_PREPAYMENT_AMOUNT})`;
+const cashOnDeliveryPrepayment = Prisma.sql`
+    CASE
+        WHEN "status"::text = 'DELIVERED' THEN LEAST("totalAmount", ${MIN_COD_PREPAYMENT})
+        ELSE "totalAmount"
+    END
+`;
 const grossOrderRevenueAmount = Prisma.sql`
     CASE
         WHEN "paymentMethod"::text = 'CASH_ON_DELIVERY' AND "status"::text = 'DELIVERED'

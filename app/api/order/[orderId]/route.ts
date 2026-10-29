@@ -6,7 +6,7 @@ import {FormValuesOrder, isPaymentSource} from "@/app/types";
 import {fiscalizeStorefrontOrder} from "@/app/lib/storefrontFiscalization";
 import {OrderItemError, reconcileOrderItems} from "@/app/lib/orderItems";
 import {getOrderStatusUpdate, OrderStatusError} from "@/app/lib/orderStatus";
-import {CASH_ON_DELIVERY_PREPAYMENT_AMOUNT, getOrderFullAmount} from "@/app/lib/orderTotal";
+import {calculateCodPrepayment, getOrderFullAmount} from "@/app/lib/orderTotal";
 import {createTTN} from "@/app/lib/novaposhta";
 
 interface IParams {
@@ -103,6 +103,11 @@ export async function PATCH(
 
         const normalizedPhone = body.phone.replace(/\D/g, "") || null;
         const itemsSubtotal = body.items.reduce((total, item) => total + item.price * item.quantity, 0);
+        if (!Number.isFinite(itemsSubtotal) || itemsSubtotal <= 0 || body.items.some((item) => (
+            !Number.isFinite(item.price) || item.price <= 0 || !Number.isSafeInteger(item.quantity) || item.quantity <= 0
+        ))) {
+            return NextResponse.json({error: "Некоректна ціна або кількість товару"}, {status: 400});
+        }
         const transactionStartedAt = Date.now();
 
         const order = await prisma.$transaction(async (transaction) => {
@@ -111,6 +116,8 @@ export async function PATCH(
                 select: {
                     ttnNumber: true,
                     status: true,
+                    paymentMethod: true,
+                    totalAmount: true,
                 },
             });
 
@@ -119,13 +126,21 @@ export async function PATCH(
             }
 
             const ttnChanged = existingOrder.ttnNumber !== normalizedTtnNumber;
+            const paidAmount = body.paymentMethod === PaymentMethod.CASH_ON_DELIVERY && existingOrder.status !== OrderStatus.DELIVERED
+                ? existingOrder.paymentMethod === PaymentMethod.CASH_ON_DELIVERY
+                    ? existingOrder.totalAmount
+                    : calculateCodPrepayment(itemsSubtotal, Number(process.env.COD_PREPAYMENT_PERCENT))
+                : itemsSubtotal;
+
+            if (body.paymentMethod === PaymentMethod.CASH_ON_DELIVERY && existingOrder.status !== OrderStatus.DELIVERED
+                && Math.round(paidAmount * 100) >= Math.round(itemsSubtotal * 100)) {
+                throw new OrderItemError("Передоплата має бути меншою за суму замовлення");
+            }
 
             const updatedOrder = await transaction.order.update({
                 where: {id},
                 data: {
-                    totalAmount: body.paymentMethod === PaymentMethod.CASH_ON_DELIVERY && existingOrder.status !== OrderStatus.DELIVERED
-                        ? CASH_ON_DELIVERY_PREPAYMENT_AMOUNT
-                        : Math.max(0, itemsSubtotal),
+                    totalAmount: paidAmount,
                     firstName: body.firstName,
                     lastName: body.lastName,
                     phone: normalizedPhone,

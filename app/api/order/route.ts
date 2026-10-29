@@ -7,7 +7,7 @@ import {FormValuesOrder, isPaymentSource} from "@/app/types";
 import {randomUUID} from "node:crypto";
 import {fiscalizeStorefrontOrder} from "@/app/lib/storefrontFiscalization";
 import {notifyStorefrontOrderTelegram} from "@/app/lib/storefrontOrderTelegram";
-import {CASH_ON_DELIVERY_PREPAYMENT_AMOUNT} from "@/app/lib/orderTotal";
+import {calculateCodPrepayment, MIN_COD_PREPAYMENT} from "@/app/lib/orderTotal";
 import {OrderItemError} from "@/app/lib/orderItems";
 
 type ManualOrderRequest = FormValuesOrder & {
@@ -40,8 +40,25 @@ export async function POST(request: Request) {
             return NextResponse.json({error: "Кількість товару має бути додатним цілим числом"}, {status: 400});
         }
 
+        if (items.some((item) => !Number.isFinite(item.price) || item.price <= 0)) {
+            return NextResponse.json({error: "Ціна товару має бути додатним числом"}, {status: 400});
+        }
+
         const totalAmount = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
-        const paidAmount = paymentMethod === PaymentMethod.CASH_ON_DELIVERY ? CASH_ON_DELIVERY_PREPAYMENT_AMOUNT : totalAmount;
+        if (!Number.isFinite(totalAmount) || totalAmount <= 0) {
+            return NextResponse.json({error: "Некоректна сума замовлення"}, {status: 400});
+        }
+
+        const prepaymentAmount = body.prepaymentAmount ?? calculateCodPrepayment(totalAmount, Number(process.env.COD_PREPAYMENT_PERCENT));
+        if (paymentMethod === PaymentMethod.CASH_ON_DELIVERY && (
+            typeof prepaymentAmount !== "number" || !Number.isFinite(prepaymentAmount)
+            || prepaymentAmount < MIN_COD_PREPAYMENT || Math.round(prepaymentAmount * 100) >= Math.round(totalAmount * 100)
+        )) {
+            return NextResponse.json({error: `Передоплата має бути не меншою за ${MIN_COD_PREPAYMENT} грн та меншою за суму замовлення`}, {status: 400});
+        }
+        const paidAmount = paymentMethod === PaymentMethod.CASH_ON_DELIVERY
+            ? Math.round(prepaymentAmount * 100) / 100
+            : totalAmount;
         const databaseStartedAt = Date.now();
 
         const order = await prisma.$transaction(async (tx) => {

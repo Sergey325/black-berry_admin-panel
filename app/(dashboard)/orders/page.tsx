@@ -20,7 +20,7 @@ const Orders = async ({searchParams}: Props) => {
     ]);
 
     return (
-        <OrdersClient ordersPage={ordersPage} ordersParams={params} ordersVersion={crypto.randomUUID()} order={order} products={products}/>
+        <OrdersClient ordersPage={ordersPage} ordersParams={params} ordersVersion={crypto.randomUUID()} order={order} products={products} codPrepaymentPercent={Number(process.env.COD_PREPAYMENT_PERCENT)}/>
     );
 };
 

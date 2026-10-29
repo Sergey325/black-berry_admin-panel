@@ -14,9 +14,10 @@ type Props = {
     ordersVersion: string;
     order: IOrder | null;
     products: IOrderProduct[];
+    codPrepaymentPercent: number;
 };
 
-export default function OrdersClient({ordersPage, ordersParams, ordersVersion, order, products}: Props) {
+export default function OrdersClient({ordersPage, ordersParams, ordersVersion, order, products, codPrepaymentPercent}: Props) {
     const params = useSearchParams()
     const router = useRouter()
 
@@ -50,7 +51,7 @@ export default function OrdersClient({ordersPage, ordersParams, ordersVersion, o
             {
                 tab === "AllOrders"
                     ? ordersPage && <AllOrders version={ordersVersion} initialPage={ordersPage} filters={ordersParams} onAdd={() => navigateToForm()} onEdit={(selectedOrder) => navigateToForm(selectedOrder.id)}/>
-                    : <AddOrder key={order?.id ?? "new"} products={products} order={order || undefined}/>
+                    : <AddOrder key={order?.id ?? "new"} products={products} order={order || undefined} codPrepaymentPercent={codPrepaymentPercent}/>
             }
             </div>
         </main>

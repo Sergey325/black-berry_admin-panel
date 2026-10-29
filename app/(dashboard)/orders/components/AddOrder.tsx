@@ -19,11 +19,12 @@ import type {IOrder} from "@/app/actions/getOrders";
 import type {PaymentSource, TrafficSource} from "@prisma/client";
 import Loader from "@/app/components/Loader";
 import {showConfirmationToast} from "@/app/components/ConfirmationToast";
-import {CASH_ON_DELIVERY_PREPAYMENT_AMOUNT} from "@/app/lib/orderTotal";
+import {calculateCodPrepayment, MIN_COD_PREPAYMENT} from "@/app/lib/orderTotal";
 
 type Props = {
     products: IOrderProduct[];
     order?: IOrder;
+    codPrepaymentPercent: number;
 };
 
 type OrderSaveResponse = {
@@ -51,7 +52,7 @@ const paymentSourceOptions = [
     {value: "CURRENT_ACCOUNT", label: "Переказ на рахунок (IBAN)"},
 ] satisfies {value: PaymentSource; label: string}[];
 
-const AddOrder = ({products, order}: Props) => {
+const AddOrder = ({products, order, codPrepaymentPercent}: Props) => {
     const router = useRouter();
     const [isSaving, setIsSaving] = useState(false);
     const [selectedCity, setSelectedCity] = useState<City | null>(() => order?.city ? {
@@ -79,6 +80,7 @@ const AddOrder = ({products, order}: Props) => {
             warehouseRef: order?.warehouseRef ?? "",
             ttnNumber: order?.ttnNumber ?? "",
             paymentMethod: order?.paymentMethod ?? "MONOBANK",
+            prepaymentAmount: null,
             isWholesale: order?.isWholesale ?? false,
             createFiscalReceipt: order ? order.checkboxReceiptStatus !== "DONE" : true,
             paymentSource: order?.paymentSource ?? "MONOBANK",
@@ -125,9 +127,9 @@ const AddOrder = ({products, order}: Props) => {
         },
     });
 
-    const [paymentMethod, watchedItems] = useWatch({
+    const [paymentMethod, watchedItems, manualPrepaymentAmount] = useWatch({
         control,
-        name: ["paymentMethod", "items"],
+        name: ["paymentMethod", "items", "prepaymentAmount"],
     });
     const productOptions = useMemo<SearchSelectOption[]>(() => products.map((product) => ({
         id: product.id,
@@ -177,6 +179,11 @@ const AddOrder = ({products, order}: Props) => {
     };
 
     const totalAmount = watchedItems?.reduce((acc, item) => acc + (item?.price ?? 0) * (item?.quantity ?? 0), 0) ?? 0;
+    const automaticPrepaymentAmount = calculateCodPrepayment(Number.isFinite(totalAmount) ? Math.max(0, totalAmount) : 0, codPrepaymentPercent);
+    const prepaymentAmount = order?.paymentMethod === "CASH_ON_DELIVERY" && order.status !== "DELIVERED"
+        ? order.totalAmount
+        : manualPrepaymentAmount ?? automaticPrepaymentAmount;
+    const isDeliveredOrder = order?.status === "DELIVERED";
 
     const saveOrder = async (data: FormValuesOrder) => {
         setIsSaving(true);
@@ -227,6 +234,18 @@ const AddOrder = ({products, order}: Props) => {
                 block: "center",
             });
 
+            return;
+        }
+
+        if (data.paymentMethod === "CASH_ON_DELIVERY" && !isDeliveredOrder && (
+            !Number.isFinite(prepaymentAmount) || Math.round(prepaymentAmount * 100) < 1
+            || (!order && prepaymentAmount < MIN_COD_PREPAYMENT)
+            || Math.round(prepaymentAmount * 100) >= Math.round(totalAmount * 100)
+        )) {
+            setError("prepaymentAmount", {
+                type: "manual",
+                message: `Передоплата має бути не меншою за ${MIN_COD_PREPAYMENT} грн та меншою за суму замовлення`,
+            });
             return;
         }
 
@@ -333,26 +352,88 @@ const AddOrder = ({products, order}: Props) => {
                         <span className="text-base font-medium text-gray-900">Оптове замовлення</span>
                     </label>
                     <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                        {(totalAmount > CASH_ON_DELIVERY_PREPAYMENT_AMOUNT ? ["MONOBANK", "CASH_ON_DELIVERY"] : ["MONOBANK"] as const).map((method) => (
+                        {(["MONOBANK", "CASH_ON_DELIVERY"] as const).map((method) => (
                             <label key={method} className={`flex cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 text-base font-medium transition ${paymentMethod === method ? "border-gray-900 bg-gray-50 text-gray-950" : "border-gray-200 text-gray-700 hover:border-gray-400 select-none"}`}>
                                 <input type="radio" value={method} {...register("paymentMethod")} className="accent-black" />
                                 <span>{method === "MONOBANK" ? "Повна оплата" : "Накладений платіж"}</span>
                             </label>
                         ))}
                     </div>
+                    {paymentMethod === "CASH_ON_DELIVERY" && !isDeliveredOrder && (
+                        <div className="mt-4 flex w-full flex-col md:flex-row gap-3">
+                            <div className="w-full">
+                                {order ? (
+                                    <p className="text-base font-medium text-gray-900">Передоплата: {prepaymentAmount.toLocaleString("uk-UA")} грн</p>
+                                ) : (
+                                    <>
+                                        <label htmlFor="prepayment-amount" className="text-base font-medium text-gray-700">Передоплата (грн)</label>
+                                        <Controller
+                                            control={control}
+                                            name="prepaymentAmount"
+                                            rules={{
+                                                validate: (value) => paymentMethod !== "CASH_ON_DELIVERY" || value == null
+                                                    || (Number.isFinite(value) && value >= MIN_COD_PREPAYMENT)
+                                                    || `Мінімальна передоплата — ${MIN_COD_PREPAYMENT} грн`,
+                                            }}
+                                            render={({field}) => (
+                                                <input
+                                                    id="prepayment-amount"
+                                                    type="number"
+                                                    inputMode="decimal"
+                                                    min={MIN_COD_PREPAYMENT}
+                                                    step={0.01}
+                                                    max={Math.max(0, totalAmount - 0.01)}
+                                                    name={field.name}
+                                                    ref={field.ref}
+                                                    onBlur={field.onBlur}
+                                                    value={field.value ?? ""}
+                                                    onChange={(event) => {
+                                                        field.onChange(event.target.value === "" ? null : event.target.valueAsNumber);
+                                                        clearErrors("prepaymentAmount");
+                                                    }}
+                                                    placeholder={automaticPrepaymentAmount.toString()}
+                                                    aria-invalid={Boolean(errors.prepaymentAmount)}
+                                                    aria-describedby="prepayment-description prepayment-error"
+                                                    className="rounded-lg border border-gray-300 px-3 py-2.5 text-base outline-none transition focus:border-gray-500 focus:ring-2 focus:ring-gray-200 w-full"
+                                                />
+                                            )}
+                                        />
+                                        <p id="prepayment-description" className="text-sm text-gray-600">
+                                            Залиште порожнім для автоматичного розрахунку: {codPrepaymentPercent}%, округлення вгору до десятків, мінімум {MIN_COD_PREPAYMENT} грн. Зараз: {automaticPrepaymentAmount.toLocaleString("uk-UA")} грн.
+                                        </p>
+                                    </>
+
+                                )}
+                                {errors.prepaymentAmount && <p id="prepayment-error" className="text-sm text-red-500">{errors.prepaymentAmount.message}</p>}
+                            </div>
+                            <Controller
+                                control={control}
+                                name="paymentSource"
+                                render={({field}) => (
+                                    <Dropdown<PaymentSource>
+                                        label={paymentMethod === "CASH_ON_DELIVERY" ? "Джерело передоплати" : "Джерело оплати"}
+                                        options={paymentSourceOptions}
+                                        value={field.value}
+                                        onChange={(option) => field.onChange(option.value)}
+                                    />
+                                )}
+                            />
+
+                        </div>
+                    )}
                     <div className="mt-4 max-w-md">
-                        <Controller
-                            control={control}
-                            name="paymentSource"
-                            render={({field}) => (
-                                <Dropdown<PaymentSource>
-                                    label={paymentMethod === "CASH_ON_DELIVERY" ? "Джерело передоплати" : "Джерело оплати"}
-                                    options={paymentSourceOptions}
-                                    value={field.value}
-                                    onChange={(option) => field.onChange(option.value)}
-                                />
-                            )}
-                        />
+                        {/*<Controller*/}
+                        {/*    control={control}*/}
+                        {/*    name="paymentSource"*/}
+                        {/*    render={({field}) => (*/}
+                        {/*        <Dropdown<PaymentSource>*/}
+                        {/*            label={paymentMethod === "CASH_ON_DELIVERY" ? "Джерело передоплати" : "Джерело оплати"}*/}
+                        {/*            options={paymentSourceOptions}*/}
+                        {/*            value={field.value}*/}
+                        {/*            onChange={(option) => field.onChange(option.value)}*/}
+                        {/*        />*/}
+                        {/*    )}*/}
+                        {/*/>*/}
                     </div>
                     <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 transition hover:border-gray-300">
                         <input
@@ -363,8 +444,8 @@ const AddOrder = ({products, order}: Props) => {
                         <span>
                             <span className="block text-base font-medium text-gray-900">Створити фіскальний чек</span>
                             <span className="mt-0.5 block text-sm leading-5 text-gray-600">
-                                {paymentMethod === "CASH_ON_DELIVERY"
-                                    ? `Буде створено чек передоплати ${CASH_ON_DELIVERY_PREPAYMENT_AMOUNT} грн після збереження замовлення`
+                                {paymentMethod === "CASH_ON_DELIVERY" && !isDeliveredOrder
+                                    ? `Буде створено чек передоплати ${prepaymentAmount} грн після збереження замовлення`
                                     : "Буде створено чек повної оплати після збереження замовлення"}
                             </span>
                         </span>
@@ -566,10 +647,22 @@ const AddOrder = ({products, order}: Props) => {
                         );
                     })}
 
+                    {itemFields.length > 0 && paymentMethod === "CASH_ON_DELIVERY" && !isDeliveredOrder && (
+                        <div className="flex flex-col gap-2 text-base text-gray-700">
+                            <div className="flex justify-between gap-3">
+                                <span>Передоплата</span>
+                                <span>{prepaymentAmount.toLocaleString("uk-UA")} грн</span>
+                            </div>
+                            <div className="flex justify-between gap-3">
+                                <span>До сплати при отриманні</span>
+                                <span>{Math.max(0, totalAmount - prepaymentAmount).toLocaleString("uk-UA")} грн</span>
+                            </div>
+                        </div>
+                    )}
                     {itemFields.length > 0 && (
                         <div className="flex items-center justify-between rounded-lg bg-gray-900 px-4 py-3 text-white">
                             <span className="text-base text-gray-100">Сума замовлення</span>
-                            <span className="font-semibold">{(paymentMethod === "CASH_ON_DELIVERY" ? CASH_ON_DELIVERY_PREPAYMENT_AMOUNT : totalAmount).toLocaleString("uk-UA")} грн</span>
+                            <span className="font-semibold">{totalAmount.toLocaleString("uk-UA")} грн</span>
                         </div>
                     )}
                 </section>

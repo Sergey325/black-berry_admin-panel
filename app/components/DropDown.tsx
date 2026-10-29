@@ -160,7 +160,7 @@ export default function Dropdown<T = string>({
     );
 
     return (
-        <div ref={rootRef} className={`relative w-full ${className}`}>
+        <div ref={rootRef} className={`relative w-full self-start ${className}`}>
             {label && (
                 <label className="mb-1.5 block text-sm font-medium text-neutral-700">
                     {label}

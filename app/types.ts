@@ -80,6 +80,7 @@ export type FormValuesOrder = {
     warehouseRef: string;
     ttnNumber: string;
     paymentMethod: "MONOBANK" | "CASH_ON_DELIVERY";
+    prepaymentAmount?: number | null;
     isWholesale: boolean;
     createFiscalReceipt: boolean;
     paymentSource: PaymentSource;
