@@ -360,7 +360,7 @@ const AddOrder = ({products, order, codPrepaymentPercent}: Props) => {
                         ))}
                     </div>
                     {paymentMethod === "CASH_ON_DELIVERY" && !isDeliveredOrder && (
-                        <div className="mt-4 flex w-full flex-col md:flex-row gap-3">
+                        <div className="mt-4 flex w-full">
                             <div className="w-full">
                                 {order ? (
                                     <p className="text-base font-medium text-gray-900">Передоплата: {prepaymentAmount.toLocaleString("uk-UA")} грн</p>
@@ -406,6 +406,12 @@ const AddOrder = ({products, order, codPrepaymentPercent}: Props) => {
                                 )}
                                 {errors.prepaymentAmount && <p id="prepayment-error" className="text-sm text-red-500">{errors.prepaymentAmount.message}</p>}
                             </div>
+
+
+                        </div>
+                    )}
+                    <div className="flex flex-col md:flex-row gap-3 w-full">
+                        <div className="mt-4 w-full md:w-1/2">
                             <Controller
                                 control={control}
                                 name="paymentSource"
@@ -418,38 +424,23 @@ const AddOrder = ({products, order, codPrepaymentPercent}: Props) => {
                                     />
                                 )}
                             />
-
                         </div>
-                    )}
-                    <div className="mt-4 max-w-md">
-                        {/*<Controller*/}
-                        {/*    control={control}*/}
-                        {/*    name="paymentSource"*/}
-                        {/*    render={({field}) => (*/}
-                        {/*        <Dropdown<PaymentSource>*/}
-                        {/*            label={paymentMethod === "CASH_ON_DELIVERY" ? "Джерело передоплати" : "Джерело оплати"}*/}
-                        {/*            options={paymentSourceOptions}*/}
-                        {/*            value={field.value}*/}
-                        {/*            onChange={(option) => field.onChange(option.value)}*/}
-                        {/*        />*/}
-                        {/*    )}*/}
-                        {/*/>*/}
-                    </div>
-                    <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 transition hover:border-gray-300">
-                        <input
-                            type="checkbox"
-                            {...register("createFiscalReceipt")}
-                            className="mt-1 size-4 shrink-0 accent-black"
-                        />
-                        <span>
+                        <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-lg border border-gray-200 bg-gray-50 px-2 py-2 transition hover:border-gray-300 w-full md:w-1/2">
+                            <input
+                                type="checkbox"
+                                {...register("createFiscalReceipt")}
+                                className="mt-1 size-4 shrink-0 accent-black"
+                            />
+                            <span>
                             <span className="block text-base font-medium text-gray-900">Створити фіскальний чек</span>
                             <span className="mt-0.5 block text-sm leading-5 text-gray-600">
                                 {paymentMethod === "CASH_ON_DELIVERY" && !isDeliveredOrder
-                                    ? `Буде створено чек передоплати ${prepaymentAmount} грн після збереження замовлення`
-                                    : "Буде створено чек повної оплати після збереження замовлення"}
+                                    ? `Буде створено чек передоплати ${prepaymentAmount} грн`
+                                    : "Буде створено чек повної оплати"}
                             </span>
                         </span>
-                    </label>
+                        </label>
+                    </div>
                 </section>
 
                 <section id="order-items" className="flex flex-col gap-4 rounded-xl border border-gray-200 bg-white p-4 shadow-sm md:p-5">
