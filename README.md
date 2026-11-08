@@ -2,7 +2,20 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
-First, run the development server:
+Database connections are configured in the ignored `.env` file:
+
+```dotenv
+DATABASE_URL_DEV="postgresql://..."
+DATABASE_URL_PROD="postgresql://..."
+```
+
+Run `npm run dev` to use the development database, or `npm run dev:prod` to run the local application against production data. Server Actions write to the selected database. The selected target is printed at startup.
+
+Use `npm run build:dev` / `npm run start:dev` or `npm run build:prod` / `npm run start:prod` for an explicit database target when building and serving. Use the same target for both commands.
+
+Existing deployments using `npm run build` and `npm run start` continue to use `DATABASE_URL`. An explicit `DATABASE_TARGET=dev` or `DATABASE_TARGET=prod` selects the corresponding connection for both the application and Prisma CLI. A missing selected connection raises an error.
+
+Run the development server:
 
 ```bash
 npm run dev

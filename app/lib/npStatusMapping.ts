@@ -4,6 +4,7 @@ const FINAL_ORDER_STATUSES = new Set<OrderStatus>([
     OrderStatus.DELIVERED,
     OrderStatus.CANCELLED,
     OrderStatus.REFUNDED,
+    OrderStatus.FAILED,
 ]);
 
 const SHIPPED_STATUS_CODES = new Set([

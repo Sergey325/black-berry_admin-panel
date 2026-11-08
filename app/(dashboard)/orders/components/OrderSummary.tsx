@@ -52,6 +52,10 @@ export const orderStatuses: StatusOption[] = [
         value: OrderStatus.REFUNDED,
         label: "Повернено",
     },
+    {
+        value: OrderStatus.FAILED,
+        label: "Помилка оплати",
+    },
 ];
 
 const OrderSummary = ({order}: Props) => {

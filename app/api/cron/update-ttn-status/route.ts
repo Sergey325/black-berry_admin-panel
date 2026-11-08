@@ -11,6 +11,7 @@ const FINAL_ORDER_STATUSES = [
     OrderStatus.DELIVERED,
     OrderStatus.CANCELLED,
     OrderStatus.REFUNDED,
+    OrderStatus.FAILED,
 ];
 
 export const maxDuration = 300;

@@ -14,8 +14,9 @@ const statusLabels: Record<string, string> = {
     SHIPPED: "Відправлено",
     ARRIVED: "Доставлено",
     DELIVERED: "Отримано",
-    CANCELLED: "Скасовано",
+    CANCELLED: "Відмінено",
     REFUNDED: "Повернено",
+    FAILED: "Помилка оплати",
 };
 
 const statusColors: Record<string, string> = {
@@ -27,6 +28,7 @@ const statusColors: Record<string, string> = {
     DELIVERED: "bg-emerald-500",
     CANCELLED: "bg-gray-400",
     REFUNDED: "bg-red-500",
+    FAILED: "bg-orange-500",
 };
 
 export default function StatusBreakdown({ data }: Props) {

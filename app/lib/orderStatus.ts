@@ -1,7 +1,7 @@
 import {OrderStatus, PaymentMethod} from "@prisma/client";
 
 const transitions: Record<OrderStatus, readonly OrderStatus[]> = {
-    PENDING: ["PAID", "CANCELLED"],
+    PENDING: ["PAID", "CANCELLED", "FAILED"],
     PAID: ["PROCESSING", "SHIPPED", "ARRIVED", "DELIVERED", "CANCELLED", "REFUNDED"],
     PROCESSING: ["SHIPPED", "ARRIVED", "DELIVERED", "CANCELLED", "REFUNDED"],
     SHIPPED: ["ARRIVED", "DELIVERED", "CANCELLED", "REFUNDED"],
@@ -9,6 +9,7 @@ const transitions: Record<OrderStatus, readonly OrderStatus[]> = {
     DELIVERED: ["REFUNDED"],
     CANCELLED: ["REFUNDED"],
     REFUNDED: [],
+    FAILED: ["PENDING", "PAID", "CANCELLED"],
 };
 
 export class OrderStatusError extends Error {}
