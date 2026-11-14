@@ -1,8 +1,9 @@
 "use client"
 
-import {CldUploadWidget, type CldUploadWidgetProps} from "next-cloudinary";
+import type {CldUploadWidgetProps, CldUploadWidgetPropsChildren} from "next-cloudinary";
+import dynamic from "next/dynamic";
 import Image from "next/image"
-import {useCallback, useEffect, useRef} from "react";
+import {useCallback, useEffect, useRef, useState} from "react";
 import type {CSSProperties, ReactNode} from "react";
 import toast from "react-hot-toast";
 import {TbPhotoPlus} from "react-icons/tb";
@@ -39,6 +40,46 @@ type Props = {
 
 type UploadWidgetOptions = NonNullable<CldUploadWidgetProps["options"]> & {
     asset_folder?: string
+};
+
+const CldUploadWidget = dynamic(
+    () => import("next-cloudinary").then((module) => module.CldUploadWidget),
+    {ssr: false, loading: () => <p role="status">Завантаження...</p>},
+);
+
+type UploadButtonProps = {
+    onClick: () => void;
+    label: string;
+    disabled?: boolean;
+};
+
+const UploadButton = ({onClick, label, disabled = false}: UploadButtonProps) => (
+    <button
+        type="button"
+        onClick={onClick}
+        disabled={disabled}
+        className="relative flex w-full cursor-pointer flex-col items-center justify-center gap-4 rounded-xl border border-dashed border-gray-300 bg-gray-50 py-5 text-black transition-colors hover:bg-gray-100 disabled:cursor-wait md:py-10"
+    >
+        <TbPhotoPlus className="size-[25px] md:size-[50px]"/>
+        <span className="text-base font-medium">{disabled ? "Завантаження..." : label}</span>
+    </button>
+);
+
+type WidgetUploadButtonProps = Pick<CldUploadWidgetPropsChildren, "open" | "isLoading"> & {
+    label: string;
+};
+
+const WidgetUploadButton = ({open, isLoading, label}: WidgetUploadButtonProps) => {
+    const hasOpened = useRef(false);
+
+    useEffect(() => {
+        if (isLoading || hasOpened.current) return;
+
+        hasOpened.current = true;
+        open();
+    }, [isLoading, open]);
+
+    return <UploadButton onClick={() => open()} label={label} disabled={isLoading}/>;
 };
 
 const getUploadedImageUrl = (result: unknown) => {
@@ -161,6 +202,7 @@ const ImagesUpload = ({
     sortable = false,
 }: Props) => {
     const valueRef = useRef(value);
+    const [isWidgetActive, setIsWidgetActive] = useState(false);
 
     useEffect(() => {
         valueRef.current = value;
@@ -220,53 +262,26 @@ const ImagesUpload = ({
 
     return (
         <div>
-            <CldUploadWidget
+            {isWidgetActive ? <CldUploadWidget
                 onSuccess={handleUpload}
                 signatureEndpoint="/api/cloudinary/sign"
                 options={widgetOptions}
             >
-                {({open}) => {
-                    return (
-                        <>
-                            <div
-                                onClick={() => open?.()}
-                                className="
-                                relative
-                                cursor-pointer
-                                bg-gray-50
-                                hover:bg-gray-100
-                                transition-colors
-                                rounded-xl
-                                border-dashed border border-gray-300
-                                py-5 md:py-10
-                                flex flex-col
-                                justify-center items-center
-                                gap-4
-                                text-black
-                            "
-                            >
-                                <TbPhotoPlus className="size-[25px] md:size-[50px]"/>
-                                <div className="text-base font-medium">
-                                    {uploadLabel}
-                                </div>
-                            </div>
-                            {value.length > 0 && (
-                                sortable ? (
-                                    <>
-                                        <SortableImages value={value} onChange={handleReorder} onDelete={handleDelete}/>
-                                    </>
-                                ) : (
-                                    <div className="flex w-full flex-wrap gap-2 pt-4">
-                                        {value.map((image, index) => (
-                                            <ImageCard key={image} image={image} index={index} onDelete={handleDelete}/>
-                                        ))}
-                                    </div>
-                                )
-                            )}
-                        </>
-                    )
-                }}
-            </CldUploadWidget>
+                {({open, isLoading}) => (
+                    <WidgetUploadButton open={open} isLoading={isLoading} label={uploadLabel}/>
+                )}
+            </CldUploadWidget> : <UploadButton onClick={() => setIsWidgetActive(true)} label={uploadLabel}/>}
+            {value.length > 0 && (
+                sortable ? (
+                    <SortableImages value={value} onChange={handleReorder} onDelete={handleDelete}/>
+                ) : (
+                    <div className="flex w-full flex-wrap gap-2 pt-4">
+                        {value.map((image, index) => (
+                            <ImageCard key={image} image={image} index={index} onDelete={handleDelete}/>
+                        ))}
+                    </div>
+                )
+            )}
         </div>
     )
 };
