@@ -14,25 +14,6 @@ export default function ContactForm({ register, errors, control }: Props) {
         <div className="flex flex-col gap-5">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="flex flex-col gap-1">
-                    <label className="text-base font-medium text-gray-700">Ім&#39;я</label>
-                    <input
-                        autoComplete="given-name"
-                        maxLength={25}
-                        {...register("firstName", {
-                            pattern: {
-                                value: /^[А-Яа-яІіЇїЄєҐґ' -]+$/,
-                                message: "Тільки українські літери",
-                            },
-                        })}
-                        className="rounded-lg border border-gray-300 px-3 py-2.5 text-base outline-none transition focus:border-gray-500 focus:ring-2 focus:ring-gray-200"
-                    />
-                    {errors.firstName && (
-                        <p className="text-red-500 text-sm">
-                            {errors.firstName.message}
-                        </p>
-                    )}
-                </div>
-                <div className="flex flex-col gap-1">
                     <label className="text-base font-medium text-gray-700">Прізвище</label>
                     <input
                         autoComplete="family-name"
@@ -48,6 +29,25 @@ export default function ContactForm({ register, errors, control }: Props) {
                     {errors.lastName && (
                         <p className="text-red-500 text-sm">
                             {errors.lastName.message}
+                        </p>
+                    )}
+                </div>
+                <div className="flex flex-col gap-1">
+                    <label className="text-base font-medium text-gray-700">Ім&#39;я</label>
+                    <input
+                        autoComplete="given-name"
+                        maxLength={25}
+                        {...register("firstName", {
+                            pattern: {
+                                value: /^[А-Яа-яІіЇїЄєҐґ' -]+$/,
+                                message: "Тільки українські літери",
+                            },
+                        })}
+                        className="rounded-lg border border-gray-300 px-3 py-2.5 text-base outline-none transition focus:border-gray-500 focus:ring-2 focus:ring-gray-200"
+                    />
+                    {errors.firstName && (
+                        <p className="text-red-500 text-sm">
+                            {errors.firstName.message}
                         </p>
                     )}
                 </div>
