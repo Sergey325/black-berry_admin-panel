@@ -7,6 +7,12 @@ import {MIN_COD_PREPAYMENT} from "@/app/lib/orderTotal";
 export const BUSINESS_TIME_ZONE = "Europe/Kyiv";
 
 const REVENUE_STATUSES = ["PAID", "PROCESSING", "SHIPPED", "ARRIVED", "DELIVERED"] as const;
+const revenueOrderFilter = Prisma.sql`
+    (
+        o."status"::text IN (${Prisma.join(REVENUE_STATUSES)})
+        OR (o."status"::text = 'CANCELLED' AND o."paymentMethod"::text = 'CASH_ON_DELIVERY')
+    )
+`;
 const cashOnDeliveryFullAmount = Prisma.sql`GREATEST(COALESCE("itemsAmount", "totalAmount"), 0)`;
 const cashOnDeliveryPrepayment = Prisma.sql`
     CASE
@@ -209,23 +215,23 @@ async function getRevenueSummary(start: Date, end: Date) {
             LEFT JOIN "OrderItem" oi ON oi."orderId" = o."id"
             WHERE o."paidAt" >= ${start}
               AND o."paidAt" < ${end}
-              AND o."status"::text IN (${Prisma.join(REVENUE_STATUSES)})
+              AND ${revenueOrderFilter}
             GROUP BY o."id", o."status", o."paymentMethod", o."paymentSource", o."totalAmount", o."isWholesale"
         )
         SELECT
             COALESCE(SUM(${orderRevenueAmount}), 0)::double precision AS revenue,
             COALESCE(SUM(${monobankFeeAmount}), 0)::double precision AS "monobankFees",
             COALESCE(SUM(${novapayFeeAmount}), 0)::double precision AS "novapayFees",
-            COUNT(*)::bigint AS "ordersCount",
+            COUNT(*) FILTER (WHERE "status"::text <> 'CANCELLED')::bigint AS "ordersCount",
             COALESCE(AVG(
                 CASE
                     WHEN "paymentMethod"::text = 'CASH_ON_DELIVERY' THEN ${cashOnDeliveryFullAmount}
                     ELSE "totalAmount"
                 END
-            ) FILTER (WHERE "isWholesale" = false), 0)::double precision AS "averageOrderValue",
+            ) FILTER (WHERE "isWholesale" = false AND "status"::text <> 'CANCELLED'), 0)::double precision AS "averageOrderValue",
             COALESCE(SUM(
                 CASE
-                    WHEN "paymentMethod"::text = 'CASH_ON_DELIVERY' AND "status"::text <> 'DELIVERED'
+                    WHEN "paymentMethod"::text = 'CASH_ON_DELIVERY' AND "status"::text NOT IN ('DELIVERED', 'CANCELLED')
                         THEN GREATEST(${cashOnDeliveryFullAmount} - ${cashOnDeliveryPrepayment}, 0)
                     ELSE 0
                 END
@@ -304,13 +310,13 @@ export async function getStats(period: MonthRange): Promise<MonthlyStats> {
                 LEFT JOIN "OrderItem" oi ON oi."orderId" = o."id"
                 WHERE o."paidAt" >= ${range.start}
                   AND o."paidAt" < ${range.end}
-                  AND o."status"::text IN (${Prisma.join(REVENUE_STATUSES)})
+                  AND ${revenueOrderFilter}
                 GROUP BY o."id", o."paidAt", o."status", o."paymentMethod", o."paymentSource", o."totalAmount"
             )
             SELECT
                 TO_CHAR("paidAt" AT TIME ZONE 'UTC' AT TIME ZONE ${BUSINESS_TIME_ZONE}, 'YYYY-MM-DD') AS date,
                 COALESCE(SUM(${orderRevenueAmount}), 0)::double precision AS revenue,
-                COUNT(*)::bigint AS "ordersCount"
+                COUNT(*) FILTER (WHERE "status"::text <> 'CANCELLED')::bigint AS "ordersCount"
             FROM eligible_orders
             GROUP BY date
             ORDER BY date ASC

@@ -97,7 +97,7 @@ const OrderCard = ({order, onEdit}: Props) => {
                     {order.warehouse && <p className="mt-1 break-words text-base text-gray-600">{order.warehouse}</p>}
                 </div>
                 <div className="min-w-0 sm:text-right">
-                    <p className="font-medium text-gray-900">{order.firstName} {order.lastName}</p>
+                    <p className="font-medium text-gray-900">{order.lastName} {order.firstName}</p>
                     {order.phone && <a href={`tel:${order.phone}`} className="mt-2 block text-base text-gray-700 transition hover:text-gray-950">{order.phone}</a>}
                     {order.email && <a href={`mailto:${order.email}`} className="mt-1 block truncate text-base text-gray-600 transition hover:text-gray-950">{order.email}</a>}
                 </div>
