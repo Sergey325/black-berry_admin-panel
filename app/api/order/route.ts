@@ -8,7 +8,7 @@ import {randomUUID} from "node:crypto";
 import {fiscalizeStorefrontOrder} from "@/app/lib/storefrontFiscalization";
 import {notifyStorefrontOrderTelegram} from "@/app/lib/storefrontOrderTelegram";
 import {calculateCodPrepayment, MIN_COD_PREPAYMENT} from "@/app/lib/orderTotal";
-import {OrderItemError} from "@/app/lib/orderItems";
+import {type OrderItemData, OrderItemError, resolveOrderProductSize, updateOrderStock} from "@/app/lib/orderItems";
 
 type ManualOrderRequest = FormValuesOrder & {
     warehouseNumber: number | null;
@@ -62,41 +62,12 @@ export async function POST(request: Request) {
         const databaseStartedAt = Date.now();
 
         const order = await prisma.$transaction(async (tx) => {
-            const requestedByProductSizeId = new Map<number, number>();
-            const orderItems = [];
+            const orderItems: OrderItemData[] = [];
 
             for (const item of items) {
-                let productSizeId: number | null = null;
-
-                if (!item.isCustom) {
-                    if (item.productId == null || item.productColorId == null) {
-                        throw new OrderItemError("Оберіть товар та колір з каталогу");
-                    }
-
-                    const matches = await tx.productSize.findMany({
-                        where: {
-                            size: item.size.trim(),
-                            productColorId: item.productColorId,
-                            productColor: {productId: item.productId},
-                        },
-                        select: {id: true},
-                        take: 2,
-                    });
-
-                    if (matches.length !== 1) {
-                        throw new OrderItemError(`Розмір товару «${item.name.trim()}» змінився. Оновіть сторінку`);
-                    }
-
-                    productSizeId = matches[0].id;
-                    requestedByProductSizeId.set(
-                        productSizeId,
-                        (requestedByProductSizeId.get(productSizeId) ?? 0) + item.quantity,
-                    );
-                }
-
                 orderItems.push({
                     productId: item.isCustom ? null : item.productId,
-                    productSizeId,
+                    productSizeId: item.isCustom ? null : await resolveOrderProductSize(tx, item),
                     name: item.name.trim(),
                     price: item.price,
                     quantity: item.quantity,
@@ -109,30 +80,7 @@ export async function POST(request: Request) {
                 });
             }
 
-            for (const [productSizeId, requestedQuantity] of [...requestedByProductSizeId].sort(([a], [b]) => a - b)) {
-                const updatedCount = await tx.$executeRaw`
-                    UPDATE "ProductSize"
-                    SET
-                        "quantity" = CASE
-                            WHEN "quantity" IS NULL THEN NULL
-                            ELSE "quantity" - ${requestedQuantity}
-                        END,
-                        "available" = CASE
-                            WHEN "quantity" IS NULL THEN "available"
-                            WHEN "quantity" - ${requestedQuantity} <= 0 THEN FALSE
-                            ELSE "available"
-                        END
-                    WHERE
-                        "id" = ${productSizeId}
-                        AND "available" = TRUE
-                        AND ("quantity" IS NULL OR "quantity" >= ${requestedQuantity})
-                `;
-
-                if (updatedCount !== 1) {
-                    const item = orderItems.find((item) => item.productSizeId === productSizeId);
-                    throw new OrderItemError(`Недостатньо товару «${item?.name ?? productSizeId}» у наявності`);
-                }
-            }
+            await updateOrderStock(tx, orderItems);
 
             return tx.order.create({
                 data: {

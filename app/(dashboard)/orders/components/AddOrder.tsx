@@ -88,7 +88,7 @@ const AddOrder = ({products, order, codPrepaymentPercent}: Props) => {
             items: order?.items.map((item) => ({
                 orderItemId: item.id,
                 productId: item.productId,
-                productColorId: products.find(({id}) => id === item.productId)?.colors.find((color) => (
+                productColorId: item.productSizeColorId ?? products.find(({id}) => id === item.productId)?.colors.find((color) => (
                     item.colorCode ? color.colorCode === item.colorCode : color.colorName === item.colorName && color.color === item.color
                 ))?.id ?? null,
                 name: item.name,

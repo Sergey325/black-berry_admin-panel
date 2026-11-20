@@ -11,6 +11,7 @@ export interface IOrderItem {
     orderId: number;
     productId: number | null;
     productColorId: number | null;
+    productSizeColorId?: number | null;
     product: {
         id: number;
         slug: string;
@@ -128,7 +129,7 @@ export async function getOrderById(orderId: number): Promise<IOrder | null> {
     try {
         const order = await prisma.order.findUnique({
             where: {id: orderId},
-            include: {items: true},
+            include: {items: {include: {ProductSize: {select: {productColorId: true}}}}},
         });
         if (!order) return null;
 
@@ -136,7 +137,10 @@ export async function getOrderById(orderId: number): Promise<IOrder | null> {
 
         return {
             ...order,
-            items: enrichOrderItems(order.items, products),
+            items: enrichOrderItems(order.items, products).map(({ProductSize, ...item}) => ({
+                ...item,
+                productSizeColorId: ProductSize?.productColorId ?? null,
+            })),
         };
     } catch (error: unknown) {
         throw error instanceof Error ? error : new Error("Failed to get order")
