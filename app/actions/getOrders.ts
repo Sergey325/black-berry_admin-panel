@@ -152,15 +152,24 @@ export async function getOrders(params?: IOrdersParams, cursor?: IOrdersCursor):
     try {
         const filters = getOrderFilters(params);
         const pageQuery = getOrderPageQuery(params, cursor);
-        const result = await prisma.order.findMany({
-            where: {AND: [filters.where, pageQuery.where]},
-            orderBy: pageQuery.orderBy,
-            take: ORDERS_PAGE_SIZE + 1,
-            include: {
-                items: true,
-            },
-        });
+        const {searchId} = filters;
+        const include = {items: true} as const;
+        const [exactOrder, otherOrders] = await Promise.all([
+            !cursor && searchId !== undefined
+                ? prisma.order.findUnique({where: {id: searchId, AND: [filters.where]}, include})
+                : null,
+            prisma.order.findMany({
+                where: {
+                    AND: [filters.where, pageQuery.where],
+                    ...(searchId === undefined ? {} : {id: {not: searchId}}),
+                },
+                orderBy: pageQuery.orderBy,
+                take: ORDERS_PAGE_SIZE + 1,
+                include,
+            }),
+        ]);
 
+        const result = exactOrder ? [exactOrder, ...otherOrders] : otherOrders;
         const orders = result.slice(0, ORDERS_PAGE_SIZE);
         const dates = [...new Set(orders.map(order => getOrderDateKey(order.createdAt)))];
         const [products, dailySummaries] = await Promise.all([

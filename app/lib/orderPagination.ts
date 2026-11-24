@@ -47,6 +47,7 @@ export function getOrderFilters(params: IOrdersParams = {}) {
     }
 
     return {
+        searchId,
         where,
         sql: conditions.length ? Prisma.join(conditions, " AND ") : Prisma.sql`TRUE`,
     };
