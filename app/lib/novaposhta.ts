@@ -64,6 +64,7 @@ export async function getStatusDocuments(
                 })),
             },
         }),
+        signal: AbortSignal.timeout(8_000),
     });
 
     if (!response.ok) {
@@ -93,6 +94,7 @@ async function getOrCreateRecipient({
 }) {
     const res = await fetch(API_URL, {
         method: "POST",
+        headers: {"Content-Type": "application/json"},
         body: JSON.stringify({
             apiKey: API_KEY,
             modelName: "Counterparty",
@@ -106,56 +108,63 @@ async function getOrCreateRecipient({
                 CounterpartyProperty: "Recipient",
             },
         }),
+        signal: AbortSignal.timeout(8_000),
     });
 
-    const data = await res.json();
+    if (!res.ok) throw new Error(`Nova Poshta API returned HTTP ${res.status}`);
+    const data: unknown = await res.json();
 
-    if (!data.success) {
-        console.error("Counterparty creation error:", data.errors);
-        throw new Error(data.errors?.[0] || "Не вдалося створити отримувача");
+    if (!isRecord(data) || data.success !== true) {
+        throw new Error(isRecord(data) ? formatApiErrors(data.errors) : "Не вдалося створити отримувача");
+    }
+    const recipient: unknown = Array.isArray(data.data) ? data.data[0] : undefined;
+    const contact: unknown = isRecord(recipient) && isRecord(recipient.ContactPerson) &&
+        Array.isArray(recipient.ContactPerson.data) ? recipient.ContactPerson.data[0] : undefined;
+    if (!isRecord(recipient) || typeof recipient.Ref !== "string" || !isRecord(contact) || typeof contact.Ref !== "string") {
+        throw new Error("Нова пошта не повернула дані отримувача");
     }
 
     return {
-        recipientRef: data.data[0].Ref,
-        contactRecipientRef: data.data[0].ContactPerson.data[0].Ref,
+        recipientRef: recipient.Ref,
+        contactRecipientRef: contact.Ref,
     };
 }
 
-export async function createTTN({
-    recipientFirstName,
-    recipientLastName,
-    recipientPhone,
-    recipientCityRef,
-    recipientWarehouseRef,
-    recipientWarehouseNumber,
-    cost,
-    codAmount,
-    serviceType,
-    description,
-}: {
+type Shipment = {
     recipientFirstName: string;
     recipientLastName: string;
     recipientPhone: string;
     recipientCityRef: string;
     recipientWarehouseRef: string;
-    recipientWarehouseNumber: string;
     cost: number;
     codAmount: number;
     serviceType: string;
     description: string;
-}) {
-    console.log("[createTTN] called with:", {
-        recipientFirstName,
-        recipientLastName,
-        recipientPhone,
-        recipientCityRef,
-        recipientWarehouseNumber,
-        cost,
-        codAmount,
-        serviceType,
-        description,
-    });
+};
 
+export async function saveTTN({
+    recipientFirstName,
+    recipientLastName,
+    recipientPhone,
+    recipientCityRef,
+    recipientWarehouseRef,
+    cost,
+    codAmount,
+    serviceType,
+    description,
+}: Shipment, document?: {ttnNumber: string; ttnRef: string | null; hadCod: boolean}) {
+    let ttnRef: string | undefined;
+    if (document) {
+        const ref = document.ttnRef || (await getStatusDocuments([{Number: document.ttnNumber}]))
+            .find(({Number}) => Number === document.ttnNumber)?.RefEW;
+        if (typeof ref !== "string" || !ref) throw new Error("Нова пошта не повернула ідентифікатор ТТН");
+        ttnRef = ref;
+    }
+
+    if (!API_KEY) throw new Error("NOVA_POSHTA_API_KEY is not configured");
+    if (!recipientFirstName || !recipientLastName || !recipientPhone || !recipientCityRef || !recipientWarehouseRef) {
+        throw new Error("Заповніть дані отримувача, місто та відділення");
+    }
     const senderWarehouseRef = process.env.NOVA_POSHTA_SENDER_WAREHOUSE_REF;
     if (!senderWarehouseRef) {
         throw new Error("NOVA_POSHTA_SENDER_WAREHOUSE_REF is not configured");
@@ -167,7 +176,6 @@ export async function createTTN({
         phone: recipientPhone,
         cityRef: recipientCityRef,
     });
-    console.log("[createTTN] recipientRef:", recipientRef, "contactRecipientRef:", contactRecipientRef);
 
     const fullDescription = Array.from(`Одяг: ${description}`);
     const shipmentDescription = fullDescription.length <= MAX_DESCRIPTION_LENGTH
@@ -177,8 +185,9 @@ export async function createTTN({
     const payload = {
         apiKey: API_KEY,
         modelName: "InternetDocument",
-        calledMethod: "save",
+        calledMethod: ttnRef ? "update" : "save",
         methodProperties: {
+            ...(ttnRef ? {Ref: ttnRef} : {}),
             CitySender: process.env.NOVA_POSHTA_SENDER_CITY_REF,
             Sender: process.env.NOVA_POSHTA_SENDER_REF,
             SenderAddress: senderWarehouseRef,
@@ -208,26 +217,29 @@ export async function createTTN({
             ],
             Description: shipmentDescription,
             Cost: cost,
-            AfterpaymentOnGoodsCost: codAmount > 0 ? String(codAmount) : undefined,
+            AfterpaymentOnGoodsCost: codAmount > 0 || document?.hadCod ? String(codAmount) : undefined,
         },
     };
-    console.log("[createTTN] InternetDocument payload methodProperties:", JSON.stringify(payload.methodProperties, null, 2));
-
     const res = await fetch(API_URL, {
         method: "POST",
+        headers: {"Content-Type": "application/json"},
         body: JSON.stringify(payload),
+        signal: AbortSignal.timeout(10_000),
     });
 
-    const data = await res.json();
-    console.log("[createTTN] InternetDocument response:", JSON.stringify(data, null, 2));
-
-    if (!data.success) {
-        console.error("NP TTN creation error:", data.errors);
-        throw new Error(data.errors?.[0] || "Не вдалося створити ТТН");
+    if (!res.ok) throw new Error(`Nova Poshta API returned HTTP ${res.status}`);
+    const data: unknown = await res.json();
+    if (!isRecord(data) || data.success !== true) {
+        throw new Error(isRecord(data) ? formatApiErrors(data.errors) : "Некоректна відповідь Нової пошти");
+    }
+    const saved: unknown = Array.isArray(data.data) ? data.data[0] : undefined;
+    if (!isRecord(saved) || typeof saved.IntDocNumber !== "string" || typeof saved.Ref !== "string" ||
+        !/^\d{14}$/.test(saved.IntDocNumber) || !saved.Ref) {
+        throw new Error("Нова пошта не повернула номер або ідентифікатор ТТН");
     }
 
     return {
-        ttnNumber: data.data[0].IntDocNumber,
-        ttnRef: data.data[0].Ref,
+        ttnNumber: saved.IntDocNumber,
+        ttnRef: saved.Ref,
     };
 }

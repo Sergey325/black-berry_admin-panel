@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import {isAdminRequest, unauthorizedResponse} from "@/app/lib/adminApi";
 import prisma from "@/app/lib/prisma";
 import { PaymentMethod } from "@prisma/client";
-import {createTTN} from "@/app/lib/novaposhta";
+import {saveTTN} from "@/app/lib/novaposhta";
 import {FormValuesOrder, isPaymentSource} from "@/app/types";
 import {randomUUID} from "node:crypto";
 import {fiscalizeStorefrontOrder} from "@/app/lib/storefrontFiscalization";
@@ -127,13 +127,12 @@ export async function POST(request: Request) {
             const startedAt = Date.now();
 
             try {
-                const {ttnNumber, ttnRef} = await createTTN({
+                const {ttnNumber, ttnRef} = await saveTTN({
                     recipientFirstName: order.firstName,
                     recipientLastName: order.lastName,
                     recipientPhone: order.phone,
                     recipientCityRef: order.cityRef,
                     recipientWarehouseRef: order.warehouseRef,
-                    recipientWarehouseNumber: order.warehouseNumber.toString(),
                     serviceType: order.warehouse?.includes("Відділення") ? "WarehouseWarehouse" : "WarehousePostomat",
                     cost: totalAmount,
                     codAmount: paymentMethod === PaymentMethod.CASH_ON_DELIVERY ? Math.max(0, totalAmount - paidAmount) : 0,

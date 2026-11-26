@@ -20,6 +20,7 @@ import type {PaymentSource, TrafficSource} from "@prisma/client";
 import Loader from "@/app/components/Loader";
 import {showConfirmationToast} from "@/app/components/ConfirmationToast";
 import {calculateCodPrepayment, MIN_COD_PREPAYMENT} from "@/app/lib/orderTotal";
+import type {OrderDocumentChanges} from "@/app/lib/orderDocuments";
 
 type Props = {
     products: IOrderProduct[];
@@ -38,6 +39,24 @@ type OrderSaveResponse = {
     };
 };
 
+type OrderSaveError = {
+    error?: string;
+    documents?: OrderDocumentChanges;
+    version?: string;
+    createdTtnNumber?: string;
+};
+
+function getDocumentConfirmation({ttn, receipt}: OrderDocumentChanges, ttnNumber: string) {
+    const actions = [
+        ttn === "create" ? "створить ТТН" : ttn === "update" ? "оновить ТТН у Новій пошті"
+            : ttn === "link" ? (ttnNumber ? `прив’яже ТТН №${ttnNumber}` : "відв’яже ТТН") : null,
+        receipt === "replace" ? "оформить повернення попереднього чека та видасть новий"
+            : receipt === "create" ? "створить фіскальний чек" : null,
+    ].filter(Boolean);
+
+    return `Збереження ${actions.join(" та ")}.${receipt === "replace" ? " Перевірте, що зміни відповідають фактичній оплаті." : ""}`;
+}
+
 const trafficSourceOptions = [
     {value: "FACEBOOK", label: "Facebook"},
     {value: "INSTAGRAM", label: "Instagram"},
@@ -55,6 +74,9 @@ const paymentSourceOptions = [
 const AddOrder = ({products, order, codPrepaymentPercent}: Props) => {
     const router = useRouter();
     const [isSaving, setIsSaving] = useState(false);
+    const [isConfirming, setIsConfirming] = useState(false);
+    const confirmationToastId = `save-order-documents-${order?.id}`;
+    const hasFiscalReceipt = Boolean(order?.checkboxReceiptId || order?.checkboxReceiptStatus === "DONE");
     const [selectedCity, setSelectedCity] = useState<City | null>(() => order?.city ? {
         ref: order.cityRef ?? "",
         name: order.city,
@@ -82,7 +104,7 @@ const AddOrder = ({products, order, codPrepaymentPercent}: Props) => {
             paymentMethod: order?.paymentMethod ?? "MONOBANK",
             prepaymentAmount: null,
             isWholesale: order?.isWholesale ?? false,
-            createFiscalReceipt: order ? order.checkboxReceiptStatus !== "DONE" : true,
+            createFiscalReceipt: !order,
             paymentSource: order?.paymentSource ?? "MONOBANK",
             trafficSource: order?.trafficSource ?? null,
             items: order?.items.map((item) => ({
@@ -103,6 +125,8 @@ const AddOrder = ({products, order, codPrepaymentPercent}: Props) => {
             })) ?? [],
         },
     });
+
+    useEffect(() => () => toast.dismiss(confirmationToastId), [confirmationToastId]);
 
     useEffect(() => {
         setValue("city", selectedCity?.name ?? "");
@@ -185,7 +209,7 @@ const AddOrder = ({products, order, codPrepaymentPercent}: Props) => {
         : manualPrepaymentAmount ?? automaticPrepaymentAmount;
     const isDeliveredOrder = order?.status === "DELIVERED";
 
-    const saveOrder = async (data: FormValuesOrder) => {
+    const saveOrder = async (data: FormValuesOrder, confirmDocuments?: string) => {
         setIsSaving(true);
         try {
             const payload = {
@@ -193,6 +217,7 @@ const AddOrder = ({products, order, codPrepaymentPercent}: Props) => {
                 warehouseNumber: selectedWarehouse?.number ? Number(selectedWarehouse.number) : null,
                 phone: data.phone.replace(/\D/g, ""),
                 ttnNumber: data.ttnNumber.trim(),
+                confirmDocuments,
             };
 
             const response = order
@@ -215,12 +240,31 @@ const AddOrder = ({products, order, codPrepaymentPercent}: Props) => {
             setSelectedCity(null);
             setSelectedWarehouse(null);
             router.replace("/orders");
-            return true;
         } catch(error: unknown) {
+            const failure = axios.isAxiosError<OrderSaveError>(error) ? error.response?.data : undefined;
+            if (failure?.createdTtnNumber) {
+                setValue("ttnNumber", failure.createdTtnNumber, {shouldDirty: true});
+            }
+            if (order && !confirmDocuments && failure?.documents && failure.version) {
+                const version = failure.version;
+                setIsConfirming(true);
+                showConfirmationToast({
+                    toastId: confirmationToastId,
+                    message: getDocumentConfirmation(failure.documents, data.ttnNumber.trim()),
+                    confirmLabel: "Підтвердити",
+                    pendingLabel: "Збереження…",
+                    variant: "primary",
+                    onConfirmAction: async () => {
+                        await saveOrder(data, version);
+                        setIsConfirming(false);
+                    },
+                    onCancelAction: () => setIsConfirming(false),
+                });
+                return;
+            }
             console.error(error);
-            const message = axios.isAxiosError<{error?: string}>(error) ? error.response?.data?.error : undefined;
+            const message = failure?.error;
             toast.error(typeof message === "string" ? message : order ? "Помилка оновлення замовлення" : "Помилка створення замовлення");
-            return false;
         } finally {
             setIsSaving(false);
         }
@@ -249,20 +293,16 @@ const AddOrder = ({products, order, codPrepaymentPercent}: Props) => {
             return;
         }
 
-        if (data.createFiscalReceipt) {
+        if (!order && data.createFiscalReceipt) {
             showConfirmationToast({
-                toastId: `save-order-receipt-${order?.id ?? "new"}`,
-                message: `Створити фіскальний чек для цього замовлення? ${order?.checkboxReceiptStatus === "DONE" ? "У цього замовлення вже э чек" : ""}`,
+                toastId: "save-order-receipt-new",
+                message: "Створити фіскальний чек для цього замовлення?",
                 confirmLabel: "Створити чек",
                 cancelLabel: "Без чека",
-                pendingLabel: order ? "Збереження…" : "Створення…",
+                pendingLabel: "Створення…",
                 variant: "primary",
-                onConfirmAction: async () => {
-                    if (!await saveOrder({...data, createFiscalReceipt: true})) throw new Error();
-                },
-                onCancelAction: async () => {
-                    if (!await saveOrder({...data, createFiscalReceipt: false})) throw new Error();
-                },
+                onConfirmAction: () => saveOrder({...data, createFiscalReceipt: true}),
+                onCancelAction: () => saveOrder({...data, createFiscalReceipt: false}),
             });
         } else {
             await saveOrder(data);
@@ -276,12 +316,12 @@ const AddOrder = ({products, order, codPrepaymentPercent}: Props) => {
                     <Loader />
                 </div>
             )}
-            <button type="button" className="group mb-5 inline-flex items-center gap-1 text-sm font-medium text-gray-600 transition hover:text-gray-950" onClick={() => router.replace("/orders?tab=AllOrders")}>
+            <button type="button" disabled={isSaving || isSubmitting} className="group mb-5 inline-flex items-center gap-1 text-sm font-medium text-gray-600 transition hover:text-gray-950" onClick={() => router.replace("/orders?tab=AllOrders")}>
                 <IoIosArrowBack className="size-5 group" />
                 <span className="select-none">Повернутися до замовлень</span>
             </button>
             <form data-scroll-navigation onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-5">
-
+                <fieldset disabled={isConfirming || isSaving} className="contents">
                 <section className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm md:p-5">
                     <div className="mb-4">
                         <h2 className="font-semibold text-gray-900">Контактні дані</h2>
@@ -425,7 +465,7 @@ const AddOrder = ({products, order, codPrepaymentPercent}: Props) => {
                                 )}
                             />
                         </div>
-                        <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-lg border border-gray-200 bg-gray-50 px-2 py-2 transition hover:border-gray-300 w-full md:w-1/2">
+                        {!hasFiscalReceipt && <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-lg border border-gray-200 bg-gray-50 px-2 py-2 transition hover:border-gray-300 w-full md:w-1/2">
                             <input
                                 type="checkbox"
                                 {...register("createFiscalReceipt")}
@@ -439,7 +479,7 @@ const AddOrder = ({products, order, codPrepaymentPercent}: Props) => {
                                     : "Буде створено чек повної оплати"}
                             </span>
                         </span>
-                        </label>
+                        </label>}
                     </div>
                 </section>
 
@@ -661,7 +701,7 @@ const AddOrder = ({products, order, codPrepaymentPercent}: Props) => {
                 <button type="submit" disabled={isSubmitting || isSaving} className="rounded-lg bg-black py-3 text-base font-medium text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-60">
                     {isSubmitting || isSaving ? "Збереження..." : order ? "Оновити замовлення" : "Створити замовлення"}
                 </button>
-
+                </fieldset>
             </form>
         </div>
     );

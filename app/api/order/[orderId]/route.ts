@@ -7,7 +7,10 @@ import {fiscalizeStorefrontOrder} from "@/app/lib/storefrontFiscalization";
 import {OrderItemError, reconcileOrderItems} from "@/app/lib/orderItems";
 import {getOrderStatusUpdate, OrderStatusError} from "@/app/lib/orderStatus";
 import {calculateCodPrepayment, getOrderFullAmount} from "@/app/lib/orderTotal";
-import {createTTN} from "@/app/lib/novaposhta";
+import {saveTTN} from "@/app/lib/novaposhta";
+import {prepareOrderReceiptCorrection} from "@/app/lib/checkboxCorrection";
+import {getOrderDocumentChanges, getOrderItemsAmount, getShipmentData, type OrderDocumentChanges} from "@/app/lib/orderDocuments";
+import {createHash} from "node:crypto";
 
 interface IParams {
     orderId: string;
@@ -15,6 +18,7 @@ interface IParams {
 
 type OrderUpdateRequest = FormValuesOrder & {
     warehouseNumber: number | null;
+    confirmDocuments?: string;
 };
 
 type OrderPatchRequest = {
@@ -23,7 +27,19 @@ type OrderPatchRequest = {
 
 const orderStatuses = new Set<string>(Object.values(OrderStatus));
 
-export const maxDuration = 60;
+export const maxDuration = 90;
+
+class OrderDocumentConfirmation extends Error {
+    constructor(readonly documents: OrderDocumentChanges, readonly version: string) {
+        super("Підтвердьте зміни в документах замовлення");
+    }
+}
+
+class OrderDocumentError extends Error {
+    constructor(message: string, readonly createdTtnNumber?: string) {
+        super(message);
+    }
+}
 
 function isRecord(value: unknown): value is Record<string, unknown> {
     return typeof value === "object" && value !== null;
@@ -96,13 +112,18 @@ export async function PATCH(
             return NextResponse.json({error: "Invalid payment source"}, {status: 400});
         }
 
+        if ((body.paymentMethod !== PaymentMethod.MONOBANK && body.paymentMethod !== PaymentMethod.CASH_ON_DELIVERY)
+            || typeof body.ttnNumber !== "string" || typeof body.phone !== "string") {
+            return NextResponse.json({error: "Некоректний спосіб оплати, телефон або номер ТТН"}, {status: 400});
+        }
+
         const normalizedTtnNumber = body.ttnNumber.trim() || null;
         if (normalizedTtnNumber && !/^\d{14}$/.test(normalizedTtnNumber)) {
             return NextResponse.json({error: "TTN number must contain 14 digits"}, {status: 400});
         }
 
         const normalizedPhone = body.phone.replace(/\D/g, "") || null;
-        const itemsSubtotal = body.items.reduce((total, item) => total + item.price * item.quantity, 0);
+        const itemsSubtotal = getOrderItemsAmount(body.items);
         if (!Number.isFinite(itemsSubtotal) || itemsSubtotal <= 0 || body.items.some((item) => (
             !Number.isFinite(item.price) || item.price <= 0 || !Number.isSafeInteger(item.quantity) || item.quantity <= 0
         ))) {
@@ -110,22 +131,16 @@ export async function PATCH(
         }
         const transactionStartedAt = Date.now();
 
-        const order = await prisma.$transaction(async (transaction) => {
+        const {order, documents} = await prisma.$transaction(async (transaction) => {
             const existingOrder = await transaction.order.findUnique({
                 where: {id},
-                select: {
-                    ttnNumber: true,
-                    status: true,
-                    paymentMethod: true,
-                    totalAmount: true,
-                },
+                include: {items: true},
             });
 
             if (!existingOrder) {
                 throw new Error("Order not found");
             }
 
-            const ttnChanged = existingOrder.ttnNumber !== normalizedTtnNumber;
             const paidAmount = body.paymentMethod === PaymentMethod.CASH_ON_DELIVERY && existingOrder.status !== OrderStatus.DELIVERED
                 ? existingOrder.paymentMethod === PaymentMethod.CASH_ON_DELIVERY
                     ? existingOrder.totalAmount
@@ -137,8 +152,49 @@ export async function PATCH(
                 throw new OrderItemError("Передоплата має бути меншою за суму замовлення");
             }
 
-            const updatedOrder = await transaction.order.update({
-                where: {id},
+            const next = {
+                id,
+                status: existingOrder.status,
+                firstName: body.firstName,
+                lastName: body.lastName,
+                email: body.email,
+                phone: normalizedPhone,
+                cityRef: body.cityRef,
+                warehouseRef: body.warehouseRef,
+                warehouse: body.warehouse,
+                ttnNumber: normalizedTtnNumber,
+                totalAmount: paidAmount,
+                paymentMethod: body.paymentMethod,
+                paymentSource: body.paymentSource,
+                items: body.items,
+            };
+            const documents = getOrderDocumentChanges(existingOrder, next, body.createFiscalReceipt === true);
+            if (documents.receipt === "replace" && (
+                existingOrder.status === OrderStatus.REFUNDED || existingOrder.status === OrderStatus.CANCELLED
+                || existingOrder.status === OrderStatus.FAILED
+            )) {
+                throw new OrderItemError("Для цього статусу коригування чека потрібно виконати в Checkbox");
+            }
+            if (documents.receipt === "replace" && existingOrder.status === OrderStatus.DELIVERED
+                && existingOrder.paymentMethod === PaymentMethod.CASH_ON_DELIVERY && !existingOrder.checkboxAfterpaymentReceiptId) {
+                throw new OrderItemError("Дочекайтеся фіскалізації післяплати перед коригуванням чека");
+            }
+            if (documents.receipt && body.paymentMethod === PaymentMethod.CASH_ON_DELIVERY
+                && !normalizedTtnNumber && documents.ttn !== "create") {
+                throw new OrderItemError("Для фіскалізації передоплати потрібен номер ТТН");
+            }
+
+            const {confirmDocuments, ...changes} = body;
+            const version = createHash("sha256").update(JSON.stringify([id, existingOrder.updatedAt, changes])).digest("hex");
+            if (confirmDocuments !== undefined && confirmDocuments !== version) {
+                throw new OrderStatusError("Замовлення змінилося. Відкрийте його знову");
+            }
+            if ((documents.ttn || documents.receipt) && confirmDocuments !== version) {
+                throw new OrderDocumentConfirmation(documents, version);
+            }
+
+            const result = await transaction.order.updateMany({
+                where: {id, updatedAt: existingOrder.updatedAt},
                 data: {
                     totalAmount: paidAmount,
                     firstName: body.firstName,
@@ -152,12 +208,12 @@ export async function PATCH(
                     warehouse: body.warehouse,
                     warehouseNumber: body.warehouseNumber,
                     warehouseRef: body.warehouseRef,
-                    paymentMethod: body.paymentMethod as PaymentMethod,
+                    paymentMethod: body.paymentMethod,
                     paymentSource: body.paymentSource,
                     trafficSource: body.trafficSource,
                     ...(body.isWholesale !== undefined ? {isWholesale: body.isWholesale} : {}),
                     ttnNumber: normalizedTtnNumber,
-                    ...(ttnChanged ? {
+                    ...(documents.ttn === "link" ? {
                         ttnRef: null,
                         ttnStatus: null,
                         ttnStatusCode: null,
@@ -165,53 +221,71 @@ export async function PATCH(
                     } : {}),
                 },
             });
+            if (result.count !== 1) throw new OrderStatusError("Замовлення змінилося. Відкрийте його знову");
             await reconcileOrderItems(transaction, id, body.items);
-            return updatedOrder;
-        });
+
+            let completeCorrection: Awaited<ReturnType<typeof prepareOrderReceiptCorrection>> | undefined;
+            const receiptNeedsNewTtn = documents.ttn === "create" && next.paymentMethod === PaymentMethod.CASH_ON_DELIVERY;
+            if (documents.receipt === "replace" && !receiptNeedsNewTtn) {
+                try {
+                    completeCorrection = await prepareOrderReceiptCorrection(existingOrder, next);
+                } catch (error: unknown) {
+                    throw new OrderDocumentError(`Не вдалося підготувати коригування чека. ${error instanceof Error ? error.message : ""}`);
+                }
+            }
+
+            let ttn: {ttnNumber: string; ttnRef: string} | undefined;
+            if (documents.ttn === "create" || documents.ttn === "update") {
+                try {
+                    const shipment = getShipmentData(next);
+                    const document = documents.ttn === "update" && existingOrder.ttnNumber
+                        ? {
+                            ttnNumber: existingOrder.ttnNumber,
+                            ttnRef: existingOrder.ttnRef,
+                            hadCod: getShipmentData(existingOrder).codAmount > 0,
+                        }
+                        : undefined;
+                    ttn = await saveTTN(shipment, document);
+                    if (documents.ttn === "update" && ttn.ttnNumber !== existingOrder.ttnNumber) {
+                        throw new Error(`Нова пошта повернула новий номер ${ttn.ttnNumber}. Перевірте ТТН і прив’яжіть її вручну`);
+                    }
+                } catch (error: unknown) {
+                    throw new OrderDocumentError(`Не вдалося зберегти ТТН. ${error instanceof Error ? error.message : ""}`);
+                }
+            }
+
+            let receipt: Awaited<ReturnType<NonNullable<typeof completeCorrection>>> | undefined;
+            if (documents.receipt === "replace") {
+                try {
+                    const correctReceipt = completeCorrection ?? await prepareOrderReceiptCorrection(existingOrder, {
+                        ...next,
+                        ttnNumber: ttn?.ttnNumber ?? next.ttnNumber,
+                    });
+                    receipt = await correctReceipt();
+                } catch (error: unknown) {
+                    const createdTtnNumber = documents.ttn === "create" ? ttn?.ttnNumber : undefined;
+                    const retryMessage = createdTtnNumber
+                        ? `ТТН №${createdTtnNumber} створено. Повторіть збереження з цим номером.`
+                        : `${ttn ? "ТТН уже оновлено в Новій пошті. " : ""}Повторіть збереження з тими самими змінами.`;
+                    throw new OrderDocumentError(
+                        `Коригування чека не завершено. ${retryMessage} ${error instanceof Error ? error.message : ""}`,
+                        createdTtnNumber,
+                    );
+                }
+            }
+
+            const order = ttn || receipt
+                ? await transaction.order.update({where: {id}, data: {...ttn, ...receipt}})
+                : next;
+            return {order, documents};
+        }, {timeout: 75_000});
         const transactionDurationMs = Date.now() - transactionStartedAt;
 
-        let ttnStatus: "skipped" | "done" | "failed" = "skipped";
-        let ttnError: string | null = null;
-        let ttnDurationMs: number | null = null;
-
-        if (!order.ttnNumber && order.phone && order.firstName && order.lastName && order.cityRef && order.warehouseRef && order.warehouseNumber) {
-            const ttnStartedAt = Date.now();
-
-            try {
-                const {ttnNumber, ttnRef} = await createTTN({
-                    recipientFirstName: order.firstName,
-                    recipientLastName: order.lastName,
-                    recipientPhone: order.phone,
-                    recipientCityRef: order.cityRef,
-                    recipientWarehouseRef: order.warehouseRef,
-                    recipientWarehouseNumber: order.warehouseNumber.toString(),
-                    serviceType: order.warehouse?.includes("Відділення") ? "WarehouseWarehouse" : "WarehousePostomat",
-                    cost: Math.max(0, itemsSubtotal),
-                    codAmount: order.paymentMethod === PaymentMethod.CASH_ON_DELIVERY
-                        ? Math.max(0, itemsSubtotal - order.totalAmount)
-                        : 0,
-                    description: body.items.map((item) => item.name.trim()).join(", "),
-                });
-
-                await prisma.order.update({
-                    where: {id},
-                    data: {ttnNumber, ttnRef},
-                });
-                ttnStatus = "done";
-            } catch (error: unknown) {
-                ttnStatus = "failed";
-                ttnError = error instanceof Error ? error.message : "TTN creation failed";
-                console.error("Failed to create TTN for updated order", {orderId: id, error});
-            } finally {
-                ttnDurationMs = Date.now() - ttnStartedAt;
-            }
-        }
-
-        let fiscalizationStatus: "skipped" | "done" | "failed" = "skipped";
+        let fiscalizationStatus: "skipped" | "done" | "failed" = documents.receipt === "replace" ? "done" : "skipped";
         let fiscalizationError: string | null = null;
         let fiscalizationDurationMs: number | null = null;
 
-        if (body.createFiscalReceipt) {
+        if (documents.receipt === "create") {
             const fiscalizationStartedAt = Date.now();
 
             try {
@@ -236,7 +310,6 @@ export async function PATCH(
         console.log("[Order update] Completed", {
             orderId: id,
             transactionDurationMs,
-            ttnDurationMs,
             fiscalizationDurationMs,
             totalDurationMs,
         });
@@ -244,8 +317,7 @@ export async function PATCH(
         return NextResponse.json({
             orderId: id,
             ttn: {
-                status: ttnStatus,
-                error: ttnError,
+                status: documents.ttn ? "done" : "skipped",
             },
             fiscalization: {
                 status: fiscalizationStatus,
@@ -253,12 +325,18 @@ export async function PATCH(
             },
             timings: {
                 transactionDurationMs,
-                ttnDurationMs,
                 fiscalizationDurationMs,
                 totalDurationMs,
             },
         }, {status: 200});
     } catch (error: unknown) {
+        if (error instanceof OrderDocumentConfirmation) {
+            return NextResponse.json({error: error.message, documents: error.documents, version: error.version}, {status: 409});
+        }
+        if (error instanceof OrderDocumentError) {
+            console.error("[Order update] Document operation failed", error);
+            return NextResponse.json({error: error.message, createdTtnNumber: error.createdTtnNumber}, {status: 502});
+        }
         if (error instanceof OrderStatusError) return NextResponse.json({error: error.message}, {status: 409});
         if (error instanceof OrderItemError) return NextResponse.json({error: error.message}, {status: 400});
         console.error("[Order update] Failed", {
